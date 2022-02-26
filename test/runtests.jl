@@ -9,6 +9,10 @@ end
     include("./crop.jl")
 end
 
+@testset "Decorations" verbose = true begin
+    include("./decorations.jl")
+end
+
 @testset "Splitting" verbose = true begin
     include("./split.jl")
 end
