@@ -1,11 +1,12 @@
 module StringManipulation
 
-import Base: @kwdef
+import Base: convert, @kwdef
 
 ################################################################################
 #                                  Constants
 ################################################################################
 
+const _CSI = "\x1b["
 # Regex that removes all ANSI escape sequences.
 const _REGEX_ANSI = r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
 
@@ -28,6 +29,8 @@ Structure to hold the current decoration of a string.
     reset::Bool        = false
     reversed::Bool     = false
 end
+
+const _DEFAULT_DECORATION = Decoration()
 
 ################################################################################
 #                                   Includes
