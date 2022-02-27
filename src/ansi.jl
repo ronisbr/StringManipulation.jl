@@ -7,34 +7,6 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export update_current_decoration
-
-"""
-    update_current_decoration(decoration::Decoration, ansi::String)
-
-Update the current `decoration` given an ANSI escape sequence `ansi`.
-"""
-function update_current_decoration(decoration::Decoration, ansi::String)
-
-    # We need to take only the code from the ANSI escape sequence.
-    buf_code = IOBuffer()
-
-    state = :text
-    for c in ansi
-        state = _process_string_state(c, state)
-
-        if state == :text
-            error("The input is not a supported ANSI escape sequence")
-        elseif state == :escape_state_1
-            write(buf_code, c)
-        end
-    end
-
-    code = String(take!(buf_code))
-
-    return _parse_ansi_code(decoration, code)
-end
-
 # Parse the ANSI code in `code` and return the updated decoration given the
 # initial `decoration`.
 function _parse_ansi_code(decoration::Decoration, code::String)

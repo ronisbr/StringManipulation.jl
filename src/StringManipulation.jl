@@ -31,6 +31,7 @@ Structure to hold the current decoration of a string.
 end
 
 const _DEFAULT_DECORATION = Decoration()
+const _RESET_DECORATION = Decoration(reset = true)
 
 ################################################################################
 #                                   Includes
@@ -42,6 +43,7 @@ include("./alignment.jl")
 include("./ansi.jl")
 include("./crop.jl")
 include("./decorations.jl")
+include("./highlighting.jl")
 include("./search.jl")
 include("./state.jl")
 include("./split.jl")

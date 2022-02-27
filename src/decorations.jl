@@ -7,7 +7,7 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export get_decorations, remove_decorations
+export get_decorations, parse_decoration, remove_decorations, update_decoration
 
 """
     get_decorations(str::AbstractString)
@@ -26,6 +26,41 @@ function get_decorations(str::AbstractString)
 end
 
 """
+    parse_decoration(code::AbstractString)
+
+Parse the decoration in the string `str` and returns an object of type
+`Decoration` with it.
+"""
+function parse_decoration(code::AbstractString)
+    state = :text
+    buf = IOBuffer()
+    decoration = Decoration()
+
+    for c in code
+        state = _process_string_state(c, state)
+
+        if state == :escape_state_begin
+            take!(buf)
+            write(buf, c)
+
+        elseif state == :escape_state_end
+            write(buf, c)
+            str = String(take!(buf))
+            decoration = update_decoration(decoration, str)
+
+        elseif state == :text
+            take!(buf)
+
+        else
+            write(buf, c)
+
+        end
+    end
+
+    return decoration
+end
+
+"""
     remove_decorations(str::AbstractString)
 
 Remove all the decorations added by ANSI escape sequences from the string `str`.
@@ -35,6 +70,38 @@ function remove_decorations(str::AbstractString)
     # After some testing, it turns out that using the ANSI regex is way faster
     # than using the string state.
     return replace(str, _REGEX_ANSI => "")
+end
+
+"""
+    update_decoration(decoration::Decoration, str::String)
+
+Update the current `decoration` given the decorations in the string `str`.
+"""
+function update_decoration(decoration::Decoration, code::String)
+    state = :text
+    buf = IOBuffer()
+    decoration = Decoration()
+
+    for c in code
+        state = _process_string_state(c, state)
+
+        if state == :escape_state_begin
+            take!(buf)
+
+        elseif state == :escape_state_end
+            str = String(take!(buf))
+            decoration = _parse_ansi_code(decoration, str)
+
+        elseif state == :text
+            take!(buf)
+
+        elseif state != :escape_state_opening
+            write(buf, c)
+
+        end
+    end
+
+    return decoration
 end
 
 ################################################################################
