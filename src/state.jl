@@ -18,9 +18,10 @@ The following states are possible:
 
 - `:text`: The character is part of the printable text.
 - `:escape_state_begin`: Beginning of an ANSI escape sequence.
+- `:escape_state_opening`: Matches the `[`.
 - `:escape_state_1`: First state of an ANSI escape sequence.
 - `:escape_state_2`: Second state of an ANSI escape sequence.
-- `:escape_state_3`: Thrid state of an ANSI escape sequence.
+- `:escape_state_3`: Third state of an ANSI escape sequence.
 - `:escape_state_end`: End of an ANSI escape sequence.
 """
 function _process_string_state(c::Char, state::Symbol = :text)
@@ -29,12 +30,21 @@ function _process_string_state(c::Char, state::Symbol = :text)
         if c == '\x1b'
             state = :escape_state_begin
         end
+
     elseif state == :escape_state_begin
-        if ('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_') || (c == '[')
+        if (c == '[')
+            state = :escape_state_opening
+
+        elseif ('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')
             state = :escape_state_1
         else
             state = :text
         end
+
+    elseif state == :escape_state_opening
+        state = :escape_state_1
+        return _process_string_state(c, state)
+
     elseif state == :escape_state_1
         if !('0' ≤ c ≤ '?')
             state = :escape_state_2
