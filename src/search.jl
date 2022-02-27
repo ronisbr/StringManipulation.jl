@@ -57,16 +57,16 @@ function string_search_per_line(
     r::Regex
 ) where T<:AbstractString
 
-    search_result = NTuple{3, Int}[]
+    search_results = Dict{Int, Vector{Tuple{Int, Int}}}()
 
     # Find the matches in each line.
     for l in 1:length(lines)
         search_results_l = string_search(lines[l], r)
 
-        for s in search_results_l
-            push!(search_result, (l, s[1], s[2]))
+        if !isempty(search_results_l)
+            search_results[l] = search_results_l
         end
     end
 
-    return search_result
+    return search_results
 end

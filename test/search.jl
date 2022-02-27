@@ -30,13 +30,12 @@ end
         Test 1 😅 \e[38;5;231;48;5;243mTest 2 😅 \e[38;5;201;48;5;243mTest\e[0m
         """
 
-    expected = [
-        (1, 11, 9),
-        (2, 11, 9),
-        (3, 11, 9),
-        (4, 11, 9),
-        (5, 11, 9),
-    ]
     search_result = string_search_per_line(str, r"Test 2 😅")
-    @test search_result == expected
+
+    @test search_result[1] == [(11, 9)]
+    @test search_result[2] == [(11, 9)]
+    @test search_result[3] == [(11, 9)]
+    @test search_result[4] == [(11, 9)]
+    @test search_result[5] == [(11, 9)]
+    @test length(search_result) == 5
 end
