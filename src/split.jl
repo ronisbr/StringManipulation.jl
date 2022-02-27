@@ -31,9 +31,28 @@ function split_string(str::AbstractString, size::Int)
     buf₁ = IOBuffer() # ........... Buffer with the string after the split point
     state = :text
 
+    # If we are splitting just at the point where a non-printable character is,
+    # then we need to add all those characters to the string in `buf₀`. This
+    # variable is used to handle this case.
+    check_ansi_after_split = true
+
     for c in str
         if size ≤ 0
-            print(buf₁, c)
+            if check_ansi_after_split
+                state = _process_string_state(c, state)
+
+                # All non-printable character just after splitting must go to
+                # `buf₀`.
+                if state != :text
+                    print(buf₀, c)
+                else
+                    check_ansi_after_split = false
+                    print(buf₁, c)
+                end
+            else
+                print(buf₁, c)
+            end
+
         else
             state = _process_string_state(c, state)
 
