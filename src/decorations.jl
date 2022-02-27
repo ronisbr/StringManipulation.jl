@@ -7,7 +7,23 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export remove_decorations
+export get_decorations, remove_decorations
+
+"""
+    get_decorations(str::AbstractString)
+
+Return a string with the decorations in `str`.
+"""
+function get_decorations(str::AbstractString)
+
+    buf = IOBuffer(sizehint = length(str))
+
+    for m in eachmatch(_REGEX_ANSI, str)
+        write(buf, m.match)
+    end
+
+    return String(take!(buf))
+end
 
 """
     remove_decorations(str::AbstractString)

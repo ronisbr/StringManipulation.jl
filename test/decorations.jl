@@ -20,6 +20,13 @@
     @test result == expected
 end
 
+@testset "Get decorations" begin
+    str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
+    expected = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+    result = get_decorations(str)
+    @test expected == result
+end
+
 @testset "Remove deocations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "Test 😅 Test 😅 Test"
