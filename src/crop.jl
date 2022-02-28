@@ -50,7 +50,7 @@ function left_crop(str::AbstractString, crop_width::Int)
 end
 
 """
-    left_crop(str::AbstractString, crop_width::Int)
+    right_crop(str::AbstractString, crop_width::Int; kwargs...)
 
 Right crop from `str` a field with printable width `crop_width`.
 
