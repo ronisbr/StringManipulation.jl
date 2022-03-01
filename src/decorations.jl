@@ -15,8 +15,7 @@ export get_decorations, parse_decoration, remove_decorations, update_decoration
 Return a string with the decorations in `str`.
 """
 function get_decorations(str::AbstractString)
-
-    buf = IOBuffer(sizehint = length(str))
+    buf = IOBuffer(sizehint = sizeof(str))
 
     for m in eachmatch(_REGEX_ANSI, str)
         write(buf, m.match)
@@ -33,7 +32,7 @@ Parse the decoration in the string `str` and returns an object of type
 """
 function parse_decoration(code::AbstractString)
     state = :text
-    buf = IOBuffer()
+    buf = IOBuffer(sizehint = floor(Int, sizeof(code)))
     decoration = Decoration()
 
     for c in code
