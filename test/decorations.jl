@@ -91,7 +91,7 @@ end
     @test decoration.reversed   == StringManipulation.inactive
 end
 
-@testset "Remove deocations" begin
+@testset "Remove decorations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "Test 😅 Test 😅 Test"
     result = remove_decorations(str)
@@ -100,4 +100,48 @@ end
     str = "This string does not have decorations"
     result = remove_decorations(str)
     @test result == str
+end
+
+@testset "Update decorations" begin
+    decoration = Decoration()
+
+    decoration = update_decoration(decoration, "\e[38;5;231m")
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == ""
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == false
+
+    decoration = update_decoration(decoration, "\e[48;5;243m")
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == false
+
+    decoration = update_decoration(decoration, "\e[4;27m")
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.active
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.inactive
+    @test decoration.reset      == false
+
+    decoration = update_decoration(decoration, "\e[0m")
+    @test decoration.foreground == ""
+    @test decoration.background == ""
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == true
+
+    decoration = update_decoration(decoration, "\e[33m")
+    @test decoration.foreground == "33"
+    @test decoration.background == ""
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == false
 end
