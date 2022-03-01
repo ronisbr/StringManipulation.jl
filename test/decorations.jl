@@ -17,6 +17,51 @@
     expected = "\e[35m\e[48;5;243m\e[4m"
     result = convert(String, d)
 
+    d = Decoration(
+        foreground = "35",
+        background = "48;5;243",
+        underline = StringManipulation.inactive
+    )
+
+    expected = "\e[35m\e[48;5;243m\e[24m"
+    result = convert(String, d)
+
+    d = Decoration(
+        foreground = "35",
+        background = "",
+        bold = StringManipulation.active
+    )
+
+    expected = "\e[35m\e[1m"
+    result = convert(String, d)
+
+    d = Decoration(
+        foreground = "35",
+        background = "",
+        bold = StringManipulation.inactive
+    )
+
+    expected = "\e[35m\e[22m"
+    result = convert(String, d)
+
+    d = Decoration(
+        foreground = "",
+        background = "45",
+        reversed = StringManipulation.active
+    )
+
+    expected = "\e[45m\e[7m"
+    result = convert(String, d)
+
+    d = Decoration(
+        foreground = "",
+        background = "45",
+        reversed = StringManipulation.inactive
+    )
+
+    expected = "\e[45m\e[27m"
+    result = convert(String, d)
+
     @test result == expected
 end
 
