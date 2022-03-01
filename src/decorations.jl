@@ -113,7 +113,6 @@ Update the current `decoration` given the decorations in the string `str`.
 function update_decoration(decoration::Decoration, code::String)
     state = :text
     buf = IOBuffer()
-    decoration = Decoration()
 
     for c in code
         state = _process_string_state(c, state)
