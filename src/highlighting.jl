@@ -140,12 +140,12 @@ function highlight_search(
 
         # There might be some decoration information inside `str₂` that must be
         # taken into account after the highlight.
-        str₂_decorations = get_decorations(str₂)
+        str₂_decorations, str₂_plain = get_and_remove_decorations(str₂)
         decoration = update_decoration(decoration, str₂_decorations)
 
         # Here we write the string, reset the decoration, and apply the previous
         # decoration stored in `decoration`.
-        write(h_str, str₂, reset_decoration, convert(String, decoration))
+        write(h_str, str₂_plain, reset_decoration, convert(String, decoration))
 
         # All the next matches must consider that we are not in the beginning of
         # the string anymore.
