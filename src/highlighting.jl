@@ -119,8 +119,8 @@ function highlight_search(
         # We need to obtain the current decoration and merge it the with one
         # stored in `decoration` to keep track how the string should be printed
         # after the highlight.
-        str₀_decoration = get_decorations(str₀)
-        decoration = update_decoration(decoration, str₀_decoration)
+        str₀_decorations = get_decorations(str₀)
+        decoration = update_decoration(decoration, str₀_decorations)
 
         # The highlight decoration will be a merge between the current string
         # highlight and the desired one.
@@ -137,6 +137,11 @@ function highlight_search(
         # Now, we need to split the remaining string using the information on
         # how many characters we have in the match.
         str₂, str₃ = split_string(str₁, match[2])
+
+        # There might be some decoration information inside `str₂` that must be
+        # taken into account after the highlight.
+        str₂_decorations = get_decorations(str₂)
+        decoration = update_decoration(decoration, str₂_decorations)
 
         # Here we write the string, reset the decoration, and apply the previous
         # decoration stored in `decoration`.
