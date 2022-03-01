@@ -33,22 +33,22 @@ function _parse_ansi_code(decoration::Decoration, code::String)
             return Decoration(reset = true)
 
         elseif code_i == 1
-            bold = true
+            bold = active
 
         elseif code_i == 4
-            underline  = true
+            underline = active
 
         elseif code_i == 7
-            reversed = true
+            reversed = active
 
         elseif code_i == 22
-            bold = false
+            bold = inactive
 
         elseif code_i == 24
-            underline = false
+            underline = inactive
 
         elseif code_i == 27
-            reversed = false
+            reversed = inactive
 
         elseif 30 <= code_i <= 37
             foreground = string(code_i)

@@ -11,10 +11,10 @@
     d = Decoration(
         foreground = "35",
         background = "48;5;243",
-        underline = true
+        underline = StringManipulation.active
     )
 
-    expected = "\e[35m\e[48;5;243m\e[22m\e[4m\e[27m"
+    expected = "\e[35m\e[48;5;243m\e[4m"
     result = convert(String, d)
 
     @test result == expected

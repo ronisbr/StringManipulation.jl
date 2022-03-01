@@ -129,17 +129,23 @@ function convert(::Type{String}, d::Decoration)
         write(buf, "m")
     end
 
-    write(buf, _CSI)
-    d.bold ? write(buf, "1") : write(buf, "22")
-    write(buf, "m")
+    if d.bold != unchanged
+        write(buf, _CSI)
+        d.bold == active ? write(buf, "1") : write(buf, "22")
+        write(buf, "m")
+    end
 
-    write(buf, _CSI)
-    d.underline ? write(buf, "4") : write(buf, "24")
-    write(buf, "m")
+    if d.underline != unchanged
+        write(buf, _CSI)
+        d.underline == active ? write(buf, "4") : write(buf, "24")
+        write(buf, "m")
+    end
 
-    write(buf, _CSI)
-    d.reversed ? write(buf, "7") : write(buf, "27")
-    write(buf, "m")
+    if d.reversed != unchanged
+        write(buf, _CSI)
+        d.reversed == active ? write(buf, "7") : write(buf, "27")
+        write(buf, "m")
+    end
 
     return String(take!(buf))
 end
