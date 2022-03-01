@@ -81,6 +81,16 @@ end
     @test expected_text === text
 end
 
+@testset "Parse decorations" begin
+    decoration = parse_decoration("\e[35m\e[48;5;243m\e[4;27m")
+
+    @test decoration.foreground == "35"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.active
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.inactive
+end
+
 @testset "Remove deocations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "Test 😅 Test 😅 Test"
