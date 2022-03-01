@@ -7,7 +7,8 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export get_decorations, parse_decoration, remove_decorations, update_decoration
+export get_decorations, get_and_remove_decorations, parse_decoration
+export remove_decorations, update_decoration
 
 """
     get_decorations(str::AbstractString)
@@ -22,6 +23,39 @@ function get_decorations(str::AbstractString)
     end
 
     return String(take!(buf))
+end
+
+"""
+    get_and_remove_decorations(str::AbstractString)
+
+Get and remove the decorations in `str`. The first returned string contains the
+decorations whereas the second contains the plain text.
+"""
+function get_and_remove_decorations(str::AbstractString)
+    buf_decorations = IOBuffer(sizehint = floor(Int, sizeof(str)))
+    buf_plain_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
+
+    str_i = 1
+
+    # Loop for each match of a ANSI escape sequence.
+    for m in eachmatch(_REGEX_ANSI, str)
+        # Write everything from the previous match up to the last character
+        # before the current match.
+        if m.offset - 1 > 0
+            str_f = prevind(str, m.offset)
+            write(buf_plain_str, SubString(str, str_i, str_f))
+        end
+
+        write(buf_decorations, m.match)
+
+        # `str_i` now have the index just after the current match.
+        str_i = m.offset + ncodeunits(m.match)
+    end
+
+    # Write the rest of the string.
+    write(buf_plain_str, SubString(str, str_i, lastindex(str)))
+
+    return String(take!(buf_decorations)), String(take!(buf_plain_str))
 end
 
 """
