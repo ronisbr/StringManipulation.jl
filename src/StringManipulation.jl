@@ -59,4 +59,15 @@ include("./split.jl")
 include("./view.jl")
 include("./width.jl")
 
+if Base.VERSION >= v"1.4.2"
+    # This try/catch is necessary in case the precompilation statements do not
+    # exists. In this case, StringManipulation.jl will work correctly but
+    # without the optimizations.
+    try
+        include("precompile/precompile_StringManipulation.jl")
+        _precompile_()
+    catch
+    end
+end
+
 end # module
