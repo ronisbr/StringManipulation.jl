@@ -5,7 +5,7 @@ StringManupulation.jl
 [![codecov](https://codecov.io/gh/ronisbr/StringManipulation.jl/branch/main/graph/badge.svg?token=XELRWB2KOO)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
 
 This package has the purpose to provide several functions to manipulate strings
-with ANSI escape sequences, like alignment and cropping.
+with ANSI escape sequences.
 
 ## Alignment
 
@@ -78,6 +78,108 @@ julia> right_crop(str, 5; keep_escape_seq = false)
 ("Test 😅 \e[38;5;231;48;5;243mTest 😅", "")
 ```
 
+## Decorations
+
+This package contains some functions to work with ANSI escape sequences that
+decorate the text.
+
+### Get decorations
+
+All the decorations in a string can be retrieved using `get_decorations`:
+
+```julia
+
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> get_decorations(str)
+"\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+```
+
+### Remove the decorations
+
+It is possible to remove all the decorations in a string using the functions
+`remove_decorations`:
+
+```julia
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> remove_decorations(str)
+"Test 😅 Test 😅 Test"
+```
+
+### Get and remove decorations
+
+If someone wants to get all the decorations in a string, and the undecorated
+string, the function `get_and_remove_decorations` can be used to improve the
+performance:
+
+```julia
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> get_and_remove_decorations(str)
+("\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m", "Test 😅 Test 😅 Test")
+```
+
+### Parsing decorations
+
+The ANSI escape sequences that decorates the text can be parsed using the
+function `parse_decoration`. The result is an object of type `Decoration` with
+the combined decoration created by the ANSI escape sequence.
+
+```julia
+julia> parse_decoration("\e[38;5;201;48;5;243;4;27m") |> dump
+Decoration
+  foreground: String "38;5;201"
+  background: String "48;5;243"
+  bold: StringManipulation.DecorationState StringManipulation.unchanged
+  underline: StringManipulation.DecorationState StringManipulation.active
+  reset: Bool false
+  reversed: StringManipulation.DecorationState StringManipulation.inactive
+```
+
+### Updating decorations
+
+A decoration (object of type `Decoration`) can be updated given another ANSI
+escape sequence using `update_decoration`:
+
+```julia
+julia> decoration = parse_decoration("\e[38;5;201;48;5;243;4;27m");
+
+julia> update_decoration(decoration, "\e[33;1m") |> dump
+Decoration
+  foreground: String "33"
+  background: String "48;5;243"
+  bold: StringManipulation.DecorationState StringManipulation.active
+  underline: StringManipulation.DecorationState StringManipulation.active
+  reset: Bool false
+  reversed: StringManipulation.DecorationState StringManipulation.inactive
+```
+
+## Highlight search matches
+
+The function `highlight_search` can be used to highlight search matches, given
+by a `Regex`, in a string.
+
+```julia
+julia> str = """
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
+  risus vel diam ultrices volutpat. Nullam id tortor ut dolor rutrum cursus
+  aliquam sed lorem. Donec interdum, risus eu scelerisque posuere, purus magna
+  auctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+  augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
+  sapien, ullamcorper quis dui ut, suscipit varius nibh. Duis varius arcu id
+  ipsum egestas aliquam. Pellentesque eget sem ornare turpis fringilla fringilla
+  id ac turpis.
+  """;
+
+julia> highlight_search(str, r"ing"; active_match = 2) |> println
+```
+
+![Highlight search](./assets/highlight_search.png "Highlight search")
+
+The function `highlight_search` has many options. For more information, please,
+see the built-in help (type `?highlight_search`  in REPL).
+
 ## Printable text width
 
 The printable text width of a string can be computed using the function
@@ -106,3 +208,45 @@ julia> printable_textwidth_per_line(str)
  25
  30
 ```
+
+## Splitting
+
+The function `split_string` can be used to split a string given a desired size
+(printable characters width).
+
+```julia
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> split_string(str, 8)
+("Test 😅 \e[38;5;231;48;5;243m", "Test 😅 \e[38;5;201;48;5;243mTest\e[0m")
+```
+
+## Text view
+
+The function `textview` can be used to create a view of a text.
+
+```julia
+
+julia> str = """
+         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
+         risus vel diam ultrices volutpat. Nullam id tortor ut dolor rutrum cursus
+         aliquam sed lorem. Donec interdum, risus eu scelerisque posuere, purus magna
+         auctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+         augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
+         sapien, ullamcorper quis dui ut, suscipit varius nibh. Duis varius arcu id
+         ipsum egestas aliquam. Pellentesque eget sem ornare turpis fringilla fringilla
+         id ac turpis.
+         """;
+
+julia> textview(str, (1, 3, 10, 50))[1] |> println
+um dolor sit amet, consectetur adipiscing
+ diam ultrices volutpat. Nullam id tortor
+ed lorem. Donec interdum, risus eu sceler
+```
+
+Notice that it correctly considers all the ANSI escape sequences that decorate
+the text, yielding to a view that matches all the characteristics of the
+original text (foreground color, background color, underline, etc.).
+
+The function `textview` has many options. For more information, please, see the
+built-in help (type `textview`  in REPL).
