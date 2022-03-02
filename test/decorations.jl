@@ -81,6 +81,7 @@ end
     @test expected_text === text
 end
 
+# Those tests are also used to verify the function `_parse_ansi_code`.
 @testset "Parse decorations" begin
     decoration = parse_decoration("\e[35m\e[48;5;243m\e[4;27m")
 
@@ -89,6 +90,38 @@ end
     @test decoration.underline  == StringManipulation.active
     @test decoration.bold       == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.inactive
+
+    decoration = parse_decoration("\e[45;1m")
+
+    @test decoration.foreground == ""
+    @test decoration.background == "45"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.active
+    @test decoration.reversed   == StringManipulation.unchanged
+
+    decoration = parse_decoration("\e[48;5;243;7;22m")
+
+    @test decoration.foreground == ""
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.inactive
+    @test decoration.reversed   == StringManipulation.active
+
+    decoration = parse_decoration("\e[39;49;1;7m")
+
+    @test decoration.foreground == "39"
+    @test decoration.background == "49"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.active
+    @test decoration.reversed   == StringManipulation.active
+
+    decoration = parse_decoration("\e[92;103;24m")
+
+    @test decoration.foreground == "92"
+    @test decoration.background == "103"
+    @test decoration.underline  == StringManipulation.inactive
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
 end
 
 @testset "Remove decorations" begin
