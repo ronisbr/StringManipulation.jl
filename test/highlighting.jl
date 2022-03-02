@@ -22,6 +22,10 @@
     expected = "Test \e[7mhighlight\e[0m\e[4m in a string with underlines."
     hstr     = highlight_search(str, r"highlight")
     @test expected == hstr
+
+    # No matches in the string.
+    hstr = highlight_search(str, r"Nothing to match")
+    @test hstr == str
 end
 
 @testset "Highlight searches in texts with multiple lines" begin
