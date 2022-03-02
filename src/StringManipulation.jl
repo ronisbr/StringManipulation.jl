@@ -59,13 +59,7 @@ include("./split.jl")
 include("./view.jl")
 include("./width.jl")
 
-# This try/catch is necessary in case the precompilation statements do not
-# exists. In this case, StringManipulation.jl will work correctly but
-# without the optimizations.
-try
-    include("precompile/precompile_StringManipulation.jl")
-    _precompile_()
-catch
-end
+include("precompile/precompile_StringManipulation.jl")
+_precompile_()
 
 end # module
