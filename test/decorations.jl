@@ -123,6 +123,15 @@ end
     @test decoration.bold       == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
 
+    # Parse decorations with text in the middle.
+    decoration = parse_decoration("\e[35m\e[48;5;243mThis text should be discarded\e[4;27m")
+
+    @test decoration.foreground == "35"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.active
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.inactive
+
     # Unsupported escape sequences.
     decoration = parse_decoration("\e]8")
     @test decoration === Decoration()
@@ -180,5 +189,30 @@ end
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == false
+
+    # Update decorations with text in the middle.
+    decoration = Decoration()
+
+    decoration = update_decoration(
+        decoration,
+        "\e[38;5;231mThis text should be discarded\e[48;5;243m"
+    )
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+    @test decoration.reset      == false
+
+    decoration = update_decoration(
+        decoration,
+        "This also should be discarded\e[4;27m"
+    )
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.active
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.inactive
     @test decoration.reset      == false
 end
