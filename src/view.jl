@@ -78,6 +78,7 @@ function textview(
     frozen_columns_at_beginning::Int = 0,
     frozen_lines_at_beginning::Int = 0,
     highlight::String = _CSI * "7m",
+    parse_decorations_before_view::Bool = false,
     search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}} = nothing,
 ) where T<:AbstractString
 
@@ -131,6 +132,11 @@ function textview(
     # Variable to compute the maximum number of characters cropped in the right.
     max_cropped_chars = 0
 
+    # Variable to store the decorations before the view, including those in the
+    # frozen lines. It is used if the option `parse_decorations_before_view`
+    # is `true`.
+    pre_decorations = ""
+
     # Frozen lines
     # ==========================================================================
 
@@ -158,19 +164,44 @@ function textview(
 
         max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
 
+        # At the last frozen line, we must reset all the decorations.
+        l == frozen_lines_at_beginning && write(buf, _CSI, "0m")
+
         frozen_lines_at_beginning < start_line && write(buf, '\n')
 
         if !isnothing(line_search_matches)
             num_matches += length(line_search_matches)
         end
+
+        # If the user wants, we need to accumulate all the decorations from the
+        # beginning of the text up to the first line in the view. Here, we
+        # accumulate those related to the frozen lines.
+        if parse_decorations_before_view
+            pre_decorations *= get_decorations(lines[l])
+        end
     end
 
-    # Sum the number of matches between the frozen line and the displayed line.
-    # This computation is important to find which match is active.
     for l = (frozen_lines_at_beginning + 1):(start_line - 1)
+        # Sum the number of matches between the frozen line and the displayed
+        # line. This computation is important to find which match is active.
         if !isnothing(search_matches) && haskey(search_matches, l)
             num_matches += length(search_matches[l])
         end
+
+        # If we need to parse the decorations before the view, then obtain the
+        # decorations of the current hidden line, and merge with the decorations
+        # of the other lines.
+        if parse_decorations_before_view
+            pre_decorations *= get_decorations(lines[l])
+        end
+    end
+
+    if parse_decorations_before_view
+        d = parse_decoration(pre_decorations)
+
+        # If the pre_decoration is a reset, then we just need to reinitialize
+        # it since the reset escape sequence was already written to the buffer.
+        !d.reset && write(buf, d |> String)
     end
 
     # Line views

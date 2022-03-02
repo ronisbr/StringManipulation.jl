@@ -78,7 +78,7 @@
       \e[1m  \e[1m\e[7m\e[0m\e[1m\e[7mentae\e[0m\e[22m
       \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
       \e[0m
-      \e[1m  \e[0m\e[1mr devorat\e[22m
+      \e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
         \e[0me\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
       \e[0m
       \e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
@@ -106,4 +106,55 @@
     vstr, max_cropped_chars = textview(str, (-1, -1, -1, -1))
     @test vstr == str
     @test max_cropped_chars == 0
+
+    # Consider decorations in hidden lines
+    # ==========================================================================
+
+    str = """
+         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
+         risus vel diam ultrices volutpat. Nullam id tortor ut dolor rutrum cursus
+         aliquam sed \e[34;1mlorem. Donec interdum, risus eu scelerisque posuere, purus magna
+         auctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+         augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
+         sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
+         ipsum egestas aliquam. Pellentesque eget sem ornare turpis fringilla fringilla
+         id ac turpis.
+         """
+
+    expected = """
+        Lorem ipsum dolor sit amet, consectetur adipisc\e[7ming\e[0m elit. Pellentesque tempor\e[0m
+        auctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+        augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
+        sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
+        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30m\e[43ming\e[0milla
+        id ac turpis.
+        """
+
+    vstr, max_cropped_char = textview(
+        str,
+        (4, -1, -1, -1);
+        active_match = 3,
+        frozen_lines_at_beginning = 1,
+        search_regex = r"ing"
+    )
+
+    expected = """
+        Lorem ipsum dolor sit amet, consectetur adipisc\e[7ming\e[0m elit. Pellentesque tempor\e[0m
+        \e[34m\e[1mauctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+        augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
+        sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
+        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30m\e[43ming\e[0milla
+        id ac turpis.
+        """
+
+    vstr, max_cropped_char = textview(
+        str,
+        (4, -1, -1, -1);
+        active_match = 3,
+        frozen_lines_at_beginning = 1,
+        parse_decorations_before_view = true,
+        search_regex = r"ing"
+    )
+
+    @test vstr == expected
 end
