@@ -140,6 +140,8 @@ end
 #                                     API
 ################################################################################
 
+String(d::Decoration) = convert(String, d)
+
 # Convert  `Decoration` to string.
 function convert(::Type{String}, d::Decoration)
     # Check if we have a reset.

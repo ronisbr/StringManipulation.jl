@@ -1,5 +1,6 @@
 using Test
 using StringManipulation
+using Markdown
 
 @testset "Alignment" verbose = true begin
     include("./alignment.jl")
@@ -23,6 +24,10 @@ end
 
 @testset "Splitting" verbose = true begin
     include("./split.jl")
+end
+
+@testset "View" verbose = true begin
+    include("./view.jl")
 end
 
 @testset "Width" verbose = true begin

@@ -1,6 +1,6 @@
 module StringManipulation
 
-import Base: convert, @kwdef
+import Base: convert, String, @kwdef
 
 ################################################################################
 #                                  Constants
@@ -56,6 +56,7 @@ include("./highlighting.jl")
 include("./search.jl")
 include("./state.jl")
 include("./split.jl")
+include("./view.jl")
 include("./width.jl")
 
 end # module
