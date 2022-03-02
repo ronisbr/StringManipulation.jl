@@ -13,6 +13,10 @@ end
     include("./decorations.jl")
 end
 
+@testset "Highlighting" verbose = true begin
+    include("./highlighting.jl")
+end
+
 @testset "Search" verbose = true begin
     include("./search.jl")
 end
