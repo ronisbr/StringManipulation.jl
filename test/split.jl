@@ -40,6 +40,12 @@
         " \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     )
 
+    result = split_string(str, 8)
+    @test result == (
+        "Test 😅 \e[38;5;231;48;5;243m",
+        "Test 😅 \e[38;5;201;48;5;243mTest\e[0m"
+    )
+
     result = split_string(str, 13)
     @test result == (
         "Test 😅 \e[38;5;231;48;5;243mTest ",
