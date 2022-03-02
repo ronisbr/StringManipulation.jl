@@ -122,6 +122,10 @@ end
     @test decoration.underline  == StringManipulation.inactive
     @test decoration.bold       == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
+
+    # Unsupported escape sequences.
+    decoration = parse_decoration("\e]8")
+    @test decoration === Decoration()
 end
 
 @testset "Remove decorations" begin
