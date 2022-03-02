@@ -10,31 +10,35 @@
 export highlight_search
 
 """
-    highlight_search(lines::Vector{T}, search_matches::Dict{Int, Vector{Tuple{Int, Int}}}, active_match::Int, highlight::String, active_highlight::String; kwargs...) where T
+    highlight_search(lines::Vector{T}, [search_matches::Dict{Int, Vector{Tuple{Int, Int}}} | regex::Regex]; kwargs...) where T <: AbstractString
 
 Return the text composed of the `lines` with the `search_matches` (see
-[`string_search_per_line`](@ref) highlighted. All matches but the one indicated
-in `active_match` are highlighted with `highlight`. The active match is
-highlighted with `active_highlight`.
+[`string_search_per_line`](@ref)) highlighted. If a `regex` is passed in the
+place of `search_matches`, the latter is automatically computed using
+[`string_search_per_line`](@ref).
 
 # Keywords
 
+- `active_match::Int`: The match number that is considered active. This match is
+    highlighted using `active_highlight` instead of `highlight`.
+    (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the
+    highlight. (**Default** = `\\e[7m`)
+- `active_highlight::String`: ANSI escape sequence that contains the decoration
+    of the active highlight. (**Default** = `\\e[30;43m`.)
 - `start_line::Int`: Line to begin the processing.
 - `end_line::Int`: Line to end the processing.
-
-# Returns
-
-A string with the highlighted text.
 """
 function highlight_search(
     lines::Vector{T},
-    search_matches::Dict{Int, Vector{Tuple{Int, Int}}},
-    active_match::Int,
-    highlight::String,
-    active_highlight::String;
+    search_matches::Dict{Int, Vector{Tuple{Int, Int}}};
+    active_match::Int = 0,
+    highlight::String = _CSI * "7m",
+    active_highlight::String = _CSI * "30;43m",
     start_line::Int = 0,
     end_line::Int = 0
 ) where T <: AbstractString
+
 
     buf = IOBuffer()
 
@@ -62,8 +66,8 @@ function highlight_search(
 
             write(buf, highlight_search(
                 lines[l],
-                search_matches_l,
-                line_active_match,
+                search_matches_l;
+                active_match = line_active_match,
                 highlight,
                 active_highlight
             ))
@@ -73,26 +77,47 @@ function highlight_search(
             write(buf, lines[l])
         end
 
-        write(buf, '\n')
+        l != end_line && write(buf, '\n')
     end
 
     return String(take!(buf))
 end
 
+function highlight_search(
+    lines::Vector{T},
+    regex::Regex;
+    kwargs...
+) where T <: AbstractString
+    search_matches = string_search_per_line(lines, regex)
+    return highlight_search(lines, search_matches; kwargs...)
+end
+
 """
-    highlight_search(str::AbstractString, search_matches::Vector{Tuple{Int, Int}}, active_match::Int, highlight::String, active_highlight::String)
+    highlight_search(str::AbstractString, [search_matches::Vector{Tuple{Int, Int}} | regex::Regex]; kwargs...)
 
 Return the text in the string `str` with the `search_matches` (see
-[`string_search`](@ref) highlighted. All matches but the one indicated in
-`active_match` are highlighted with `highlight`. The active match is highlighted
-with `active_highlight`.
+[`string_search`](@ref)) highlighted. If a `regex` is passed in the place of
+`search_matches`, the latter is automatically computed using
+[`string_search`](@ref).
+
+# Keywords
+
+- `active_match::Int`: The match number that is considered active. This match is
+    highlighted using `active_highlight` instead of `highlight`.
+    (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the
+    highlight. (**Default** = `\\e[7m`)
+- `active_highlight::String`: ANSI escape sequence that contains the decoration
+    of the active highlight. (**Default** = `\\e[30;43m`.)
+- `start_line::Int`: Line to begin the processing.
+- `end_line::Int`: Line to end the processing.
 """
 function highlight_search(
     str::AbstractString,
-    search_matches::Vector{Tuple{Int, Int}},
-    active_match::Int,
-    highlight::String,
-    active_highlight::String
+    search_matches::Vector{Tuple{Int, Int}};
+    active_match::Int = 0,
+    highlight::String = _CSI * "7m",
+    active_highlight::String = _CSI * "30;43m"
 )
 
     num_matches = length(search_matches)
@@ -158,3 +183,13 @@ function highlight_search(
 
     return String(take!(h_str))
 end
+
+function highlight_search(
+    str::AbstractString,
+    regex::Regex;
+    kwargs...
+)
+    search_matches = string_search(str, regex)
+    return highlight_search(str, search_matches; kwargs...)
+end
+
