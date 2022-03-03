@@ -21,12 +21,12 @@ This function return two strings:
 """
 function left_crop(str::AbstractString, crop_width::Int)
     buf_ansi = IOBuffer()
-    buf_str = IOBuffer()
+    buf_str = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
     state = :text
 
     for c in str
         if crop_width ≤ 0
-            print(buf_str, c)
+            write(buf_str, c)
         else
             state = _process_string_state(c, state)
 
@@ -37,11 +37,11 @@ function left_crop(str::AbstractString, crop_width::Int)
                 # character that occupies more than 1 character. In this case,
                 # we fill the string with space.
                 if crop_width < 0
-                    print(buf_str, " "^(-crop_width))
+                    write(buf_str, " "^(-crop_width))
                     crop_width = 0
                 end
             else
-                print(buf_ansi, c)
+                write(buf_ansi, c)
             end
         end
     end
