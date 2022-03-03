@@ -19,18 +19,7 @@ removing all ANSI escape sequences related to decorations.
     Characters like `\\n` and `\\t` are treated as normal characters.
 """
 function printable_textwidth(str::AbstractString)
-    width = 0
-
-    state = :text
-
-    for c in str
-        state = _process_string_state(c, state)
-        if state == :text
-            width += textwidth(c)
-        end
-    end
-
-    return width
+    return str |> remove_decorations |> textwidth
 end
 
 """
