@@ -97,21 +97,21 @@ function align_string_per_line(
     alignment::Symbol;
     fill::Bool = false
 )
+    if field_width ≤ 0
+        return str
+    end
+
     # Split the lines.
     lines = split(str, '\n')
     num_lines = length(lines)
 
     # Align each one of them.
-    output = ""
+    buf = IOBuffer(sizehint = floor(Int, sizeof(str) + num_lines * div(field_width, 2)))
 
-    for i in 1:num_lines
-        aligned_line = align_string(lines[i], field_width, alignment; fill)
-        output *= aligned_line
-
-        if i != num_lines
-            output *= "\n"
-        end
+    @inbounds for i in 1:num_lines
+        write(buf, align_string(lines[i], field_width, alignment; fill))
+        i != num_lines && write(buf, '\n')
     end
 
-    return output
+    return String(take!(buf))
 end
