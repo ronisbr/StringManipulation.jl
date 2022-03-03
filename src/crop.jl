@@ -75,8 +75,8 @@ function right_crop(
     crop_width::Int;
     keep_escape_seq::Bool = true
 )
-    buf_str = IOBuffer()
     buf_ansi = IOBuffer()
+    buf_str = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
 
     str_width = printable_textwidth(str)
     remaining_chars = str_width - crop_width
@@ -87,7 +87,7 @@ function right_crop(
 
         if remaining_chars ≤ 0
             !keep_escape_seq && break
-            state != :text && print(buf_ansi, c)
+            state != :text && write(buf_ansi, c)
         else
             if state == :text
                 Δ = textwidth(c)
@@ -97,13 +97,13 @@ function right_crop(
                 # character that occupies more than 1 character. In this case,
                 # we fill the string with space.
                 if remaining_chars < 0
-                    print(buf_str, " "^(-remaining_chars))
+                    write(buf_str, " "^(-remaining_chars))
                     remaining_chars = 0
                 else
-                    print(buf_str, c)
+                    write(buf_str, c)
                 end
             else
-                print(buf_str, c)
+                write(buf_str, c)
             end
         end
     end
