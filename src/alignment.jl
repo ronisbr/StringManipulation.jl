@@ -31,7 +31,7 @@ Align the string `str` in the field with width `field_width` using `alignment`.
 # Keyword
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so
-    that the resulting string has printable witdh `field_size` if the initial
+    that the resulting string has printable width `field_size` if the initial
     string printable width is lower than it.
 """
 function align_string(
@@ -88,7 +88,7 @@ Align each line of the string `str` in the field with width `field_width` using
 # Keyword
 
 - `fill::Bool`: If `true`, the each line will be filled with spaces to the right
-    so that the resulting string has printable witdh `field_size` if the initial
+    so that the resulting string has printable width `field_size` if the initial
     string printable width is lower than it.
 """
 function align_string_per_line(
