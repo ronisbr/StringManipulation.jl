@@ -51,4 +51,10 @@ end
 
     ~, ansi_escape_seq = right_crop(str, 14)
     @test ansi_escape_seq == "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+
+    # Test passing the string printable width.
+    printable_string_width = printable_textwidth(str)
+    expected = "Test 😅 \e[38;5;231;48;5;243mTest 😅\e[38;5;201;48;5;243m\e[0m"
+    cropped_str = *(right_crop(str, 5; printable_string_width)...)
+    @test cropped_str == expected
 end

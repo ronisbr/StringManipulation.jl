@@ -64,6 +64,9 @@ This function return two strings:
 - `keep_escape_seq::Bool`: If `false`, then the ANSI escape sequence in the
     cropped field will not be computed. In this case, the second argument
     returned is always empty. (**Default** = `true`)
+- `printable_string_width::Int`: Provide the printable string width to reduce
+    the computational burden. If this parameters is lower than 0, the printable
+    width is compute internally. (**Default** = -1)
 
 !!! note
     If the keyword `keep_escape_seq` is set to `true`, then all the string must
@@ -73,12 +76,16 @@ This function return two strings:
 function right_crop(
     str::AbstractString,
     crop_width::Int;
-    keep_escape_seq::Bool = true
+    keep_escape_seq::Bool = true,
+    printable_string_width::Int = -1
 )
     buf_ansi = IOBuffer()
     buf_str = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
 
-    str_width = printable_textwidth(str)
+    str_width = printable_string_width < 0 ?
+        printable_textwidth(str) :
+        printable_string_width
+
     remaining_chars = str_width - crop_width
     state = :text
 
