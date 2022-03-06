@@ -249,4 +249,4 @@ the text, yielding to a view that matches all the characteristics of the
 original text (foreground color, background color, underline, etc.).
 
 The function `textview` has many options. For more information, please, see the
-built-in help (type `textview`  in REPL).
+built-in help (type `?textview`  in REPL).
