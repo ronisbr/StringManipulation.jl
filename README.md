@@ -43,6 +43,21 @@ julia> align_string_per_line(str, 80, :r) |> print
 
 ## Cropping
 
+### Fit string in a field
+
+The function `fit_string_in_field` crop the string so that it has a number of
+printable characters that fits in a field.
+
+```julia
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> fit_string_in_field(str, 9)
+"Test 😅 …\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+```
+
+The function `fit_string_in_field` has many options. For more information,
+please, see the built-in help (type `textview`  in REPL).
+
 ### Left cropping
 
 The function `left_crop` can be used to crop a field of specific width to the
