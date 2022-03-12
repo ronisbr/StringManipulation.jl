@@ -90,7 +90,12 @@ function textview(
     total_lines = length(lines)
 
     start_line = clamp(start_line, 1, total_lines)
-    num_lines  = clamp(num_lines, 0, total_lines - start_line + 1)
+
+    if num_lines ≥ 0
+        num_lines = clamp(num_lines, 0, total_lines - start_line + 1)
+    else
+        num_lines = total_lines
+    end
 
     frozen_lines_at_beginning = clamp(
         frozen_lines_at_beginning,
