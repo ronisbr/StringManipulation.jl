@@ -16,9 +16,9 @@ Create a view of `text` or `lines` considering a `view` configuration. The
 latter is a tuple with four integers that has the following meaning:
 
 - Top line;
-- Bottom line;
+- Number of lines;
 - Left column; and
-- Right column.
+- Number of columns.
 
 If a value equal or lower than 0 is passed to any of those options, then its
 extreme value is used.
@@ -85,16 +85,12 @@ function textview(
     # Verification of the input parameters
     # ==========================================================================
 
-    start_line = view[1]
-    end_line   = view[2]
-    num_lines  = length(lines)
+    start_line  = view[1]
+    num_lines   = view[2]
+    total_lines = length(lines)
 
-    if end_line ≤ 0
-        end_line = num_lines
-    end
-
-    start_line = clamp(start_line, 1, num_lines)
-    end_line   = clamp(end_line, start_line, num_lines)
+    start_line = clamp(start_line, 1, total_lines)
+    num_lines  = clamp(num_lines, 0, total_lines - start_line + 1)
 
     frozen_lines_at_beginning = clamp(
         frozen_lines_at_beginning,
@@ -108,8 +104,7 @@ function textview(
         start_column = 1
     end
 
-    end_column   = view[4]
-    num_columns  = end_column - start_column + 1
+    num_columns = view[4]
 
     frozen_columns_at_beginning = clamp(
         frozen_columns_at_beginning,
@@ -165,9 +160,12 @@ function textview(
         max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
 
         # At the last frozen line, we must reset all the decorations.
-        l == frozen_lines_at_beginning && write(buf, _CSI, "0m")
-
-        frozen_lines_at_beginning < start_line && write(buf, '\n')
+        if l != frozen_lines_at_beginning
+            write(buf, '\n')
+        else
+            write(buf, _CSI, "0m")
+            num_lines > 0 && write(buf, '\n')
+        end
 
         if !isnothing(line_search_matches)
             num_matches += length(line_search_matches)
@@ -207,7 +205,10 @@ function textview(
     # Line views
     # ==========================================================================
 
-    for l in start_line:end_line
+    for k in 1:num_lines
+        # Get the current line number.
+        l = start_line + (k - 1)
+
         line_active_match = active_match - num_matches
 
         if !isnothing(search_matches) && haskey(search_matches, l)
@@ -231,7 +232,7 @@ function textview(
 
         max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
 
-        l != end_line && write(buf, '\n')
+        k != num_lines && write(buf, '\n')
 
         if !isnothing(line_search_matches)
             num_matches += length(line_search_matches)
@@ -294,7 +295,7 @@ function _draw_line_view!(
         left_ansi = get_decorations(left) |> parse_decoration |> String
     end
 
-    if num_columns > 0
+    if num_columns ≥ 0
         line_str, right = split_string(line_str, num_columns)
 
         # Here we simplify the decorations to avoid too many escape sequences.
