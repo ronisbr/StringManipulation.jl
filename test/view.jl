@@ -176,7 +176,7 @@
     @test num_cropped_lines_at_end == 18
     @test max_cropped_chars == 51
 
-    # Text related to multiple dispatch
+    # Test related to multiple dispatch
     # ==========================================================================
 
     lines = split(str, '\n')
@@ -197,6 +197,33 @@
         (14, 8, 10, 31);
         active_match = 7,
         search_matches = search_matches
+    )
+
+    @test vstr == expected
+    @test num_cropped_lines_at_end == 11
+    @test max_cropped_chars == 13
+
+    # Title lines
+    # ==========================================================================
+
+    expected = """
+        \e[1m  Si distentae\e[22m\e[0m\e[1m\e[22m
+        \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m\e[0m
+          \e[0meque umbra patulas Laurentes de
+        \e[0m
+        \e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
+        \e[36m  \e[0m\e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
+        \e[36m  \e[0m\e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
+        \e[0m
+        \e[1m  \e[0m\e[1ms quo inceptaque urbem quibus l\e[22m
+        \e[1m  \e[0m\e[1m===============================\e[22m"""
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        lines,
+        (14, 8, 10, 31),
+        frozen_columns_at_beginning = 2,
+        frozen_lines_at_beginning = 2,
+        title_lines = 1
     )
 
     @test vstr == expected

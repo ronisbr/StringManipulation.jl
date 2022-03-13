@@ -122,7 +122,10 @@ function textview(
     maximum_number_of_columns::Int = -1,
     maximum_number_of_lines::Int = -1,
     parse_decorations_before_view::Bool = false,
+    ruler_decoration::String = _CSI * "90m",
     search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}} = nothing,
+    show_ruler::Bool = false,
+    title_lines::Int = 0
 ) where T<:AbstractString
 
     # Verification of the input parameters
@@ -158,7 +161,24 @@ function textview(
 
     if frozen_columns_at_beginning > 0
         if start_column ≤ frozen_columns_at_beginning
-            start_column = frozen_columns_at_beginning
+            start_column = frozen_columns_at_beginning + 1
+        end
+    end
+
+    # If the user wants a ruler, compute the required size here.
+    ruler_spacing = 0
+
+    if show_ruler
+        ruler_spacing = floor(Int, total_lines |> abs |> log10) + 1
+
+        # If the user selected a maximum number of columns, we need to decrease
+        # it to take into account the ruler.
+        if maximum_number_of_columns ≥ 0
+            maximum_number_of_columns = maximum_number_of_columns - ruler_spacing - 3
+
+            if maximum_number_of_columns < 0
+                maximum_number_of_columns = 0
+            end
         end
     end
 
@@ -236,18 +256,41 @@ function textview(
             line_search_matches = nothing
         end
 
-        cropped_chars_in_line = _draw_line_view!(
-            buf,
-            line_buf,
-            lines[l],
-            line_search_matches,
-            line_active_match,
-            highlight,
-            active_highlight,
-            start_column,
-            num_columns,
-            frozen_columns_at_beginning
-        )
+        if show_ruler
+            line_number_str = lpad(l, ruler_spacing)
+            write(buf, " ", line_number_str, " │")
+        end
+
+        cropped_chars_in_line = 0
+
+        if l ≤ title_lines
+            _draw_line_view!(
+                buf,
+                line_buf,
+                lines[l],
+                line_search_matches,
+                line_active_match,
+                highlight,
+                active_highlight,
+                1,
+                0,
+                num_columns + frozen_columns_at_beginning
+            )
+
+        else
+            cropped_chars_in_line = _draw_line_view!(
+                buf,
+                line_buf,
+                lines[l],
+                line_search_matches,
+                line_active_match,
+                highlight,
+                active_highlight,
+                start_column,
+                num_columns,
+                frozen_columns_at_beginning
+            )
+        end
 
         # We should not compute the number of cropped chars if we are only
         # printing frozen columns.
@@ -311,6 +354,11 @@ function textview(
             line_search_matches = search_matches[l]
         else
             line_search_matches = nothing
+        end
+
+        if show_ruler
+            line_number_str = lpad(l, ruler_spacing)
+            write(buf, " ", line_number_str, " │")
         end
 
         cropped_chars_in_line = _draw_line_view!(
