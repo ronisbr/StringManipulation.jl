@@ -70,3 +70,13 @@ end
 
     @test aligned_str == expected_str
 end
+
+@testset "Corner cases" begin
+    str = """
+    We have \e[38;5;231;48;5;243mhere\e[0m 😅😃 the first line
+    We now have the 😊 \e[38;5;231;48;5;243msecond\e[0m 😃 line"""
+
+    aligned_str = align_string_per_line(str, -1, :l)
+
+    @test aligned_str == str
+end

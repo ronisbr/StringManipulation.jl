@@ -116,3 +116,17 @@ end
     cropped_str = *(right_crop(str, 5; printable_string_width)...)
     @test cropped_str == expected
 end
+
+@testset "Corner cases" begin
+    str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
+    cropped_str = fit_string_in_field(str, 25)
+    @test cropped_str == str
+
+    expected = "…\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+    cropped_str = fit_string_in_field(str, 0)
+    @test cropped_str == expected
+
+    expected = "…"
+    cropped_str = fit_string_in_field(str, 0; keep_ansi = false)
+    @test cropped_str == expected
+end

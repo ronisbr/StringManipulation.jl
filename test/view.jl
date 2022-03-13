@@ -155,6 +155,27 @@
     @test num_cropped_lines_at_end == 0
     @test max_cropped_chars == 0
 
+    expected = """
+      \e[0markdownum ipsi Ema\e[22m
+      \e[0m Iam excepi ignis \e[24m
+      \e[0mis, Chironis infel\e[24m
+      \e[0mvenit adventus mol
+    \e[0m
+      \e[0muibus Phaethon man
+      \e[0mt \e[4mPallas\e[24m est fera 
+      \e[0meque umbra patulas"""
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        str,
+        (7, 8, 10, -1);
+        frozen_columns_at_beginning = 2,
+        maximum_number_of_columns = 20,
+    )
+
+    @test vstr == expected
+    @test num_cropped_lines_at_end == 18
+    @test max_cropped_chars == 51
+
     # Text related to multiple dispatch
     # ==========================================================================
 
