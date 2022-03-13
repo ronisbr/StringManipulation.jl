@@ -122,7 +122,15 @@ function fit_string_in_field(
 
         # If we are left with no space, then just return the continuation char.
         if Δ > str_width
-            return string(continuation_char)
+            # We just need to check if the user wants to keep the ANSI escape
+            # sequences.
+            ansi = ""
+
+            if keep_ansi
+                ansi = get_decorations(str)
+            end
+
+            return string(continuation_char) * ansi
         end
     end
 
