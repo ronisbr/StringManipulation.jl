@@ -11,6 +11,7 @@
 # initial `decoration`.
 function _parse_ansi_code(decoration::Decoration, code::String)
     tokens = split(code, ';')
+    num_tokens = length(tokens)
 
     # Unpack fields.
     foreground = decoration.foreground
@@ -25,7 +26,7 @@ function _parse_ansi_code(decoration::Decoration, code::String)
     reset = false
 
     i = 1
-    while i ≤ length(tokens)
+    while i ≤ num_tokens
         code_i = tryparse(Int, tokens[i], base = 10)
 
         if code_i == 0
@@ -53,19 +54,39 @@ function _parse_ansi_code(decoration::Decoration, code::String)
         elseif 30 <= code_i <= 37
             foreground = string(code_i)
 
-        # 256-color support for foreground.
+        # 256-color / true-color (24-bit) support for foreground.
         elseif code_i == 38
-            # In this case, we can have an extended color code. To check this,
-            # we must have at least two more codes.
-            if i+2 ≤ length(tokens)
-                code_i_1 = tryparse(Int, tokens[i+1], base = 10)
-                code_i_2 = tryparse(Int, tokens[i+2], base = 10)
+            # Check if we have 256-color or true-color (24-bit) definition.
+            if i + 1 ≤ num_tokens
+                color_type = tryparse(Int, tokens[i + 1], base = 10)
 
-                if code_i_1 == 5
-                    foreground = "38;5;" * string(code_i_2)
+                # 256-color mode.
+                if color_type == 5
+                    # In this case, we must have another token for the color.
+                    if i + 2 ≤ num_tokens
+                        color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        foreground = "38;5;" * string(color_code)
+                        i += 2
+                    end
+
+                # True-color (24-bit) mode.
+                elseif color_type == 2
+                    # In this case, we must have another three tokens for the
+                    # RGB color.
+                    if i + 4 ≤ num_tokens
+                        color_r = tryparse(Int, tokens[i + 2], base = 10)
+                        color_g = tryparse(Int, tokens[i + 3], base = 10)
+                        color_b = tryparse(Int, tokens[i + 4], base = 10)
+
+                        foreground =
+                            "38;2;" *
+                            string(color_r) * ";" *
+                            string(color_g) * ";" *
+                            string(color_b)
+
+                        i += 4
+                    end
                 end
-
-                i += 2
             end
 
         elseif code_i == 39
@@ -74,19 +95,39 @@ function _parse_ansi_code(decoration::Decoration, code::String)
         elseif 40 <= code_i <= 47
             background = string(code_i)
 
-        # 256-color support for background.
+        # 256-color / truecolor support for background.
         elseif code_i == 48
-            # In this case, we can have an extended color code. To check this,
-            # we must have at least two more codes.
-            if i+2 ≤ length(tokens)
-                code_i_1 = tryparse(Int, tokens[i+1], base = 10)
-                code_i_2 = tryparse(Int, tokens[i+2], base = 10)
+            # Check if we have 256-color or truecolor definition.
+            if i + 1 ≤ num_tokens
+                color_type = tryparse(Int, tokens[i + 1], base = 10)
 
-                if code_i_1 == 5
-                    background = "48;5;" * string(code_i_2)
+                # 256-color mode.
+                if color_type == 5
+                    # In this case, we must have another token for the color.
+                    if i + 2 ≤ num_tokens
+                        color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        background = "48;5;" * string(color_code)
+                        i += 2
+                    end
+
+                # Truecolor mode.
+                elseif color_type == 2
+                    # In this case, we must have another three tokens for the
+                    # RGB color.
+                    if i + 4 ≤ num_tokens
+                        color_r = tryparse(Int, tokens[i + 2], base = 10)
+                        color_g = tryparse(Int, tokens[i + 3], base = 10)
+                        color_b = tryparse(Int, tokens[i + 4], base = 10)
+
+                        background =
+                            "48;2;" *
+                            string(color_r) * ";" *
+                            string(color_g) * ";" *
+                            string(color_b)
+
+                        i += 4
+                    end
                 end
-
-                i += 2
             end
 
         elseif code_i == 49

@@ -135,6 +135,15 @@ end
     # Unsupported escape sequences.
     decoration = parse_decoration("\e]8")
     @test decoration === Decoration()
+
+    # True-color mode.
+    decoration = parse_decoration("\e[38;2;28;101;140;48;2;216;210;203mFirst decoration")
+
+    @test decoration.foreground == "38;2;28;101;140"
+    @test decoration.background == "48;2;216;210;203"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
 end
 
 @testset "Remove decorations" begin
@@ -215,4 +224,28 @@ end
     @test decoration.bold       == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.inactive
     @test decoration.reset      == false
+
+    # True-color mode.
+    decoration = Decoration()
+    decoration = update_decoration(
+        decoration,
+        "\e[38;2;28;101;140;48;2;216;210;203mFirst decoration"
+    )
+
+    @test decoration.foreground == "38;2;28;101;140"
+    @test decoration.background == "48;2;216;210;203"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.unchanged
+
+    decoration = update_decoration(
+        decoration,
+        "\e[38;2;57;138;185;1mSecond decoration"
+    )
+
+    @test decoration.foreground == "38;2;57;138;185"
+    @test decoration.background == "48;2;216;210;203"
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.bold       == StringManipulation.active
+    @test decoration.reversed   == StringManipulation.unchanged
 end
