@@ -28,6 +28,7 @@ function _parse_ansi_code(decoration::Decoration, code::String)
     i = 1
     while i ≤ num_tokens
         code_i = tryparse(Int, tokens[i], base = 10)
+        isnothing(code_i) && continue
 
         if code_i == 0
             # If we have a reset, neglect all the other configurations.
@@ -59,12 +60,15 @@ function _parse_ansi_code(decoration::Decoration, code::String)
             # Check if we have 256-color or true-color (24-bit) definition.
             if i + 1 ≤ num_tokens
                 color_type = tryparse(Int, tokens[i + 1], base = 10)
+                isnothing(color_type) && continue
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
                         color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        isnothing(color_code) && continue
+
                         foreground = "38;5;" * string(color_code)
                         i += 2
                     end
@@ -75,8 +79,13 @@ function _parse_ansi_code(decoration::Decoration, code::String)
                     # RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
+                        isnothing(color_r) && continue
+
                         color_g = tryparse(Int, tokens[i + 3], base = 10)
+                        isnothing(color_g) && continue
+
                         color_b = tryparse(Int, tokens[i + 4], base = 10)
+                        isnothing(color_b) && continue
 
                         foreground =
                             "38;2;" *
@@ -100,12 +109,15 @@ function _parse_ansi_code(decoration::Decoration, code::String)
             # Check if we have 256-color or truecolor definition.
             if i + 1 ≤ num_tokens
                 color_type = tryparse(Int, tokens[i + 1], base = 10)
+                isnothing(color_type) && continue
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
                         color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        isnothing(color_code) && continue
+
                         background = "48;5;" * string(color_code)
                         i += 2
                     end
@@ -116,8 +128,13 @@ function _parse_ansi_code(decoration::Decoration, code::String)
                     # RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
+                        isnothing(color_r) && continue
+
                         color_g = tryparse(Int, tokens[i + 3], base = 10)
+                        isnothing(color_g) && continue
+
                         color_b = tryparse(Int, tokens[i + 4], base = 10)
+                        isnothing(color_b) && continue
 
                         background =
                             "48;2;" *
