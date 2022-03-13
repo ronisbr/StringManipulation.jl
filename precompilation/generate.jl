@@ -13,7 +13,7 @@ run(`rm -rf precompile_StringManipulation.jl`)
 
 using Pkg
 Pkg.build("StringManipulation")
-using PrettyTables
+using StringManipulation
 
 include("input.jl")
 
