@@ -60,14 +60,15 @@
         \e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
         \e[1m===============================\e[22m"""
 
-    vstr, max_cropped_chars = textview(
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
         str,
-        (14, 21, 10, 40);
+        (14, 8, 10, 31);
         active_match = 7,
         search_regex = r"qu"
     )
 
     @test vstr == expected
+    @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
     # With frozen lines or columns
@@ -88,9 +89,9 @@
       \e[1m  \e[0m\e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
       \e[1m  \e[0m\e[1m===============================\e[22m"""
 
-    vstr, max_cropped_chars = textview(
+    vstr, num_cropped_lines, max_cropped_chars = textview(
         str,
-        (14, 21, 10, 40);
+        (14, 8, 10, 31);
         active_match = 8,
         frozen_lines_at_beginning = 4,
         frozen_columns_at_beginning = 2,
@@ -98,13 +99,60 @@
     )
 
     @test vstr == expected
+    @test num_cropped_lines == 11
     @test max_cropped_chars == 13
 
     # View the entire text without any modification
     # ==========================================================================
 
-    vstr, max_cropped_chars = textview(str, (-1, -1, -1, -1))
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(str, (-1, -1, -1, -1))
     @test vstr == str
+    @test num_cropped_lines_at_end == 0
+    @test max_cropped_chars == 0
+
+    # Maximum number of lines and columns
+    # ==========================================================================
+
+    expected = """
+        eque umbra patulas Laure
+
+        \e[36mte recursively `sin(m*ϕ)\e[39m
+        \e[36m= 2cos_ϕ * sin_m_1ϕ - si\e[39m
+        \e[36m= 2cos_ϕ * cos_m_1ϕ - co\e[39m
+        """
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        str,
+        (14, 8, 10, 31);
+        maximum_number_of_lines = 6,
+        maximum_number_of_columns = 24
+    )
+
+    @test vstr == expected
+    @test num_cropped_lines_at_end == 13
+    @test max_cropped_chars == 20
+
+    expected = """
+        \e[1m  Si distentae\e[22m\e[0m\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m\e[0m\e[22m
+        \e[0m
+        \e[1m  Carpitur devorat\e[22m\e[0m\e[22m
+        \e[1m  ==================\e[22m\e[0m\e[22m
+        \e[0m
+          Lorem markdownum i\e[0m\e[22m
+          namque. Iam excepi\e[0m\e[24m\e[0m"""
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        str,
+        (14, 8, 10, 31);
+        frozen_columns_at_beginning = 30,
+        frozen_lines_at_beginning = 10,
+        maximum_number_of_columns = 20,
+        maximum_number_of_lines = 8
+    )
+
+    @test vstr == expected
+    @test num_cropped_lines_at_end == 0
     @test max_cropped_chars == 0
 
     # Consider decorations in hidden lines

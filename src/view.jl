@@ -49,6 +49,16 @@ available:
     search matches that are highlighted in the text view. This dictionary must
     be created using the function [`string_search_per_line`](@ref).
     (**Default** = `nothing`)
+
+# Returns
+
+- The string with the required view;
+- The number of cropped lines at the end;
+- The maximum number cropped characters in a row.
+
+If only frozen lines are printed, the second returned value is set to 0.
+
+If only frozen columns are printed, the third returned value is set to 0.
 """
 function textview(
     text::AbstractString,
@@ -78,6 +88,8 @@ function textview(
     frozen_columns_at_beginning::Int = 0,
     frozen_lines_at_beginning::Int = 0,
     highlight::String = _CSI * "7m",
+    maximum_number_of_columns::Int = -1,
+    maximum_number_of_lines::Int = -1,
     parse_decorations_before_view::Bool = false,
     search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}} = nothing,
 ) where T<:AbstractString
@@ -97,11 +109,13 @@ function textview(
         num_lines = total_lines
     end
 
-    frozen_lines_at_beginning = clamp(
-        frozen_lines_at_beginning,
-        0,
-        start_line - 1
-    )
+    if start_line + num_lines - 1 > total_lines
+        num_lines = total_lines - start_line + 1
+    end
+
+    if frozen_lines_at_beginning > 0
+        start_line = clamp(start_line, frozen_lines_at_beginning + 1, total_lines)
+    end
 
     start_column = view[3]
 
@@ -111,11 +125,11 @@ function textview(
 
     num_columns = view[4]
 
-    frozen_columns_at_beginning = clamp(
-        frozen_columns_at_beginning,
-        0,
-        start_column - 1
-    )
+    if frozen_columns_at_beginning > 0
+        if start_column ≤ frozen_columns_at_beginning
+            start_column = frozen_columns_at_beginning
+        end
+    end
 
     # Internal variables
     # ==========================================================================
@@ -129,6 +143,9 @@ function textview(
     # processed.
     num_matches = 0
 
+    # Variable to store the maximum number of cropped lines at the end.
+    num_cropped_lines_at_end = 0
+
     # Variable to compute the maximum number of characters cropped in the right.
     max_cropped_chars = 0
 
@@ -136,6 +153,46 @@ function textview(
     # frozen lines. It is used if the option `parse_decorations_before_view`
     # is `true`.
     pre_decorations = ""
+
+    # Check if we have a maximum number of lines.
+    if maximum_number_of_lines ≥ 0
+        if frozen_lines_at_beginning ≥ maximum_number_of_lines
+            frozen_lines_at_beginning = maximum_number_of_lines
+            start_lines = frozen_lines_at_beginning + 1
+            num_lines = 0
+
+        else
+            if num_lines > maximum_number_of_lines - frozen_lines_at_beginning
+                num_lines = maximum_number_of_lines - frozen_lines_at_beginning
+            end
+
+            num_cropped_lines_at_end = total_lines - start_line - (num_lines - 1)
+        end
+    else
+       num_cropped_lines_at_end = total_lines - start_line - (num_lines - 1)
+    end
+
+    # Check if we have a maximum number of columns.
+    if maximum_number_of_columns ≥ 0
+        # Check if we can only draw the frozen columns.
+        if frozen_columns_at_beginning ≥ maximum_number_of_columns
+            frozen_columns_at_beginning = maximum_number_of_columns
+            start_column = frozen_columns_at_beginning + 1
+            num_columns = 0
+
+        else
+            if num_columns < 0
+                num_columns =
+                    maximum_number_of_columns - frozen_columns_at_beginning
+            else
+                num_columns = clamp(
+                    num_columns,
+                    -1,
+                    maximum_number_of_columns - frozen_columns_at_beginning
+                )
+            end
+        end
+    end
 
     # Frozen lines
     # ==========================================================================
@@ -162,7 +219,11 @@ function textview(
             frozen_columns_at_beginning
         )
 
-        max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
+        # We should not compute the number of cropped chars if we are only
+        # printing frozen columns.
+        if frozen_columns_at_beginning != maximum_number_of_columns
+            max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
+        end
 
         # At the last frozen line, we must reset all the decorations.
         if l != frozen_lines_at_beginning
@@ -235,7 +296,11 @@ function textview(
             frozen_columns_at_beginning
         )
 
-        max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
+        # We should not compute the number of cropped chars if we are only
+        # printing frozen columns.
+        if frozen_columns_at_beginning != maximum_number_of_columns
+            max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
+        end
 
         k != num_lines && write(buf, '\n')
 
@@ -244,7 +309,7 @@ function textview(
         end
     end
 
-    return String(take!(buf)), max_cropped_chars
+    return String(take!(buf)), num_cropped_lines_at_end, max_cropped_chars
 end
 
 ################################################################################
