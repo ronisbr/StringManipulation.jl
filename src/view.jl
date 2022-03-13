@@ -10,7 +10,7 @@
 export textview
 
 """
-    textview([text::AbstractString | lines::Vector{AbstractString}], view::NTuple{4, Int}; kwargs...)
+    textview([io::IO, ][text::AbstractString | lines::Vector{AbstractString}], view::NTuple{4, Int}; kwargs...)
 
 Create a view of `text` or `lines` considering a `view` configuration. The
 latter is a tuple with four integers that has the following meaning:
@@ -52,15 +52,34 @@ available:
 
 # Returns
 
+If `io` is passed, the view is written to it and the function returns:
+
+- The number of cropped lines at the end;
+- The maximum number cropped characters in a row.
+
+However, if `io` is not passed, the function returns:
+
 - The string with the required view;
 - The number of cropped lines at the end;
 - The maximum number cropped characters in a row.
 
-If only frozen lines are printed, the second returned value is set to 0.
+!!! note
+    If only frozen lines are printed, the second returned value is set to 0.
 
-If only frozen columns are printed, the third returned value is set to 0.
+    If only frozen columns are printed, the third returned value is set to 0.
 """
 function textview(
+    text::AbstractString,
+    view::NTuple{4, Int};
+    kwargs...
+)
+    buf = IOBuffer()
+    num_cropped_lines, max_cropped_chars = textview(buf, text, view; kwargs...)
+    return String(take!(buf)), num_cropped_lines, max_cropped_chars
+end
+
+function textview(
+    buf::IO,
     text::AbstractString,
     view::NTuple{4, Int};
     search_regex::Union{Nothing, Regex} = nothing,
@@ -73,6 +92,7 @@ function textview(
         nothing
 
     return textview(
+        buf,
         lines,
         view;
         search_matches,
@@ -81,6 +101,17 @@ function textview(
 end
 
 function textview(
+    lines::Vector{T},
+    view::NTuple{4, Int};
+    kwargs...
+) where T<:AbstractString
+    buf = IOBuffer()
+    num_cropped_lines, max_cropped_chars = textview(buf, lines, view; kwargs...)
+    return String(take!(buf)), num_cropped_lines, max_cropped_chars
+end
+
+function textview(
+    buf::IO,
     lines::Vector{T},
     view::NTuple{4, Int};
     active_highlight::String = _CSI * "30;43m",
@@ -134,9 +165,8 @@ function textview(
     # Internal variables
     # ==========================================================================
 
-    # Buffers used to store the entire view and the line rendering. The latter
-    # is created here to reduce the number of allocations.
-    buf      = IOBuffer()
+    # Buffers used to store the entire the line view rendering, created here to
+    # reduce the number of allocations.
     line_buf = IOBuffer()
 
     # Count how many matches we passed in the current line that is being
@@ -309,7 +339,7 @@ function textview(
         end
     end
 
-    return String(take!(buf)), num_cropped_lines_at_end, max_cropped_chars
+    return num_cropped_lines_at_end, max_cropped_chars
 end
 
 ################################################################################
@@ -318,7 +348,7 @@ end
 
 # Draw a line view and return the number of right characters that was cropped.
 function _draw_line_view!(
-    buf::IOBuffer,
+    buf::IO,
     line_buf::IOBuffer,
     line::AbstractString,
     line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}},

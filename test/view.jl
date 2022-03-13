@@ -155,6 +155,33 @@
     @test num_cropped_lines_at_end == 0
     @test max_cropped_chars == 0
 
+    # Text related to multiple dispatch
+    # ==========================================================================
+
+    lines = split(str, '\n')
+    search_matches = string_search_per_line(lines, r"qu")
+
+    expected = """
+        e\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
+
+        \e[36mte recursively `sin(m*ϕ)` and `\e[39m
+        \e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
+        \e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
+
+        \e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
+        \e[1m===============================\e[22m"""
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        lines,
+        (14, 8, 10, 31);
+        active_match = 7,
+        search_matches = search_matches
+    )
+
+    @test vstr == expected
+    @test num_cropped_lines_at_end == 11
+    @test max_cropped_chars == 13
+
     # Consider decorations in hidden lines
     # ==========================================================================
 
