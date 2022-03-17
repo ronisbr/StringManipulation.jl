@@ -1,6 +1,12 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.2.1
+-------------
+
+- ![Enhancement][badge-enhancement] The performance was improved by removing
+  functions that could trigger runtime dispatch.
+
 Version 0.2.0
 -------------
 
