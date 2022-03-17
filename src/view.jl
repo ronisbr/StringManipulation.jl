@@ -258,7 +258,9 @@ function textview(
 
         if show_ruler
             line_number_str = lpad(l, ruler_spacing)
-            write(buf, ruler_decoration, " ", line_number_str, " │", _CSI, "0m")
+            write(buf, ruler_decoration, " ")
+            write(buf, line_number_str, " │")
+            write(buf, _CSI, "0m")
         end
 
         cropped_chars_in_line = 0
@@ -358,7 +360,9 @@ function textview(
 
         if show_ruler
             line_number_str = lpad(l, ruler_spacing)
-            write(buf, ruler_decoration, " ", line_number_str, " │", _CSI, "0m")
+            write(buf, ruler_decoration, " ")
+            write(buf, line_number_str, " │")
+            write(buf, _CSI, "0m")
         end
 
         cropped_chars_in_line = _draw_line_view!(
@@ -457,7 +461,9 @@ function _draw_line_view!(
     end
 
     # Write to the buffer.
-    write(buf, left_ansi, line_str, right_ansi)
+    write(buf, left_ansi)
+    write(buf, line_str)
+    write(buf, right_ansi)
 
     return cropped_chars
 end

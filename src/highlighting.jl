@@ -170,7 +170,8 @@ function highlight_search(
 
         # Here we write the string, reset the decoration, and apply the previous
         # decoration stored in `decoration`.
-        write(h_str, str₂_plain, reset_decoration, convert(String, decoration))
+        write(h_str, str₂_plain, reset_decoration)
+        write(h_str, convert(String, decoration))
 
         # All the next matches must consider that we are not in the beginning of
         # the string anymore.
