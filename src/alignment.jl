@@ -7,7 +7,7 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export align_string, align_string_per_line
+export align_string, align_string_per_line, get_padding_for_string_alignment
 
 """
     align_string(str::AbstractString, field_width::Int, alignment::Symbol; fill::Bool = false )
@@ -33,40 +33,31 @@ Align the string `str` in the field with width `field_width` using `alignment`.
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so
     that the resulting string has printable width `field_size` if the initial
     string printable width is lower than it.
+- `printable_string_width::Int`: Provide the printable string width to reduce
+    the computational burden. If this parameters is lower than 0, the printable
+    width is compute internally. (**Default** = -1)
 """
 function align_string(
     str::AbstractString,
     field_width::Int,
     alignment::Symbol;
-    fill::Bool = false
+    fill::Bool = false,
+    printable_string_width::Int = -1
 )
-    str_width = printable_textwidth(str)
+    padding = get_padding_for_string_alignment(
+        str,
+        field_width,
+        alignment;
+        fill,
+        printable_string_width
+    )
 
-    if field_width < str_width
+    if isnothing(padding)
         return str
+    else
+        lpad, rpad = padding
+        return " "^lpad * str * " "^rpad
     end
-
-    # Compute the padding given the alignment type.
-    if alignment == :l
-        # In this case, we only need to modify the string if `fill` is `true`.
-        if fill
-            Δ = field_width - str_width
-            return str * " "^Δ
-        end
-    elseif alignment == :c
-        Δ = div(field_width - str_width, 2)
-        str = " "^Δ * str
-
-        if fill
-            Δ = field_width - str_width - Δ
-            str = str * " "^Δ
-        end
-    elseif alignment == :r
-        Δ = field_width - str_width
-        str = " "^Δ * str
-    end
-
-    return str
 end
 
 """
@@ -115,3 +106,69 @@ function align_string_per_line(
 
     return String(take!(buf))
 end
+
+"""
+    get_padding_for_string_alignment(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...)
+
+Return the left and right padding required to align the string `str` in a field
+with width `field_width` using the `alignment`.
+
+`alignment` can be:
+
+- `:l`: Align the string to the left;
+- `:c`: Align the string in the center;
+- `:r`: Align the string in the right.
+
+!!! note
+    If the printable width of `str` is higher than `field_width`, then nothing
+    is returned.
+
+!!! note
+    This function treats `\n` as a normal characters.
+
+# Keyword
+
+- `fill::Bool`: If `true`, the string will be filled with spaces to the right so
+    that the resulting string has printable width `field_size` if the initial
+    string printable width is lower than it.
+- `printable_string_width::Int`: Provide the printable string width to reduce
+    the computational burden. If this parameters is lower than 0, the printable
+    width is compute internally. (**Default** = -1)
+"""
+function get_padding_for_string_alignment(
+    str::AbstractString,
+    field_width::Int,
+    alignment::Symbol;
+    fill::Bool = false,
+    printable_string_width::Int = -1
+)
+
+    str_width = printable_string_width < 0 ?
+        printable_textwidth(str) :
+        printable_string_width
+
+    if field_width ≤ str_width
+        return nothing
+    end
+
+    # Compute the padding given the alignment type.
+    if alignment == :l
+        # In this case, we only need to modify the string if `fill` is `true`.
+        if fill
+            rpad = field_width - str_width
+            return 0, rpad
+        end
+
+    elseif alignment == :c
+        lpad = div(field_width - str_width, 2)
+        rpad = fill ? (field_width - str_width - lpad) : 0
+        return lpad, rpad
+
+    elseif alignment == :r
+        lpad = field_width - str_width
+        return lpad, 0
+    end
+
+    return nothing
+end
+
