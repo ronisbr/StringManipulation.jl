@@ -91,7 +91,7 @@ function fit_string_in_field(
     Δ = str_width - field_width
 
     # If the field is larger than the string, then just return it.
-    if Δ < 0
+    if Δ ≤ 0
         return str
     end
 
