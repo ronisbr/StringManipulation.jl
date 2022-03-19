@@ -68,6 +68,8 @@ Crop the string `str` to fit it in a field with width `field_width`.
 - `crop_side::Symbol`: Select from which side the characters must be removed to
     fit the string into the field. It can be `:right` or `:left`.
     (**Default** = `:right`)
+- `field_margin::Int`: Consider an additional margin in the field if it must be
+    cropped. (**Default** = 0)
 - `keep_ansi::Bool`: If `true`, the ANSI escape sequences found in the cropped
     part will be kept. (**Default** = `true`)
 - `printable_string_width::Int`: Provide the printable string width to reduce
@@ -81,6 +83,7 @@ function fit_string_in_field(
     add_space_in_continuation_char::Bool = false,
     continuation_char::Char = '…',
     crop_side::Symbol = :right,
+    field_margin::Int = 0,
     keep_ansi::Bool = true,
     printable_string_width::Int = -1
 )
@@ -90,14 +93,14 @@ function fit_string_in_field(
 
     crop = get_crop_to_fit_string_in_field(
         str,
-        field_width;
+        field_width - field_margin;
         add_continuation_char,
         add_space_in_continuation_char,
         continuation_char,
         printable_string_width = str_width
     )
 
-    if crop == 0
+    if crop ≤ field_margin
         return str
     end
 
@@ -231,7 +234,7 @@ function right_crop(
     printable_string_width::Int = -1
 )
     buf_ansi = IOBuffer()
-    buf_str = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
+    buf_str = IOBuffer(sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
 
     str_width = printable_string_width < 0 ?
         printable_textwidth(str) :
