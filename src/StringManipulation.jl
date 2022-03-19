@@ -68,7 +68,9 @@ if Base.VERSION >= v"1.4.2" && !haskey(ENV, "STRING_MANIPULATION_NO_PRECOMPILATI
     # without the optimizations.
     try
         include("../precompilation/precompile_StringManipulation.jl")
+        include("../precompilation/precompile_StringManipulation_manual.jl")
         _precompile_()
+        _precompile_manual_()
     catch
     end
 end
