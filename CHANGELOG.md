@@ -1,6 +1,26 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.3.0
+-------------
+
+- ![Feature][badge-feature] The function `get_padding_for_string_alignment` can
+  be used to return the left and right padding required to align a string in a
+  field.
+- ![Feature][badge-feature] The function `get_crop_to_fit_string_in_field` can
+  be used to return the number of characters we must crop from a string to fit
+  it in a field.
+- ![Feature][badge-feature] The keyword `field_margin` can be used in the
+  function `fit_string_in_field` to define an additional margin when cropping is
+  required.
+- ![Feature][badge-feature] The function `drop_inactive_properties` can be used
+  to change inactive properties in a decoration to unchanged. This function is
+  useful to save printing escape sequences when a reset was performed.
+- ![Enhancement][badge-enhancement] The performance was improved by including
+  some manual precompilations statements.
+- ![Bug][badge-bug] The crop algorithm was improved by avoiding cropping if the
+  string has the same size of the field.
+
 Version 0.2.1
 -------------
 
