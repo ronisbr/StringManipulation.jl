@@ -7,8 +7,55 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export get_decorations, get_and_remove_decorations, parse_decoration
-export remove_decorations, update_decoration
+export drop_inactive_properties, get_decorations, get_and_remove_decorations
+export parse_decoration, remove_decorations, update_decoration
+
+"""
+    drop_inactive_properties(decoration::Decoration)
+
+Drop the inactive properties of `decoration` by changing them to inactive. This
+operation can be useful to avoid unnecessary escape sequences if the decorations
+are reset.
+"""
+function drop_inactive_properties(decoration::Decoration)
+
+    # Unpack fields.
+    foreground = decoration.foreground
+    background = decoration.background
+    bold       = decoration.bold
+    underline  = decoration.underline
+    reversed   = decoration.reversed
+
+    # If a field is inactive or if it is a reset to a default value, drop it by
+    # returning to default.
+    if foreground == "39"
+        foreground =  ""
+    end
+
+    if background == "49"
+        background = ""
+    end
+
+    if bold == inactive
+        bold = unchanged
+    end
+
+    if underline == inactive
+        underline = unchanged
+    end
+
+    if reversed == inactive
+        reversed = unchanged
+    end
+
+    return Decoration(;
+        foreground,
+        background,
+        bold,
+        underline,
+        reversed
+    )
+end
 
 """
     get_decorations(str::AbstractString)

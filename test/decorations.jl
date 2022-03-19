@@ -65,6 +65,32 @@
     @test result == expected
 end
 
+@testset "Drop inactive decorations" begin
+    decoration = Decoration(
+        foreground = "39",
+        background = "49",
+        bold       = StringManipulation.inactive,
+        underline  = StringManipulation.inactive,
+        reversed   = StringManipulation.inactive
+    )
+
+    decoration = drop_inactive_properties(decoration)
+
+    @test decoration === Decoration()
+
+    decoration = Decoration(
+        foreground = "39",
+        background = "245",
+        bold       = StringManipulation.inactive,
+        underline  = StringManipulation.inactive,
+        reversed   = StringManipulation.inactive
+    )
+
+    decoration = drop_inactive_properties(decoration)
+
+    @test decoration === Decoration(background = "245")
+end
+
 @testset "Get decorations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
