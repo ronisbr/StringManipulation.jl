@@ -1,4 +1,4 @@
-StringManupulation.jl
+StringManipulation.jl
 =====================
 
 [![CI](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
