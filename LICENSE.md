@@ -1,4 +1,4 @@
-The StringManipulation.jl package is licensed under the MIT "Expat" License:
+The StringManupulation.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2021: Ronan Arraes Jardim Chagas.
 
