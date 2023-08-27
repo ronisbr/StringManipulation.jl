@@ -183,7 +183,19 @@ end
     @test result == str
 end
 
+@testset "Replace the default background" begin
+    str = "\e[35mThis is a \e[45;1mtest string to \e[0mverify if \e[45mthe background \e[49;1mwas replaced correctly."
+    exp = "\e[43m\e[35mThis is a \e[45;1mtest string to \e[0m\e[43mverify if \e[45mthe background \e[43m\e[1mwas replaced correctly.\e[49m"
+    new = replace_default_background(str, "43")
+
+    @test new == exp
+end
+
 @testset "Update decorations" begin
+
+    # Update Decorations Given a String
+    # ======================================================================================
+
     decoration = Decoration()
 
     decoration = update_decoration(decoration, "\e[38;5;231m")
@@ -274,4 +286,27 @@ end
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.active
     @test decoration.reversed   == StringManipulation.unchanged
+
+    # Update Decoration Using a New Decoration
+    # ======================================================================================
+
+    decoration = Decoration(
+        foreground = "33",
+        bold = StringManipulation.active,
+        reversed = StringManipulation.inactive
+    )
+
+    new_decoration = Decoration(
+        background = "43",
+        bold = StringManipulation.inactive
+    )
+
+    decoration = update_decoration(decoration, new_decoration)
+
+    decoration.foreground == "33"
+    decoration.background == "43"
+    decoration.bold       == StringManipulation.inactive
+    decoration.underline  == StringManipulation.unchanged
+    decoration.reset      == StringManipulation.inactive
+    decoration.reversed   == StringManipulation.inactive
 end

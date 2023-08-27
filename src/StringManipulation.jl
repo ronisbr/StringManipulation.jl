@@ -16,7 +16,7 @@ const _RESET_DECORATIONS = _CSI * "0m"
 #                                  Structures
 ################################################################################
 
-# Enumetation to store the state in `Decoration`.
+# Enumeration to store the state in `Decoration`.
 @enum DecorationState begin
     inactive  = 0
     active    = 1
