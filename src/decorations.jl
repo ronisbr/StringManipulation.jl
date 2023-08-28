@@ -1,21 +1,20 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions related to decorations in strings.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 export drop_inactive_properties, get_decorations, get_and_remove_decorations
 export parse_decoration, remove_decorations, replace_default_background, update_decoration
 
 """
-    drop_inactive_properties(decoration::Decoration)
+    drop_inactive_properties(decoration::Decoration) -> Decoration
 
-Drop the inactive properties of `decoration` by changing them to inactive. This
-operation can be useful to avoid unnecessary escape sequences if the decorations
-are reset.
+Drop the inactive properties of `decoration` by changing them to inactive. This operation
+can be useful to avoid unnecessary escape sequences if the decorations are reset.
 """
 function drop_inactive_properties(decoration::Decoration)
 
@@ -58,9 +57,16 @@ function drop_inactive_properties(decoration::Decoration)
 end
 
 """
-    get_decorations(str::AbstractString)
+    get_decorations(str::AbstractString) -> String
 
 Return a string with the decorations in `str`.
+
+# Examples
+
+```julia
+julia> get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
+"\\e[1m\\e[45m\\e[0m"
+```
 """
 function get_decorations(str::AbstractString)
     buf = IOBuffer(sizehint = sizeof(str))

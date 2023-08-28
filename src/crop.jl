@@ -1,24 +1,32 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions to crop strings.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-export left_crop, fit_string_in_field, get_crop_to_fit_string_in_field
-export right_crop
+export left_crop, fit_string_in_field, get_crop_to_fit_string_in_field, right_crop
 
 """
-    left_crop(str::AbstractString, crop_width::Int)
+    left_crop(str::AbstractString, crop_width::Int) -> String, String
 
-Left crop from `str` a field with printable width `crop_width`.
+Return a string obtained by cropping the left characters of `str` given a field with a
+printable width of `crop_width`.
 
-This function return two strings:
+# Returns
 
-- The ANSI escape sequence (non-printable string) in the cropped field; and
-- The cropped string.
+- `String`: ANSI escape sequence (non-printable string) in the cropped part.
+- `String`: Cropped string.
+
+# Examples
+
+
+```julia-repl
+julia> left_crop("\\e[1mPlease, crop this string.", 8)
+("\\e[1m", "crop this string.")
+```
 """
 function left_crop(str::AbstractString, crop_width::Int)
     buf_ansi = IOBuffer()
@@ -51,30 +59,39 @@ function left_crop(str::AbstractString, crop_width::Int)
 end
 
 """
-    fit_string_in_field(str::AbstractString, field_width::Int; kwargs...)
+    fit_string_in_field(str::AbstractString, field_width::Int; kwargs...) -> String
 
 Crop the string `str` to fit it in a field with width `field_width`.
 
 # Keywords
 
-- `add_continuation_char::Bool`: If `true`, a continuation character is added to
-    the cropped string end. Notice that the returned string always has a
-    printable width of `field_size`. (**Default** = `true`)
+- `add_continuation_char::Bool`: If `true`, a continuation character is added to the cropped
+    string end. Notice that the returned string always has a printable width of
+    `field_size`. (**Default** = `true`)
 - `add_space_in_continuation_char::Bool`: If `true`, a space is added before the
-    continuation character if `crop_size` is `:right`, or after the continuation
-    character if `crop_side` if `:left`. (**Default** = `false`)
-- `continuation_char::Char`: The continuation character to add if the string is
-    cropped. (**Default** = `…`)
-- `crop_side::Symbol`: Select from which side the characters must be removed to
-    fit the string into the field. It can be `:right` or `:left`.
-    (**Default** = `:right`)
-- `field_margin::Int`: Consider an additional margin in the field if it must be
-    cropped. (**Default** = 0)
-- `keep_ansi::Bool`: If `true`, the ANSI escape sequences found in the cropped
-    part will be kept. (**Default** = `true`)
-- `printable_string_width::Int`: Provide the printable string width to reduce
-    the computational burden. If this parameters is lower than 0, the printable
-    width is compute internally. (**Default** = -1)
+    continuation character if `crop_size` is `:right`, or after the continuation character
+    if `crop_side` if `:left`. (**Default** = `false`)
+- `continuation_char::Char`: The continuation character to add if the string is cropped.
+    (**Default** = `…`)
+- `crop_side::Symbol`: Select from which side the characters must be removed to fit the
+    string into the field. It can be `:right` or `:left`. (**Default** = `:right`)
+- `field_margin::Int`: Consider an additional margin in the field if it must be cropped.
+    (**Default** = 0)
+- `keep_ansi::Bool`: If `true`, the ANSI escape sequences found in the cropped part will be
+    kept. (**Default** = `true`)
+- `printable_string_width::Int`: Provide the printable string width to reduce the
+    computational burden. If this parameters is lower than 0, the printable width is compute
+    internally. (**Default** = -1)
+
+# Examples
+
+```julia-repl
+julia> fit_string_in_field("This is a very long string for a very small field", 10)
+"This is a…"
+
+julia> fit_string_in_field("This is a very long string for a very small field", 10; crop_side = :left)
+"…all field"
+```
 """
 function fit_string_in_field(
     str::AbstractString,
@@ -100,14 +117,12 @@ function fit_string_in_field(
         printable_string_width = str_width
     )
 
-    if crop ≤ field_margin
-        return str
-    end
+    crop ≤ field_margin && return str
 
     cont_str = add_continuation_char ? string(continuation_char) : ""
 
-    # Crop from the right
-    # ==========================================================================
+    # Crop from The Right
+    # ======================================================================================
 
     if crop_side == :right
         cropped_str, ansi = right_crop(
@@ -123,8 +138,8 @@ function fit_string_in_field(
             return cropped_str * cont_str * ansi
         end
 
-    # Crop from the left
-    # ==========================================================================
+    # Crop from The Left
+    # ======================================================================================
 
     else
         ansi, cropped_str = left_crop(str, crop)
@@ -142,24 +157,31 @@ function fit_string_in_field(
 end
 
 """
-    get_crop_to_fit_string_in_field(str::AbstractString, field_width::Int; kwargs...)
+    get_crop_to_fit_string_in_field(str::AbstractString, field_width::Int; kwargs...) -> Int
 
-Get the number of printable characters to be cropped so that the string `str`
-can fit in the field with size `field_width`.
+Get the number of printable characters to be cropped so that the string `str` can fit in the
+field with size `field_width`.
 
 # Keywords
 
-- `add_continuation_char::Bool`: If `true`, a continuation character is added to
-    the cropped string end. Notice that the returned string always has a
-    printable width of `field_size`. (**Default** = `true`)
+- `add_continuation_char::Bool`: If `true`, a continuation character is added to the cropped
+    string end. Notice that the returned string always has a printable width of
+    `field_size`. (**Default** = `true`)
 - `add_space_in_continuation_char::Bool`: If `true`, a space is added before the
-    continuation character if `crop_size` is `:right`, or after the continuation
-    character if `crop_side` if `:left`. (**Default** = `false`)
-- `continuation_char::Char`: The continuation character to add if the string is
-    cropped. (**Default** = `…`)
-- `printable_string_width::Int`: Provide the printable string width to reduce
-    the computational burden. If this parameters is lower than 0, the printable
-    width is compute internally. (**Default** = -1)
+    continuation character if `crop_size` is `:right`, or after the continuation character
+    if `crop_side` if `:left`. (**Default** = `false`)
+- `continuation_char::Char`: The continuation character to add if the string is cropped.
+    (**Default** = `…`)
+- `printable_string_width::Int`: Provide the printable string width to reduce the
+    computational burden. If this parameters is lower than 0, the printable width is compute
+    internally. (**Default** = -1)
+
+# Examples
+
+```julia-repl
+julia> get_crop_to_fit_string_in_field("This is a very long string for a very small field", 10)
+40
+```
 """
 function get_crop_to_fit_string_in_field(
     str::AbstractString,
@@ -204,28 +226,38 @@ function get_crop_to_fit_string_in_field(
 end
 
 """
-    right_crop(str::AbstractString, crop_width::Int; kwargs...)
+    right_crop(str::AbstractString, crop_width::Int; kwargs...) -> String, String
 
-Right crop from `str` a field with printable width `crop_width`.
+Return a string obtained by cropping the right characters of `str` given a field with a
+printable width of `crop_width`.
 
-This function return two strings:
+# Returns
 
-- The cropped string; and
-- The ANSI escape sequence (non-printable string) in the cropped field.
+- `String`: Cropped string.
+- `String`: ANSI escape sequence (non-printable string) in the cropped part.
 
 # Keyword
 
-- `keep_escape_seq::Bool`: If `false`, then the ANSI escape sequence in the
-    cropped field will not be computed. In this case, the second argument
-    returned is always empty. (**Default** = `true`)
-- `printable_string_width::Int`: Provide the printable string width to reduce
-    the computational burden. If this parameters is lower than 0, the printable
-    width is compute internally. (**Default** = -1)
+- `keep_escape_seq::Bool`: If `false`, the ANSI escape sequence in the cropped field will
+    not be computed. In this case, the second argument returned is always empty.
+    (**Default** = `true`)
+- `printable_string_width::Int`: Provide the printable string width to reduce the
+    computational burden. If this parameters is lower than 0, the printable width is compute
+    internally. (**Default** = -1)
 
-!!! note
-    If the keyword `keep_escape_seq` is set to `true`, then all the string must
-    be processed, which can lead to a substantial increase in computational
-    time.
+!!! warning
+    If the keyword `keep_escape_seq` is set to `true`, all the string must be processed,
+    which can lead to a substantial increase in computational time.
+
+# Examples
+
+```julia-repl
+julia> right_crop("\e[1mPlease, crop this \e[0mstring.", 8)
+("\e[1mPlease, crop this", "\e[0m")
+
+julia> right_crop("\e[1mPlease, crop this \e[0mstring.", 8; keep_escape_seq = false)
+("\e[1mPlease, crop this", "")
+```
 """
 function right_crop(
     str::AbstractString,
@@ -246,17 +278,18 @@ function right_crop(
     for c in str
         state = _process_string_state(c, state)
 
-        if remaining_chars ≤ 0
+        if remaining_chars <= 0
             !keep_escape_seq && break
             state != :text && write(buf_ansi, c)
+
         else
             if state == :text
                 Δ = textwidth(c)
                 remaining_chars -= Δ
 
-                # If `remaining_chars` is negative, then it means that we have a
-                # character that occupies more than 1 character. In this case,
-                # we fill the string with space.
+                # If `remaining_chars` is negative, it means that we have a character that
+                # occupies more than 1 character. In this case, we fill the string with
+                # space.
                 if remaining_chars < 0
                     write(buf_str, " "^(-remaining_chars))
                     remaining_chars = 0

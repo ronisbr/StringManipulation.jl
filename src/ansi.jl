@@ -1,14 +1,14 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions related to ANSI escape sequences.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Parse the ANSI code in `code` and return the updated decoration given the
-# initial `decoration`.
+# Parse the ANSI code in `code` and return the updated decoration given the initial
+# `decoration`.
 function _parse_ansi_code(decoration::Decoration, code::String)
     tokens = split(code, ';')
     num_tokens = length(tokens)
@@ -21,8 +21,7 @@ function _parse_ansi_code(decoration::Decoration, code::String)
     reset      = decoration.reset
     reversed   = decoration.reversed
 
-    # `reset` must not be copied to other decorations. Hence, we need to reset
-    # it here.
+    # `reset` must not be copied to other decorations. Hence, we need to reset it here.
     reset = false
 
     i = 1
@@ -75,8 +74,7 @@ function _parse_ansi_code(decoration::Decoration, code::String)
 
                 # True-color (24-bit) mode.
                 elseif color_type == 2
-                    # In this case, we must have another three tokens for the
-                    # RGB color.
+                    # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
                         isnothing(color_r) && continue
@@ -124,8 +122,7 @@ function _parse_ansi_code(decoration::Decoration, code::String)
 
                 # Truecolor mode.
                 elseif color_type == 2
-                    # In this case, we must have another three tokens for the
-                    # RGB color.
+                    # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
                         isnothing(color_r) && continue
