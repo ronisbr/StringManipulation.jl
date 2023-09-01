@@ -1,31 +1,31 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions related to string highlighting.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 export highlight_search
 
 """
-    highlight_search(lines::Vector{T}, [search_matches::Dict{Int, Vector{Tuple{Int, Int}}} | regex::Regex]; kwargs...) where T <: AbstractString
+    highlight_search(lines::Vector{T}, search_matches::Dict{Int, Vector{Tuple{Int, Int}}}; kwargs...) where T <: AbstractString -> String
+    highlight_search(lines::Vector{T}, regex::Regex]; kwargs...) where T <: AbstractString -> String
 
 Return the text composed of the `lines` with the `search_matches` (see
-[`string_search_per_line`](@ref)) highlighted. If a `regex` is passed in the
-place of `search_matches`, the latter is automatically computed using
+[`string_search_per_line`](@ref)) highlighted. If a `regex` is passed in the place of
+`search_matches`, the latter is automatically computed using
 [`string_search_per_line`](@ref).
 
 # Keywords
 
-- `active_match::Int`: The match number that is considered active. This match is
-    highlighted using `active_highlight` instead of `highlight`.
-    (**Default** = 0)
-- `highlight::String`: ANSI escape sequence that contains the decoration of the
-    highlight. (**Default** = `\\e[7m`)
-- `active_highlight::String`: ANSI escape sequence that contains the decoration
-    of the active highlight. (**Default** = `\\e[30;43m`.)
+- `active_match::Int`: The match number that is considered active. This match is highlighted
+    using `active_highlight` instead of `highlight`.  (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
+    (**Default** = `\\e[7m`)
+- `active_highlight::String`: ANSI escape sequence that contains the decoration of the
+    active highlight. (**Default** = `\\e[30;43m`.)
 - `start_line::Int`: Line to begin the processing.
 - `end_line::Int`: Line to end the processing.
 """
@@ -39,7 +39,6 @@ function highlight_search(
     end_line::Int = 0
 ) where T <: AbstractString
 
-
     buf = IOBuffer()
 
     if start_line ≤ 0
@@ -52,7 +51,7 @@ function highlight_search(
 
     # Count how many matches we have before this line.
     num_matches = 0
-    for l = 1:start_line - 1
+    for l in 1:(start_line - 1)
         if haskey(search_matches, l)
             num_matches += length(search_matches[l])
         end
@@ -83,32 +82,27 @@ function highlight_search(
     return String(take!(buf))
 end
 
-function highlight_search(
-    lines::Vector{T},
-    regex::Regex;
-    kwargs...
-) where T <: AbstractString
+function highlight_search(lines::Vector{T}, regex::Regex; kwargs...) where T <: AbstractString
     search_matches = string_search_per_line(lines, regex)
     return highlight_search(lines, search_matches; kwargs...)
 end
 
 """
-    highlight_search(str::AbstractString, [search_matches::Vector{Tuple{Int, Int}} | regex::Regex]; kwargs...)
+    highlight_search(str::AbstractString, search_matches::Vector{Tuple{Int, Int}}; kwargs...) -> String
+    highlight_search(str::AbstractString, regex::Regex; kwargs...) -> String
 
-Return the text in the string `str` with the `search_matches` (see
-[`string_search`](@ref)) highlighted. If a `regex` is passed in the place of
-`search_matches`, the latter is automatically computed using
-[`string_search`](@ref).
+Return the text in the string `str` with the `search_matches` (see [`string_search`](@ref))
+highlighted. If a `regex` is passed in the place of `search_matches`, the latter is
+automatically computed using [`string_search`](@ref).
 
 # Keywords
 
-- `active_match::Int`: The match number that is considered active. This match is
-    highlighted using `active_highlight` instead of `highlight`.
-    (**Default** = 0)
-- `highlight::String`: ANSI escape sequence that contains the decoration of the
-    highlight. (**Default** = `\\e[7m`)
-- `active_highlight::String`: ANSI escape sequence that contains the decoration
-    of the active highlight. (**Default** = `\\e[30;43m`.)
+- `active_match::Int`: The match number that is considered active. This match is highlighted
+    using `active_highlight` instead of `highlight`. (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
+    (**Default** = `\\e[7m`)
+- `active_highlight::String`: ANSI escape sequence that contains the decoration of the
+    active highlight. (**Default** = `\\e[30;43m`.)
 - `start_line::Int`: Line to begin the processing.
 - `end_line::Int`: Line to end the processing.
 """
@@ -141,40 +135,38 @@ function highlight_search(
         # Split the string in the point indicated by the match.
         str₀, str₁ = split_string(str, match[1] - 1 - Δ)
 
-        # We need to obtain the current decoration and merge it the with one
-        # stored in `decoration` to keep track how the string should be printed
-        # after the highlight.
+        # We need to obtain the current decoration and merge it the with one stored in
+        # `decoration` to keep track how the string should be printed after the highlight.
         str₀_decorations = get_decorations(str₀)
         decoration = update_decoration(decoration, str₀_decorations)
 
-        # The highlight decoration will be a merge between the current string
-        # highlight and the desired one.
+        # The highlight decoration will be a merge between the current string highlight and
+        # the desired one.
         if i != active_match
             highlight_decoration = update_decoration(decoration, highlight)
         else
             highlight_decoration = update_decoration(decoration, active_highlight)
         end
 
-        # Write the to the buffer the string before and the highlight
-        # decoration.
+        # Write the to the buffer the string before and the highlight decoration.
         write(h_str, str₀, convert(String, highlight_decoration))
 
-        # Now, we need to split the remaining string using the information on
-        # how many characters we have in the match.
+        # Now, we need to split the remaining string using the information on how many
+        # characters we have in the match.
         str₂, str₃ = split_string(str₁, match[2])
 
-        # There might be some decoration information inside `str₂` that must be
-        # taken into account after the highlight.
+        # There might be some decoration information inside `str₂` that must be taken into
+        # account after the highlight.
         str₂_decorations, str₂_plain = get_and_remove_decorations(str₂)
         decoration = update_decoration(decoration, str₂_decorations)
 
-        # Here we write the string, reset the decoration, and apply the previous
-        # decoration stored in `decoration`.
+        # Here we write the string, reset the decoration, and apply the previous decoration
+        # stored in `decoration`.
         write(h_str, str₂_plain, reset_decoration)
         write(h_str, convert(String, decoration))
 
-        # All the next matches must consider that we are not in the beginning of
-        # the string anymore.
+        # All the next matches must consider that we are not in the beginning of the string
+        # anymore.
         Δ = match[1] + match[2] - 1
         str = str₃
     end
@@ -193,4 +185,3 @@ function highlight_search(
     search_matches = string_search(str, regex)
     return highlight_search(str, search_matches; kwargs...)
 end
-

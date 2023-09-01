@@ -1,13 +1,13 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Tests related with highlights.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@testset "Highlight searches in strings" begin
+@testset "Highlight Searches in Strings" begin
     str      = "Test high\e[1mlight\e[0m in a string with no underlines."
     expected = "Test \e[7mhighlight\e[0m\e[0m in a string with no underlines."
     hstr     = highlight_search(str, r"highlight")
@@ -28,7 +28,7 @@
     @test hstr == str
 end
 
-@testset "Highlight searches in texts with multiple lines" begin
+@testset "Highlight Searches in Texts with Multiple Lines" begin
     str = """
         Test high\e[1mlight\e[0m in a string with no underlines.
         Test high\e[4mlight in a string with underlines\e[0m.

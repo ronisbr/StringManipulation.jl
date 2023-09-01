@@ -1,13 +1,13 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Tests related with string decorations.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@testset "Convert decoration to string" begin
+@testset "Convert Decoration to String" begin
     d = Decoration(
         foreground = "35",
         background = "48;5;243",
@@ -65,7 +65,7 @@
     @test result == expected
 end
 
-@testset "Drop inactive decorations" begin
+@testset "Drop Inactive Decorations" begin
     decoration = Decoration(
         foreground = "39",
         background = "49",
@@ -91,14 +91,14 @@ end
     @test decoration === Decoration(background = "245")
 end
 
-@testset "Get decorations" begin
+@testset "Get Decorations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
     result = get_decorations(str)
     @test expected == result
 end
 
-@testset "Get and remove decorations" begin
+@testset "Get and Remove Decorations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected_decorations = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
     expected_text = "Test 😅 Test 😅 Test"
@@ -108,7 +108,7 @@ end
 end
 
 # Those tests are also used to verify the function `_parse_ansi_code`.
-@testset "Parse decorations" begin
+@testset "Parse Decorations" begin
     decoration = parse_decoration("\e[35m\e[48;5;243m\e[4;27m")
 
     @test decoration.foreground == "35"
@@ -172,7 +172,7 @@ end
     @test decoration.reversed   == StringManipulation.unchanged
 end
 
-@testset "Remove decorations" begin
+@testset "Remove Decorations" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     expected = "Test 😅 Test 😅 Test"
     result = remove_decorations(str)
@@ -183,7 +183,7 @@ end
     @test result == str
 end
 
-@testset "Replace the default background" begin
+@testset "Replace the Default Background" begin
     str = "\e[35mThis is a \e[45;1mtest string to \e[0mverify if \e[45mthe background \e[49;1mwas replaced correctly."
     exp = "\e[43m\e[35mThis is a \e[45;1mtest string to \e[0m\e[43mverify if \e[45mthe background \e[43m\e[1mwas replaced correctly.\e[49m"
     new = replace_default_background(str, "43")
@@ -191,7 +191,7 @@ end
     @test new == exp
 end
 
-@testset "Update decorations" begin
+@testset "Update Decorations" begin
 
     # Update Decorations Given a String
     # ======================================================================================

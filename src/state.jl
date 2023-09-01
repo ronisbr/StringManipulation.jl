@@ -1,18 +1,17 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
-#   Internal function to keep track of string state when iterating through the
-#   characters.
+#   Internal function to keep track of string state when iterating through the characters.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 """
     _process_string_state(c::Char, state::Symbol = :text)
 
-Return the current state of the string given the new character `c` and the
-previous state `state`.
+Return the current state of the string given the new character `c` and the previous state
+`state`.
 
 The following states are possible:
 
@@ -66,8 +65,8 @@ function _process_string_state(c::Char, state::Symbol = :text)
     elseif state == :escape_state_end
         state = :text
 
-        # We need to recall this function because the next character can be the
-        # beginning of a new ANSI escape sequence.
+        # We need to recall this function because the next character can be the beginning of
+        # a new ANSI escape sequence.
         return _process_string_state(c, state)
     end
 

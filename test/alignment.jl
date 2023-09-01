@@ -1,13 +1,13 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Tests related to the string alignment.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@testset "Alignment to the right" begin
+@testset "Alignment to The Right" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
 
     expected = "                    Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
@@ -25,7 +25,7 @@
     @test str == aligned_str
 end
 
-@testset "Alignment to the center" begin
+@testset "Alignment to The Center" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     expected = "          Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     aligned_str = align_string(str, 40, :c)
@@ -43,7 +43,7 @@ end
     @test str == aligned_str
 end
 
-@testset "Alignment to the left" begin
+@testset "Alignment to The Left" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     aligned_str = align_string(str, 40, :l)
 
@@ -60,7 +60,7 @@ end
     @test str == aligned_str
 end
 
-@testset "Multiple lines alignment" begin
+@testset "Multiple Lines Alignment" begin
     str = """
     We have \e[38;5;231;48;5;243mhere\e[0m 😅😃 the first line
     We now have the 😊 \e[38;5;231;48;5;243msecond\e[0m 😃 line"""
@@ -71,7 +71,7 @@ end
     @test aligned_str == expected_str
 end
 
-@testset "Corner cases" begin
+@testset "Corner Cases" begin
     str = """
     We have \e[38;5;231;48;5;243mhere\e[0m 😅😃 the first line
     We now have the 😊 \e[38;5;231;48;5;243msecond\e[0m 😃 line"""

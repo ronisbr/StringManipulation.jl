@@ -1,39 +1,37 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions to split strings.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 export split_string
 
 """
-    split_string(str::AbstractString, size::Int)
+    split_string(str::AbstractString, size::Int) -> String, String
 
-Split the string `str` after a number of characters that have a specific
-printable `size`. This function returns a tuple with two strings: before and
-after the split point.
+Split the string `str` after a number of characters that have a specific printable `size`.
+This function returns two strings: before and after the split point.
 
-The algorithm ensures that the printable width of the first returned string will
-always be equal `size`, unless `size` is negative or larger than the printable
-size of `str`. In the first case, the first string is empty, whereas, in the
-second case, the first string is equal to `str`.
+The algorithm ensures that the printable width of the first returned string will always be
+equal `size`, unless `size` is negative or larger than the printable size of `str`. In the
+first case, the first string is empty, whereas, in the second case, the first string is
+equal to `str`.
 
 !!! note
-    If the character in the split point needs more than 1 character to be
-    printed (like some UTF-8 characters), then everything will be filled with
-    spaces.
+    If the character in the split point needs more than 1 character to be printed (like some
+    UTF-8 characters), everything will be filled with spaces.
 """
 function split_string(str::AbstractString, size::Int)
-    buf₀ = IOBuffer() # .......... Buffer with the string before the split point
-    buf₁ = IOBuffer() # ........... Buffer with the string after the split point
+    buf₀ = IOBuffer() # ...................... Buffer with the string before the split point
+    buf₁ = IOBuffer() # ....................... Buffer with the string after the split point
     state = :text
 
-    # If we are splitting just at the point where a non-printable character is,
-    # then we need to add all those characters to the string in `buf₀`. This
-    # variable is used to handle this case.
+    # If we are splitting just at the point where a non-printable character is, we need to
+    # add all those characters to the string in `buf₀`. This variable is used to handle this
+    # case.
     check_ansi_after_split = true
 
     for c in str
@@ -41,8 +39,7 @@ function split_string(str::AbstractString, size::Int)
             if check_ansi_after_split
                 state = _process_string_state(c, state)
 
-                # All non-printable character just after splitting must go to
-                # `buf₀`.
+                # All non-printable character just after splitting must go to `buf₀`.
                 if state != :text
                     print(buf₀, c)
                 else
@@ -60,9 +57,9 @@ function split_string(str::AbstractString, size::Int)
                 cw = textwidth(c)
                 size -= cw
 
-                # If `size` is negative, then it means that we have a character
-                # that occupies more than 1 character. In this case, we fill the
-                # string with space.
+                # If `size` is negative, then it means that we have a character that
+                # occupies more than 1 character. In this case, we fill the string with
+                # space.
                 if size < 0
                     print(buf₀, " "^(-size))
                     print(buf₁, " "^(cw + size))

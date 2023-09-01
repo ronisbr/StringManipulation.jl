@@ -1,11 +1,11 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Tests related with text views.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @testset "Text view" begin
     md_str = md"""
@@ -47,8 +47,8 @@
     show(io, MIME("text/plain"), md_str)
     str = String(take!(buf))
 
-    # Without frozen lines or columns
-    # ==========================================================================
+    # Without Frozen Lines or Columns
+    # ======================================================================================
 
     expected = """
         e\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
@@ -71,8 +71,8 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
-    # With frozen lines or columns
-    # ==========================================================================
+    # With Frozen Lines or Columns
+    # ======================================================================================
 
     expected =
     """
@@ -102,7 +102,7 @@
     @test num_cropped_lines == 11
     @test max_cropped_chars == 13
 
-    # View the entire text without any modification
+    # View The Entire Text without Any Modification
     # ==========================================================================
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(str, (-1, -1, -1, -1))
@@ -110,8 +110,8 @@
     @test num_cropped_lines_at_end == 0
     @test max_cropped_chars == 0
 
-    # Maximum number of lines and columns
-    # ==========================================================================
+    # Maximum Number of Lines and Columns
+    # ======================================================================================
 
     expected = """
         eque umbra patulas Laure
@@ -176,8 +176,8 @@
     @test num_cropped_lines_at_end == 18
     @test max_cropped_chars == 51
 
-    # Test related to multiple dispatch
-    # ==========================================================================
+    # Test Related to Multiple Dispatch
+    # ======================================================================================
 
     lines = split(str, '\n')
     search_matches = string_search_per_line(lines, r"qu")
@@ -204,7 +204,7 @@
     @test max_cropped_chars == 13
 
     # Ruler
-    # ==========================================================================
+    # ======================================================================================
 
     expected = """
         \e[90m  1 │\e[0m\e[1m  \e[1m\e[7m\e[0m\e[1m\e[7mentae\e[0m\e[22m
@@ -234,8 +234,8 @@
     @test num_cropped_lines == 11
     @test max_cropped_chars == 13
 
-    # Title lines
-    # ==========================================================================
+    # Title Lines
+    # ======================================================================================
 
     expected = """
         \e[1m  Si distentae\e[22m\e[0m\e[1m\e[22m
@@ -261,8 +261,8 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
-    # Consider decorations in hidden lines
-    # ==========================================================================
+    # Consider Decorations in Hidden Lines
+    # ======================================================================================
 
     str = """
          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor

@@ -10,69 +10,63 @@
 export textview
 
 """
-    textview([io::IO, ][text::AbstractString | lines::Vector{AbstractString}], view::NTuple{4, Int}; kwargs...)
+    textview([io::IO,] text::AbstractString, view::NTuple{4, Int}; kwargs...)
+    textview([io::IO,] lines::Vector{AbstractString}, view::NTuple{4, Int}; kwargs...)
 
-Create a view of `text` or `lines` considering a `view` configuration. The
-latter is a tuple with four integers that has the following meaning:
+Create a view of `text` or `lines` considering a `view` configuration. The latter is a tuple
+with four integers that has the following meaning:
 
 - Top line;
 - Number of lines;
 - Left column; and
 - Number of columns.
 
-If a value equal or lower than 0 is passed to any of those options, then its
-extreme value is used.
+If a value equal or lower than 0 is passed to any of those options, its extreme value is
+used.
 
 # Keywords
 
-- `active_match::Int`: The match number that is considered active. This match is
-    highlighted using `active_highlight` instead of `highlight`.
+- `active_match::Int`: The match number that is considered active. This match is highlighted
+    using `active_highlight` instead of `highlight`.  (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
+    (**Default** = `\\e[7m`)
+- `active_highlight::String`: ANSI escape sequence that contains the decoration of the
+    active highlight. (**Default** = `\\e[30;43m`.)
+- `frozen_lines_at_beginning::Int`: Number of frozen lines that are drawn in the beginning.
     (**Default** = 0)
-- `highlight::String`: ANSI escape sequence that contains the decoration of the
-    highlight. (**Default** = `\\e[7m`)
-- `active_highlight::String`: ANSI escape sequence that contains the decoration
-    of the active highlight. (**Default** = `\\e[30;43m`.)
-- `frozen_lines_at_beginning::Int`: Number of frozen lines that are drawn in the
+- `frozen_columns_at_beginning::Int`: Number of frozen columns that are drawn in the
     beginning. (**Default** = 0)
-- `frozen_columns_at_beginning::Int`: Number of frozen columns that are drawn in
-    the beginning. (**Default** = 0)
 
-If `text::AbstractString` is passed, then the following keyword is available:
+If `text::AbstractString` is passed, the following keyword is available:
 
-- `search_regex::Uniont{Nothing, Regex}`: A regex used to highlight matches in
-    the text view. (**Default** = `nothing`).
+- `search_regex::Uniont{Nothing, Regex}`: A regex used to highlight matches in the text
+    view. (**Default** = `nothing`).
 
-If `lines::Vector{AbstractString}` is passed, then the following keyword is
-available:
+If `lines::Vector{AbstractString}` is passed, the following keyword is available:
 
-- `search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}}`: The
-    search matches that are highlighted in the text view. This dictionary must
-    be created using the function [`string_search_per_line`](@ref).
-    (**Default** = `nothing`)
+- `search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}}`: The search matches
+    that are highlighted in the text view. This dictionary must be created using the
+    function [`string_search_per_line`](@ref). (**Default** = `nothing`)
 
 # Returns
 
 If `io` is passed, the view is written to it and the function returns:
 
-- The number of cropped lines at the end;
-- The maximum number cropped characters in a row.
+- `Int`: Number of cropped lines at the end.
+- `Int`: Maximum number cropped characters in a row.
 
 However, if `io` is not passed, the function returns:
 
-- The string with the required view;
-- The number of cropped lines at the end;
-- The maximum number cropped characters in a row.
+- `String`: Text view.
+- `Int`: Number of cropped lines at the end.
+- `Int`: Maximum number cropped characters in a row.
 
 !!! note
     If only frozen lines are printed, the second returned value is set to 0.
 
     If only frozen columns are printed, the third returned value is set to 0.
 """
-function textview(
-    text::AbstractString,
-    view::NTuple{4, Int};
-    kwargs...
-)
+function textview(text::AbstractString, view::NTuple{4, Int}; kwargs...)
     buf = IOBuffer()
     num_cropped_lines, max_cropped_chars = textview(buf, text, view; kwargs...)
     return String(take!(buf)), num_cropped_lines, max_cropped_chars
@@ -100,11 +94,7 @@ function textview(
     )
 end
 
-function textview(
-    lines::Vector{T},
-    view::NTuple{4, Int};
-    kwargs...
-) where T<:AbstractString
+function textview(lines::Vector{T}, view::NTuple{4, Int}; kwargs...) where T<:AbstractString
     buf = IOBuffer()
     num_cropped_lines, max_cropped_chars = textview(buf, lines, view; kwargs...)
     return String(take!(buf)), num_cropped_lines, max_cropped_chars
@@ -129,20 +119,15 @@ function textview(
     visual_line::Int = -1
 ) where T<:AbstractString
 
-    # Verification of the input parameters
-    # ==========================================================================
+    # Verification of the Input Parameters
+    # ======================================================================================
 
     start_line  = view[1]
     num_lines   = view[2]
     total_lines = length(lines)
 
     start_line = clamp(start_line, 1, total_lines)
-
-    if num_lines ≥ 0
-        num_lines = clamp(num_lines, 0, total_lines - start_line + 1)
-    else
-        num_lines = total_lines
-    end
+    num_lines = num_lines ≥ 0 ? clamp(num_lines, 0, total_lines - start_line + 1) : total_lines
 
     if start_line + num_lines - 1 > total_lines
         num_lines = total_lines - start_line + 1
@@ -152,18 +137,12 @@ function textview(
         start_line = clamp(start_line, frozen_lines_at_beginning + 1, total_lines)
     end
 
-    start_column = view[3]
-
-    if start_column < 1
-        start_column = 1
-    end
+    start_column = max(view[3], 1)
 
     num_columns = view[4]
 
-    if frozen_columns_at_beginning > 0
-        if start_column ≤ frozen_columns_at_beginning
-            start_column = frozen_columns_at_beginning + 1
-        end
+    if (frozen_columns_at_beginning > 0) && (start_column ≤ frozen_columns_at_beginning)
+        start_column = frozen_columns_at_beginning + 1
     end
 
     # If the user wants a ruler, compute the required size here.
@@ -172,26 +151,21 @@ function textview(
     if show_ruler
         ruler_spacing = floor(Int, total_lines |> abs |> log10) + 1
 
-        # If the user selected a maximum number of columns, we need to decrease
-        # it to take into account the ruler.
+        # If the user selected a maximum number of columns, we need to decrease it to take
+        # into account the ruler.
         if maximum_number_of_columns ≥ 0
-            maximum_number_of_columns = maximum_number_of_columns - ruler_spacing - 3
-
-            if maximum_number_of_columns < 0
-                maximum_number_of_columns = 0
-            end
+            maximum_number_of_columns = max(maximum_number_of_columns - ruler_spacing - 3, 0)
         end
     end
 
-    # Internal variables
-    # ==========================================================================
+    # Internal Variables
+    # ======================================================================================
 
-    # Buffers used to store the entire the line view rendering, created here to
-    # reduce the number of allocations.
+    # Buffers used to store the entire the line view rendering, created here to reduce the
+    # number of allocations.
     line_buf = IOBuffer()
 
-    # Count how many matches we passed in the current line that is being
-    # processed.
+    # Count how many matches we passed in the current line that is being processed.
     num_matches = 0
 
     # Variable to store the maximum number of cropped lines at the end.
@@ -200,9 +174,8 @@ function textview(
     # Variable to compute the maximum number of characters cropped in the right.
     max_cropped_chars = 0
 
-    # Variable to store the decorations before the view, including those in the
-    # frozen lines. It is used if the option `parse_decorations_before_view`
-    # is `true`.
+    # Variable to store the decorations before the view, including those in the frozen
+    # lines. It is used if the option `parse_decorations_before_view` is `true`.
     pre_decorations = ""
 
     # Check if we have a maximum number of lines.
@@ -245,8 +218,8 @@ function textview(
         end
     end
 
-    # Frozen lines
-    # ==========================================================================
+    # Frozen Lines
+    # ======================================================================================
 
     for l in 1:frozen_lines_at_beginning
         line_active_match = active_match - num_matches
@@ -295,8 +268,8 @@ function textview(
             )
         end
 
-        # We should not compute the number of cropped chars if we are only
-        # printing frozen columns.
+        # We should not compute the number of cropped chars if we are only printing frozen
+        # columns.
         if frozen_columns_at_beginning != maximum_number_of_columns
             max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
         end
@@ -313,24 +286,23 @@ function textview(
             num_matches += length(line_search_matches)
         end
 
-        # If the user wants, we need to accumulate all the decorations from the
-        # beginning of the text up to the first line in the view. Here, we
-        # accumulate those related to the frozen lines.
+        # If the user wants, we need to accumulate all the decorations from the beginning of
+        # the text up to the first line in the view. Here, we accumulate those related to
+        # the frozen lines.
         if parse_decorations_before_view
             pre_decorations *= get_decorations(lines[l])
         end
     end
 
     for l = (frozen_lines_at_beginning + 1):(start_line - 1)
-        # Sum the number of matches between the frozen line and the displayed
-        # line. This computation is important to find which match is active.
+        # Sum the number of matches between the frozen line and the displayed line. This
+        # computation is important to find which match is active.
         if !isnothing(search_matches) && haskey(search_matches, l)
             num_matches += length(search_matches[l])
         end
 
-        # If we need to parse the decorations before the view, then obtain the
-        # decorations of the current hidden line, and merge with the decorations
-        # of the other lines.
+        # If we need to parse the decorations before the view, then obtain the decorations
+        # of the current hidden line, and merge with the decorations of the other lines.
         if parse_decorations_before_view
             pre_decorations *= get_decorations(lines[l])
         end
@@ -339,13 +311,13 @@ function textview(
     if parse_decorations_before_view
         d = parse_decoration(pre_decorations)
 
-        # If the pre_decoration is a reset, then we just need to reinitialize
-        # it since the reset escape sequence was already written to the buffer.
+        # If the pre_decoration is a reset, then we just need to reinitialize it since the
+        # reset escape sequence was already written to the buffer.
         !d.reset && write(buf, d |> String)
     end
 
-    # Line views
-    # ==========================================================================
+    # Line Views
+    # ======================================================================================
 
     for k in 1:num_lines
         # Get the current line number.
@@ -383,8 +355,8 @@ function textview(
             frozen_columns_at_beginning
         )
 
-        # We should not compute the number of cropped chars if we are only
-        # printing frozen columns.
+        # We should not compute the number of cropped chars if we are only printing frozen
+        # columns.
         if frozen_columns_at_beginning != maximum_number_of_columns
             max_cropped_chars = max(max_cropped_chars, cropped_chars_in_line)
         end
@@ -399,9 +371,9 @@ function textview(
     return num_cropped_lines_at_end, max_cropped_chars
 end
 
-################################################################################
-#                              Private functions
-################################################################################
+############################################################################################
+#                                    Private Functions
+############################################################################################
 
 # Draw a line view and return the number of right characters that was cropped.
 function _draw_line_view!(
@@ -443,9 +415,9 @@ function _draw_line_view!(
 
     if start_column > 0
         # TODO: Can we improve this?
-        # Maybe we can improve the performance by creating a function that
-        # remove a certain number of characters from the left/right and also
-        # returns the ANSI escape sequence.
+        # Maybe we can improve the performance by creating a function that remove a certain
+        # number of characters from the left/right and also returns the ANSI escape
+        # sequence.
         left, line_str = split_string(line_str, start_column - 1)
 
         # Here we simplify the decorations to avoid too many escape sequences.

@@ -1,19 +1,19 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Functions to compute the printable width of the string.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 export printable_textwidth, printable_textwidth_per_line
 
 """
-    printable_textwidth(str::AbstractString)
+    printable_textwidth(str::AbstractString) -> Int
 
-Return the text width of `str` considering only the printable characters, *i.e.*
-removing all ANSI escape sequences related to decorations.
+Return the text width of `str` considering only the printable characters, *i.e.* removing
+all ANSI escape sequences related to decorations.
 
 !!! note
     Characters like `\\n` and `\\t` are treated as normal characters.
@@ -23,10 +23,10 @@ function printable_textwidth(str::AbstractString)
 end
 
 """
-    printable_textwidth_per_line(str::AbstractString)
+    printable_textwidth_per_line(str::AbstractString) -> Vector{Int}
 
-Return a vector with the printable textwidth of each line in `str`. The lines
-are split considering the character `\n`.
+Return a vector with the printable textwidth of each line in `str`. The lines are split
+considering the character `\n`.
 """
 function printable_textwidth_per_line(str::AbstractString)
     lines = split(str, '\n')

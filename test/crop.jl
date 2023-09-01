@@ -1,13 +1,13 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Description
-# ==============================================================================
+# ==========================================================================================
 #
 #   Tests related to the string cropping.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@testset "Left cropping" begin
+@testset "Left Cropping" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
 
     expected = "😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
@@ -30,12 +30,12 @@
     @test ansi_escape_seq == "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m"
 end
 
-@testset "Fit field" begin
+@testset "Fit Field" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     printable_string_width = printable_textwidth(str)
 
-    # Cropping from the right
-    # ==========================================================================
+    # Cropping from The Right
+    # ======================================================================================
 
     cropped_str = fit_string_in_field(str, 8)
     expected = "Test 😅…\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
@@ -62,8 +62,8 @@ end
     expected = "Test   …"
     @test cropped_str == expected
 
-    # Cropping from the left
-    # ==========================================================================
+    # Cropping from The Left
+    # ======================================================================================
 
     cropped_str = fit_string_in_field(str, 8; crop_side = :left)
     expected = "\e[38;5;231;48;5;243m…😅 \e[38;5;201;48;5;243mTest\e[0m"
@@ -88,7 +88,7 @@ end
     @test cropped_str == expected
 end
 
-@testset "Right cropping" begin
+@testset "Right Cropping" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
 
     expected = "Test 😅 \e[38;5;231;48;5;243mTest 😅\e[38;5;201;48;5;243m\e[0m"
@@ -117,7 +117,7 @@ end
     @test cropped_str == expected
 end
 
-@testset "Corner cases" begin
+@testset "Corner Cases" begin
     str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
     cropped_str = fit_string_in_field(str, 25)
     @test cropped_str == str
