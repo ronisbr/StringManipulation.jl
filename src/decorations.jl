@@ -220,9 +220,13 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     # Write the rest of the string.
     write(buf_new_str, SubString(str, str_i, lastindex(str)))
 
-    # If the decoration at the end of string contains no background or the default one, we
-    # should reset it also here.
-    if isempty(current_decoration.background) || (current_decoration.background == "49")
+    # If the last decoration is a reset, we should also reset everything here.
+    if current_decoration.reset
+        write(buf_new_str, _CSI, "0m")
+
+    # If the last decoration is a background change, or if the background is not modified,
+    # we should reset to the terminal default background.
+    elseif isempty(current_decoration.background) || (current_decoration.background == "49")
         write(buf_new_str, _CSI, "49m")
     end
 

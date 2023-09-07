@@ -115,8 +115,7 @@ function textview(
     ruler_decoration::String = _CSI * "90m",
     search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}} = nothing,
     show_ruler::Bool = false,
-    title_lines::Int = 0,
-    visual_line::Int = -1
+    title_lines::Int = 0
 ) where T<:AbstractString
 
     # Verification of the Input Parameters
@@ -336,10 +335,6 @@ function textview(
             write(buf, ruler_decoration, " ")
             write(buf, line_number_str, " │")
             write(buf, _CSI, "0m")
-        end
-
-        if visual_line == l
-            write(buf, _CSI, "27m")
         end
 
         cropped_chars_in_line = _draw_line_view!(
