@@ -115,6 +115,8 @@ function textview(
     ruler_decoration::String = _CSI * "90m",
     search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}} = nothing,
     show_ruler::Bool = false,
+    visual_lines::Union{Nothing, Vector{Int}} = nothing,
+    visual_line_backgrounds::Union{String, Vector{String}} = "44",
     title_lines::Int = 0
 ) where T<:AbstractString
 
@@ -155,6 +157,22 @@ function textview(
         if maximum_number_of_columns ≥ 0
             maximum_number_of_columns = max(maximum_number_of_columns - ruler_spacing - 3, 0)
         end
+    end
+
+    if !isnothing(visual_lines)
+        if visual_line_backgrounds isa AbstractVector
+            if (length(visual_lines) != length(visual_line_backgrounds))
+                throw(ArgumentError(
+                    "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`."
+                ))
+            else
+                visual_line_background_vec = visual_line_backgrounds
+            end
+        else
+            visual_line_background_vec = fill("44", length(visual_lines))
+        end
+    else
+        visual_line_background_vec = nothing
     end
 
     # Internal Variables
@@ -337,6 +355,16 @@ function textview(
             write(buf, _CSI, "0m")
         end
 
+        i_vl = isnothing(visual_lines) ? nothing : findfirst(==(l), visual_lines)
+
+        if !isnothing(i_vl)
+            is_visual_line = true
+            visual_line_background = visual_line_background_vec[i_vl]
+        else
+            is_visual_line = false
+            visual_line_background = ""
+        end
+
         cropped_chars_in_line = _draw_line_view!(
             buf,
             line_buf,
@@ -347,7 +375,9 @@ function textview(
             active_highlight,
             start_column,
             num_columns,
-            frozen_columns_at_beginning
+            frozen_columns_at_beginning,
+            is_visual_line,
+            visual_line_background
         )
 
         # We should not compute the number of cropped chars if we are only printing frozen
@@ -381,7 +411,9 @@ function _draw_line_view!(
     active_highlight::String,
     start_column::Int,
     num_columns::Int,
-    frozen_columns_at_beginning::Int
+    frozen_columns_at_beginning::Int,
+    visual_line::Bool = false,
+    visual_line_background::String = ""
 )
 
     # Check if we need to highlight the current line.
@@ -402,6 +434,16 @@ function _draw_line_view!(
     # Frozen columns.
     if frozen_columns_at_beginning > 0
         left, frozen_str = split_string(line_str, frozen_columns_at_beginning)
+
+        # If this is a visual line, we must ensure that the frozen row has the minimum
+        # number of characters to fill the frozen space.
+        if visual_line
+            w = printable_textwidth(left)
+            if w < frozen_columns_at_beginning
+                left = left * " "^(frozen_columns_at_beginning - w)
+            end
+        end
+
         write(buf, left, _RESET_DECORATIONS)
     end
 
@@ -420,6 +462,19 @@ function _draw_line_view!(
     end
 
     if num_columns ≥ 0
+        # If this is a visual line, we change the default background.
+        if visual_line
+            w = printable_textwidth(line_str)
+
+            if w < num_columns
+                line_str = line_str * " "^(num_columns - w)
+            end
+
+            # We must append the left ANSI escape sequence to keep the decorations at the
+            # beginning of the line.
+            line_str = replace_default_background(left_ansi * line_str, visual_line_background)
+        end
+
         line_str, right = split_string(line_str, num_columns)
 
         # Here we simplify the decorations to avoid too many escape sequences.
