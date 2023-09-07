@@ -61,19 +61,6 @@ include("./split.jl")
 include("./view.jl")
 include("./width.jl")
 
-# The environment variable `STRING_MANIPULATION_NO_PRECOMPILATION` is used to disable the
-# precompilation directives. This option must only be used inside Github Actions to improve
-# the coverage results.
-if Base.VERSION >= v"1.4.2" && !haskey(ENV, "STRING_MANIPULATION_NO_PRECOMPILATION")
-    # This try/catch is necessary in case the precompilation statements do not exists. In
-    # this case, StringManipulation.jl will work correctly but without the optimizations.
-    try
-        include("../precompilation/precompile_StringManipulation.jl")
-        include("../precompilation/precompile_StringManipulation_manual.jl")
-        _precompile_()
-        _precompile_manual_()
-    catch
-    end
-end
+include("./precompilation.jl")
 
 end # module
