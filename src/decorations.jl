@@ -197,6 +197,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
         # background.
         if d.reset
             write(buf_new_str, _CSI, "0m", _CSI, new_background, "m")
+            current_decoration = Decoration()
 
         elseif d.background == "49"
             new_decoration = Decoration(

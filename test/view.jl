@@ -261,6 +261,30 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
+    # Visual Lines
+    # ======================================================================================
+
+    expected = """
+        \e[1m  Si distentae\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
+        \e[44m                                                 \e[49m
+        \e[1m  Carpitur devorat\e[22m
+        \e[1m  ==================\e[22m
+
+        \e[45m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[49m\e[22m
+          namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
+          animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et
+          iugis, venit adventus molle adpropera?"""
+
+    vstr, ~ = textview(
+        str,
+        (0, 10, 0, 49);
+        visual_lines = [3, 7],
+        visual_line_backgrounds = ["44", "45"]
+    )
+
+    @test vstr == expected
+
     # Consider Decorations in Hidden Lines
     # ======================================================================================
 
@@ -308,30 +332,6 @@
         frozen_lines_at_beginning = 1,
         parse_decorations_before_view = true,
         search_regex = r"ing"
-    )
-
-    @test vstr == expected
-
-    # Visual Lines
-    # ======================================================================================
-
-    expected = """
-        \e[1m  Si distentae\e[22m
-        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
-        \e[44m                                                 \e[49m
-        \e[1m  Carpitur devorat\e[22m
-        \e[1m  ==================\e[22m
-
-        \e[45m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[49m\e[22m
-          namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
-          animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et
-          iugis, venit adventus molle adpropera?"""
-
-    vstr, ~ = textview(
-        str,
-        (0, 10, 0, 49);
-        visual_lines = [3, 7],
-        visual_line_backgrounds = ["44", "45"]
     )
 
     @test vstr == expected
