@@ -4,6 +4,7 @@ StringManipulation.jl
 [![CI](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ronisbr/StringManipulation.jl/branch/main/graph/badge.svg?token=XELRWB2KOO)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![DOI](https://zenodo.org/badge/421645319.svg)](https://zenodo.org/badge/latestdoi/421645319)
 
 This package has the purpose to provide functions to manipulate strings with ANSI escape
 sequences.
