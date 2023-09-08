@@ -285,6 +285,28 @@
 
     @test vstr == expected
 
+    expected = """
+        \e[1m  Si diste\e[0m\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡\e[0m\e[22m
+        \e[44m          \e[49m\e[0m\e[44m                                                 \e[49m
+        \e[1m  Carpitur\e[0m\e[22m
+        \e[1m  ========\e[0m\e[1m==\e[22m
+        \e[0m
+        \e[45m  Lorem ma\e[49m\e[0m\e[45m ipsi Emathion Neoptolemum et moenia \e[1mviveret spum\e[49m\e[22m
+          namque. \e[0mpi ignis turbamve, \e[4mcruorem quo nubes\e[24m aevi; sensit
+          animanti\e[0mnis infelix \e[4mstabantque\e[24m. Ruit et iuvenemque longo;
+          iugis, v\e[0mentus molle adpropera?"""
+
+    vstr, ~ = textview(
+        str,
+        (0, 10, 19, 49);
+        frozen_columns_at_beginning = 10,
+        visual_lines = [3, 7],
+        visual_line_backgrounds = ["44", "45"]
+    )
+
+    @test vstr == expected
+
     # Consider Decorations in Hidden Lines
     # ======================================================================================
 

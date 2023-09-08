@@ -465,6 +465,7 @@ function _draw_line_view!(
             if w < frozen_columns_at_beginning
                 left = left * " "^(frozen_columns_at_beginning - w)
             end
+            left = replace_default_background(left, visual_line_background)
         end
 
         write(buf, left, _RESET_DECORATIONS)
