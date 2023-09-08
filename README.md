@@ -4,13 +4,13 @@ StringManipulation.jl
 [![CI](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ronisbr/StringManipulation.jl/branch/main/graph/badge.svg?token=XELRWB2KOO)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
 
-This package has the purpose to provide several functions to manipulate strings
-with ANSI escape sequences.
+This package has the purpose to provide functions to manipulate strings with ANSI escape
+sequences.
 
 ## Alignment
 
-The function `align_string` can be used to align the string in a field with a
-specific size to the left, center, or right.
+The function `align_string` can be used to align the string in a field with a specific size
+to the left, center, or right.
 
 ```julia
 julia> align_string(
@@ -28,8 +28,8 @@ julia> align_string(
                           A string with emojis 😃😃 and decoration to be aligned
 ```
 
-If the string has multiple lines, then all can be aligned at once using the
-function `align_string_per_line`.
+If the string has multiple lines, then all can be aligned at once using the function
+`align_string_per_line`.
 
 ```julia
 julia> str = """
@@ -45,8 +45,8 @@ julia> align_string_per_line(str, 80, :r) |> print
 
 ### Fit String in a Field
 
-The function `fit_string_in_field` crop the string so that it has a number of
-printable characters that fits in a field.
+The function `fit_string_in_field` crop the string so that it has a number of printable
+characters that fits in a field.
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -55,14 +55,14 @@ julia> fit_string_in_field(str, 9)
 "Test 😅 …\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
 ```
 
-The function `fit_string_in_field` has many options. For more information,
-please, see the built-in help (type `textview`  in REPL).
+The function `fit_string_in_field` has many options. For more information, please, see the
+built-in help (type `textview`  in REPL).
 
 ### Left Cropping
 
-The function `left_crop` can be used to crop a field of specific width to the
-left of the string. In this case, the function return the ANSI escape sequence
-(non-printable string) in the cropped field, and the cropped string.
+The function `left_crop` can be used to crop a field of specific width to the left of the
+string. In this case, the function return the ANSI escape sequence (non-printable string) in
+the cropped field, and the cropped string.
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -73,9 +73,9 @@ julia> left_crop(str, 9)
 
 ### Right Cropping
 
-The function `right_crop` can be used to crop a field of specific width to the
-right of the string. In this case, the function return the cropped string, and
-the ANSI escape sequence (non-printable string) in the cropped field.
+The function `right_crop` can be used to crop a field of specific width to the right of the
+string. In this case, the function return the cropped string, and the ANSI escape sequence
+(non-printable string) in the cropped field.
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -84,9 +84,9 @@ julia> right_crop(str, 5)
 ("Test 😅 \e[38;5;231;48;5;243mTest 😅", "\e[38;5;201;48;5;243m\e[0m")
 ```
 
-If the keyword `keep_escape_seq` is set to `false`, then the ANSI escape
-sequence in the cropped field will not be computed. This can lead to a
-substantial increase in the performance for very long string.
+If the keyword `keep_escape_seq` is set to `false`, then the ANSI escape sequence in the
+cropped field will not be computed. This can lead to a substantial increase in the
+performance for very long string.
 
 ```julia
 julia> right_crop(str, 5; keep_escape_seq = false)
@@ -95,8 +95,8 @@ julia> right_crop(str, 5; keep_escape_seq = false)
 
 ## Decorations
 
-This package contains some functions to work with ANSI escape sequences that
-decorate the text.
+This package contains some functions to work with ANSI escape sequences that decorate the
+text.
 
 ### Get Decorations
 
@@ -124,9 +124,8 @@ julia> remove_decorations(str)
 
 ### Get and Remove Decorations
 
-If someone wants to get all the decorations in a string, and the undecorated
-string, the function `get_and_remove_decorations` can be used to improve the
-performance:
+If someone wants to get all the decorations in a string, and the undecorated string, the
+function `get_and_remove_decorations` can be used to improve the performance:
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -137,9 +136,9 @@ julia> get_and_remove_decorations(str)
 
 ### Parsing Decorations
 
-The ANSI escape sequences that decorates the text can be parsed using the
-function `parse_decoration`. The result is an object of type `Decoration` with
-the combined decoration created by the ANSI escape sequence.
+The ANSI escape sequences that decorates the text can be parsed using the function
+`parse_decoration`. The result is an object of type `Decoration` with the combined
+decoration created by the ANSI escape sequence.
 
 ```julia
 julia> parse_decoration("\e[38;5;201;48;5;243;4;27m") |> dump
@@ -154,8 +153,8 @@ Decoration
 
 ### Updating Decorations
 
-A decoration (object of type `Decoration`) can be updated given another ANSI
-escape sequence using `update_decoration`:
+A decoration (object of type `Decoration`) can be updated given another ANSI escape sequence
+using `update_decoration`:
 
 ```julia
 julia> decoration = parse_decoration("\e[38;5;201;48;5;243;4;27m");
@@ -180,8 +179,8 @@ code of the new background:
 
 ## Highlight Search Matches
 
-The function `highlight_search` can be used to highlight search matches, given
-by a `Regex`, in a string.
+The function `highlight_search` can be used to highlight search matches, given by a `Regex`,
+in a string.
 
 ```julia
 julia> str = """
@@ -200,8 +199,8 @@ julia> highlight_search(str, r"ing"; active_match = 2) |> println
 
 ![Highlight search](./assets/highlight_search.png "Highlight search")
 
-The function `highlight_search` has many options. For more information, please,
-see the built-in help (type `?highlight_search`  in REPL).
+The function `highlight_search` has many options. For more information, please, see the
+built-in help (type `?highlight_search`  in REPL).
 
 ## Printable Text Width
 
@@ -215,9 +214,8 @@ julia> printable_textwidth(str)
 20
 ```
 
-If the string has multiple lines, then the function
-`printable_textwidth_per_line` can be used to compute the printable text width
-of each one of them:
+If the string has multiple lines, then the function `printable_textwidth_per_line` can be
+used to compute the printable text width of each one of them:
 
 ```julia
 julia> str = """
@@ -234,8 +232,8 @@ julia> printable_textwidth_per_line(str)
 
 ## Splitting
 
-The function `split_string` can be used to split a string given a desired size
-(printable characters width).
+The function `split_string` can be used to split a string given a desired size (printable
+characters width).
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -267,9 +265,9 @@ um dolor sit amet, consectetur adipiscing
 ed lorem. Donec interdum, risus eu sceler
 ```
 
-Notice that it correctly considers all the ANSI escape sequences that decorate
-the text, yielding to a view that matches all the characteristics of the
-original text (foreground color, background color, underline, etc.).
+Notice that it correctly considers all the ANSI escape sequences that decorate the text,
+yielding to a view that matches all the characteristics of the original text (foreground
+color, background color, underline, etc.).
 
-The function `textview` has many options. For more information, please, see the
-built-in help (type `?textview`  in REPL).
+The function `textview` has many options. For more information, please, see the built-in
+help (type `?textview`  in REPL).
