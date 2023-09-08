@@ -43,7 +43,7 @@ julia> align_string_per_line(str, 80, :r) |> print
 
 ## Cropping
 
-### Fit string in a field
+### Fit String in a Field
 
 The function `fit_string_in_field` crop the string so that it has a number of
 printable characters that fits in a field.
@@ -58,7 +58,7 @@ julia> fit_string_in_field(str, 9)
 The function `fit_string_in_field` has many options. For more information,
 please, see the built-in help (type `textview`  in REPL).
 
-### Left cropping
+### Left Cropping
 
 The function `left_crop` can be used to crop a field of specific width to the
 left of the string. In this case, the function return the ANSI escape sequence
@@ -71,7 +71,7 @@ julia> left_crop(str, 9)
 ("\e[38;5;231;48;5;243m", "est 😅 \e[38;5;201;48;5;243mTest\e[0m")
 ```
 
-### Right cropping
+### Right Cropping
 
 The function `right_crop` can be used to crop a field of specific width to the
 right of the string. In this case, the function return the cropped string, and
@@ -98,7 +98,7 @@ julia> right_crop(str, 5; keep_escape_seq = false)
 This package contains some functions to work with ANSI escape sequences that
 decorate the text.
 
-### Get decorations
+### Get Decorations
 
 All the decorations in a string can be retrieved using `get_decorations`:
 
@@ -110,7 +110,7 @@ julia> get_decorations(str)
 "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
 ```
 
-### Remove the decorations
+### Remove the Decorations
 
 It is possible to remove all the decorations in a string using the functions
 `remove_decorations`:
@@ -122,7 +122,7 @@ julia> remove_decorations(str)
 "Test 😅 Test 😅 Test"
 ```
 
-### Get and remove decorations
+### Get and Remove Decorations
 
 If someone wants to get all the decorations in a string, and the undecorated
 string, the function `get_and_remove_decorations` can be used to improve the
@@ -135,7 +135,7 @@ julia> get_and_remove_decorations(str)
 ("\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m", "Test 😅 Test 😅 Test")
 ```
 
-### Parsing decorations
+### Parsing Decorations
 
 The ANSI escape sequences that decorates the text can be parsed using the
 function `parse_decoration`. The result is an object of type `Decoration` with
@@ -152,7 +152,7 @@ Decoration
   reversed: StringManipulation.DecorationState StringManipulation.inactive
 ```
 
-### Updating decorations
+### Updating Decorations
 
 A decoration (object of type `Decoration`) can be updated given another ANSI
 escape sequence using `update_decoration`:
@@ -170,7 +170,7 @@ Decoration
   reversed: StringManipulation.DecorationState StringManipulation.inactive
 ```
 
-## Highlight search matches
+## Highlight Search Matches
 
 The function `highlight_search` can be used to highlight search matches, given
 by a `Regex`, in a string.
@@ -195,7 +195,7 @@ julia> highlight_search(str, r"ing"; active_match = 2) |> println
 The function `highlight_search` has many options. For more information, please,
 see the built-in help (type `?highlight_search`  in REPL).
 
-## Printable text width
+## Printable Text Width
 
 The printable text width of a string can be computed using the function
 `printable_textwidth`:
@@ -236,7 +236,7 @@ julia> split_string(str, 8)
 ("Test 😅 \e[38;5;231;48;5;243m", "Test 😅 \e[38;5;201;48;5;243mTest\e[0m")
 ```
 
-## Text view
+## Text View
 
 The function `textview` can be used to create a view of a text.
 
