@@ -1,6 +1,16 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.3.1
+-------------
+
+- ![Feature][badge-feature] The function `replace_default_background` can be used to replace
+  the default background in a string.
+- ![Feature][badge-feature] `textview` can now have visual lines, which are lines that has a
+  different default background.
+- ![Enhancement][badge-enhancement] The precompilation is now performed by the package
+  **PrecompilationTools.jl**.
+
 Version 0.3.0
 -------------
 
