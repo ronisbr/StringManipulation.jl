@@ -170,6 +170,14 @@ Decoration
   reversed: StringManipulation.DecorationState StringManipulation.inactive
 ```
 
+### Replacing the Default Background
+
+The default background of a string can be replaced using the function
+`replace_default_background`. The first argument is the string and the second is the ANSI
+code of the new background:
+
+![Replace default background](./assets/replace_default_background.png "Replace default background")
+
 ## Highlight Search Matches
 
 The function `highlight_search` can be used to highlight search matches, given
