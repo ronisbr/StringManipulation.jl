@@ -1,7 +1,7 @@
 name = "StringManipulation"
 uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
 authors = ["Ronan Arraes Jardim Chagas <ronisbr@gmail.com>"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
