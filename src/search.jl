@@ -17,7 +17,6 @@ Search for the pattern in regex `r` in the string `str`. The result will be a ve
 related to the width of printable characters.
 """
 function string_search(str::AbstractString, r::Regex)
-
     # Remove the decorations so that we can search by regex.
     undecorated_str = remove_decorations(str)
 
@@ -30,7 +29,7 @@ function string_search(str::AbstractString, r::Regex)
         # we need to obtain the character. Hence, it is necessary to compute
         # the text width from the beginning to the offset.
         push!(search_result, (
-            textwidth(undecorated_str[1:m.offset]),
+            textwidth(@view(undecorated_str[1:m.offset])),
             textwidth(m.match)
         ))
     end
@@ -51,11 +50,7 @@ function string_search_per_line(str::AbstractString, r::Regex)
     return string_search_per_line(tokens, r)
 end
 
-function string_search_per_line(
-    lines::AbstractVector{T},
-    r::Regex
-) where T<:AbstractString
-
+function string_search_per_line(lines::AbstractVector{T}, r::Regex) where T<:AbstractString
     search_results = Dict{Int, Vector{Tuple{Int, Int}}}()
 
     # Find the matches in each line.
