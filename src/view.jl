@@ -438,21 +438,7 @@ function _draw_line_view!(
     visual_line::Bool = false,
     visual_line_background::String = ""
 )
-
-    # Check if we need to highlight the current line.
-    if !isnothing(line_search_matches)
-        write(line_buf, highlight_search(
-            line,
-            line_search_matches;
-            active_highlight,
-            active_match = line_active_match,
-            highlight
-        ))
-    else
-        write(line_buf, line)
-    end
-
-    line_str = String(take!(line_buf))
+    line_str = string(line)
 
     # Frozen columns.
     if frozen_columns_at_beginning > 0
@@ -466,6 +452,20 @@ function _draw_line_view!(
                 left = left * " "^(frozen_columns_at_beginning - w)
             end
             left = replace_default_background(left, visual_line_background)
+        end
+
+        # If we have matches, we should have highlight those in the frozen columns.
+        if !isnothing(line_search_matches)
+            left = highlight_search(
+                left,
+                line_search_matches;
+                active_highlight,
+                active_match = line_active_match,
+                highlight,
+                min_column = 1,
+                max_column = frozen_columns_at_beginning,
+                start_column = 1
+            )
         end
 
         write(buf, left, _RESET_DECORATIONS)
@@ -496,7 +496,10 @@ function _draw_line_view!(
 
             # We must append the left ANSI escape sequence to keep the decorations at the
             # beginning of the line.
-            line_str = replace_default_background(left_ansi * line_str, visual_line_background)
+            line_str = replace_default_background(
+                left_ansi * line_str,
+                visual_line_background
+            )
         end
 
         line_str, right = split_string(line_str, num_columns)
@@ -504,11 +507,25 @@ function _draw_line_view!(
         # Here we simplify the decorations to avoid too many escape sequences.
         right_ansi = get_decorations(right) |> parse_decoration |> String
 
-        # Compute the amount of printable cropped characters in the right
-        # string.
+        # Compute the amount of printable cropped characters in the right string.
         cropped_chars = printable_textwidth(right)
     else
         cropped_chars = 0
+    end
+
+    # Now that we have what we will print to the buffer, we can highlight the matches if
+    # they exist in the visible area.
+    if !isnothing(line_search_matches)
+        line_str = highlight_search(
+            line_str,
+            line_search_matches;
+            active_highlight,
+            active_match = line_active_match,
+            highlight,
+            start_column = start_column,
+            min_column = start_column,
+            max_column = start_column + num_columns - 1
+        )
     end
 
     # Write to the buffer.

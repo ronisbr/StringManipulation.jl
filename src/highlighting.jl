@@ -22,28 +22,33 @@ Return the text composed of the `lines` with the `search_matches` (see
 
 - `active_match::Int`: The match number that is considered active. This match is highlighted
     using `active_highlight` instead of `highlight`.  (**Default** = 0)
-- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
-    (**Default** = `\\e[7m`)
 - `active_highlight::String`: ANSI escape sequence that contains the decoration of the
     active highlight. (**Default** = `\\e[30;43m`.)
-- `start_line::Int`: Line to begin the processing.
-- `end_line::Int`: Line to end the processing.
+- `end_line::Int`: Line to end the processing. If it is equal or lower than 0, all lines
+    will be processed. (**Default** = 0)
+- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
+    (**Default** = `\\e[7m`)
+- `max_column::Int`: Stop processing if the match is after this column. If it is equal or
+    lower than 0, this limit will not be considered. (**Default** = 0)
+- `min_column::Int`: Do not process matches before this column. If it is equal or lower than
+    0, this limit will not be considered. (**Default** = 0)
+- `start_line::Int`: Line to begin the processing. (**Default** = 1)
 """
 function highlight_search(
     lines::Vector{T},
     search_matches::Dict{Int, Vector{Tuple{Int, Int}}};
-    active_match::Int = 0,
-    highlight::String = _CSI * "7m",
     active_highlight::String = _CSI * "30;43m",
-    start_line::Int = 0,
-    end_line::Int = 0
+    active_match::Int = 0,
+    end_line::Int = 0,
+    highlight::String = _CSI * "7m",
+    max_column::Int = 0,
+    min_column::Int = 0,
+    start_line::Int = 0
 ) where T <: AbstractString
 
     buf = IOBuffer()
 
-    if start_line ≤ 0
-        start_line = 1
-    end
+    start_line = max(start_line, 1)
 
     if end_line ≤ 0
         end_line = length(lines)
@@ -68,7 +73,9 @@ function highlight_search(
                 search_matches_l;
                 active_match = line_active_match,
                 highlight,
-                active_highlight
+                active_highlight,
+                min_column,
+                max_column
             ))
 
             num_matches += length(search_matches_l)
@@ -99,38 +106,58 @@ automatically computed using [`string_search`](@ref).
 
 - `active_match::Int`: The match number that is considered active. This match is highlighted
     using `active_highlight` instead of `highlight`. (**Default** = 0)
-- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
-    (**Default** = `\\e[7m`)
 - `active_highlight::String`: ANSI escape sequence that contains the decoration of the
     active highlight. (**Default** = `\\e[30;43m`.)
-- `start_line::Int`: Line to begin the processing.
-- `end_line::Int`: Line to end the processing.
+- `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
+    (**Default** = `\\e[7m`)
+- `max_column::Int`: Stop processing if the match is after this column. If it is equal or
+    lower than 0, this limit will not be considered. (**Default** = 0)
+- `min_column::Int`: Do not process matches before this column. If it is equal or lower than
+    0, this limit will not be considered. (**Default** = 0)
+- `start_column::Int`: The algorithm will consider that the first character in `str` is in
+    this column. (**Default** = 1)
 """
 function highlight_search(
     str::AbstractString,
     search_matches::Vector{Tuple{Int, Int}};
+    active_highlight::String = _CSI * "30;43m",
     active_match::Int = 0,
     highlight::String = _CSI * "7m",
-    active_highlight::String = _CSI * "30;43m"
+    max_column::Int = 0,
+    min_column::Int = 0,
+    start_column::Int = 1
 )
-
     num_matches = length(search_matches)
 
-    if num_matches == 0
-        return str
-    end
+    num_matches == 0 && return str
 
     reset_decoration = convert(String, _RESET_DECORATION)
-    h_str = IOBuffer(sizehint = length(str) * length(highlight) * num_matches)
+    h_str = IOBuffer()
 
-    # Auxiliary variable to store how many characters were processed.
-    Δ = 0
+    # If `min_column` is specified and it is lower than `start_column`, we should clamp it
+    # to `start_column`.
+    if (min_column > 0) && (min_column < start_column)
+        min_column = start_column
+    end
+
+    # Auxiliary variable to store the index of the first character in the current string
+    # part we are processing.
+    Δ = start_column - 1
 
     # Store the current decoration of the string.
     decoration = Decoration()
 
     for i in 1:length(search_matches)
         match = search_matches[i]
+
+        # If the match is before `start_column`, just skip it.
+        (match[1] + match[2] - 1) < start_column && continue
+
+        # If the match is before `min_column`, just skip it.
+        ((min_column > 0) && ((match[1] + match[2] - 1) < min_column)) && continue
+
+        # If the match is after `max_column`, we can stop the process.
+        ((max_column > 0) && (match[1] > max_column)) && break
 
         # Split the string in the point indicated by the match.
         str₀, str₁ = split_string(str, match[1] - 1 - Δ)
@@ -152,8 +179,11 @@ function highlight_search(
         write(h_str, str₀, convert(String, highlight_decoration))
 
         # Now, we need to split the remaining string using the information on how many
-        # characters we have in the match.
-        str₂, str₃ = split_string(str₁, match[2])
+        # characters we have in the match. Notice that we must take into account the case
+        # where the match happened before the first character in `str`, i.e., before the
+        # `start_column`. This case only happens when `match[1] - 1 - Δ` is negative.
+        match_size = min(0, match[1] - 1 - Δ) + match[2]
+        str₂, str₃ = split_string(str₁, match_size)
 
         # There might be some decoration information inside `str₂` that must be taken into
         # account after the highlight.
@@ -167,21 +197,17 @@ function highlight_search(
 
         # All the next matches must consider that we are not in the beginning of the string
         # anymore.
-        Δ = match[1] + match[2] - 1
+        Δ = match[1] - 1 + match[2]
         str = str₃
     end
 
-    # Write the remaining of the string.
+    # Write the rest of the string.
     write(h_str, str)
 
     return String(take!(h_str))
 end
 
-function highlight_search(
-    str::AbstractString,
-    regex::Regex;
-    kwargs...
-)
+function highlight_search(str::AbstractString, regex::Regex; kwargs...)
     search_matches = string_search(str, regex)
     return highlight_search(str, search_matches; kwargs...)
 end
