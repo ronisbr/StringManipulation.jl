@@ -51,13 +51,13 @@
     # ======================================================================================
 
     expected = """
-        e\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
+        e\e[30;43mqu\e[0me umbra patulas Laurentes de
 
         \e[36mte recursively `sin(m*ϕ)` and `\e[39m
         \e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
         \e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
 
-        \e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
+        \e[1ms \e[7mqu\e[0m\e[1mo incepta\e[7mqu\e[0m\e[1me urbem \e[7mqu\e[0m\e[1mibus l\e[22m
         \e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
@@ -74,20 +74,19 @@
     # With Frozen Lines or Columns
     # ======================================================================================
 
-    expected =
-    """
-      \e[1m  \e[1m\e[7m\e[0m\e[1m\e[7mentae\e[0m\e[22m
-      \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
-      \e[0m
-      \e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
-        \e[0me\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
-      \e[0m
-      \e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
-      \e[36m  \e[0m\e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
-      \e[36m  \e[0m\e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
-      \e[0m
-      \e[1m  \e[0m\e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
-      \e[1m  \e[0m\e[1m===============================\e[22m"""
+    expected = """
+        \e[1m  \e[0m\e[1m\e[7mentae\e[0m\e[22m
+        \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
+        \e[0m
+        \e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
+          \e[0me\e[30;43mqu\e[0me umbra patulas Laurentes de
+        \e[0m
+        \e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
+        \e[36m  \e[0m\e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
+        \e[36m  \e[0m\e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
+        \e[0m
+        \e[1m  \e[0m\e[1ms \e[7mqu\e[0m\e[1mo incepta\e[7mqu\e[0m\e[1me urbem \e[7mqu\e[0m\e[1mibus l\e[22m
+        \e[1m  \e[0m\e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines, max_cropped_chars = textview(
         str,
@@ -103,7 +102,7 @@
     @test max_cropped_chars == 13
 
     # View The Entire Text without Any Modification
-    # ==========================================================================
+    # ======================================================================================
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(str, (-1, -1, -1, -1))
     @test vstr == str
@@ -183,13 +182,13 @@
     search_matches = string_search_per_line(lines, r"qu")
 
     expected = """
-        e\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
+        e\e[30;43mqu\e[0me umbra patulas Laurentes de
 
         \e[36mte recursively `sin(m*ϕ)` and `\e[39m
         \e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
         \e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
 
-        \e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
+        \e[1ms \e[7mqu\e[0m\e[1mo incepta\e[7mqu\e[0m\e[1me urbem \e[7mqu\e[0m\e[1mibus l\e[22m
         \e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
@@ -207,17 +206,17 @@
     # ======================================================================================
 
     expected = """
-        \e[90m  1 │\e[0m\e[1m  \e[1m\e[7m\e[0m\e[1m\e[7mentae\e[0m\e[22m
+        \e[90m  1 │\e[0m\e[1m  \e[0m\e[1m\e[7mentae\e[0m\e[22m
         \e[90m  2 │\e[0m\e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
         \e[90m  3 │\e[0m\e[0m
         \e[90m  4 │\e[0m\e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
-        \e[90m 14 │\e[0m  \e[0me\e[30m\e[43mqu\e[0me umbra patulas Laurentes de\e[0m
+        \e[90m 14 │\e[0m  \e[0me\e[30;43mqu\e[0me umbra patulas Laurentes de
         \e[90m 15 │\e[0m\e[0m
         \e[90m 16 │\e[0m\e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
         \e[90m 17 │\e[0m\e[36m  \e[0m\e[36m= 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
         \e[90m 18 │\e[0m\e[36m  \e[0m\e[36m= 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
         \e[90m 19 │\e[0m\e[0m
-        \e[90m 20 │\e[0m\e[1m  \e[0m\e[1ms \e[1m\e[7mqu\e[0m\e[1mo incepta\e[1m\e[7mqu\e[0m\e[1me urbem \e[1m\e[7mqu\e[0m\e[1mibus l\e[22m
+        \e[90m 20 │\e[0m\e[1m  \e[0m\e[1ms \e[7mqu\e[0m\e[1mo incepta\e[7mqu\e[0m\e[1me urbem \e[7mqu\e[0m\e[1mibus l\e[22m
         \e[90m 21 │\e[0m\e[1m  \e[0m\e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines, max_cropped_chars = textview(
@@ -363,7 +362,7 @@
         \e[34m\e[1mauctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
         augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
         sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
-        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30m\e[43ming\e[0milla
+        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30;43ming\e[0milla
         id ac turpis.
         """
 

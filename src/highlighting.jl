@@ -132,13 +132,7 @@ function highlight_search(
     num_matches == 0 && return str
 
     reset_decoration = convert(String, _RESET_DECORATION)
-    h_str = IOBuffer()
-
-    # If `min_column` is specified and it is lower than `start_column`, we should clamp it
-    # to `start_column`.
-    if (min_column > 0) && (min_column < start_column)
-        min_column = start_column
-    end
+    h_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
 
     # Auxiliary variable to store the index of the first character in the current string
     # part we are processing.
@@ -167,16 +161,11 @@ function highlight_search(
         str₀_decorations = get_decorations(str₀)
         decoration = update_decoration(decoration, str₀_decorations)
 
-        # The highlight decoration will be a merge between the current string highlight and
-        # the desired one.
-        if i != active_match
-            highlight_decoration = update_decoration(decoration, highlight)
-        else
-            highlight_decoration = update_decoration(decoration, active_highlight)
-        end
+        # Check if we are in the active highlight or not.
+        hd = i != active_match ? highlight : active_highlight
 
         # Write the to the buffer the string before and the highlight decoration.
-        write(h_str, str₀, convert(String, highlight_decoration))
+        write(h_str, str₀, hd)
 
         # Now, we need to split the remaining string using the information on how many
         # characters we have in the match. Notice that we must take into account the case

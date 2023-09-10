@@ -14,7 +14,7 @@
     @test expected == hstr
 
     str      = "Test high\e[1mlight\e[0m in a string with no underlines."
-    expected = "Test \e[30m\e[43mhighlight\e[0m\e[0m in a string with no underlines."
+    expected = "Test \e[30;43mhighlight\e[0m\e[0m in a string with no underlines."
     hstr     = highlight_search(str, r"highlight"; active_match = 1)
     @test expected == hstr
 
@@ -46,7 +46,7 @@ end
 
     expected = """
         Test \e[7mhighlight\e[0m\e[0m in a string with no underlines.
-        Test \e[30m\e[43mhighlight\e[0m\e[4m in a string with underlines\e[0m.
+        Test \e[30;43mhighlight\e[0m\e[4m in a string with underlines\e[0m.
         Test another \e[7mhighlight\e[0m\e[33m with colors.
         This is the last line."""
     hstr = highlight_search(lines, r"highlight"; active_match = 2)
@@ -54,7 +54,7 @@ end
 
     expected = """
         Test \e[7mhighlight\e[0m\e[4m in a string with underlines\e[0m.
-        Test another \e[30m\e[43mhighlight\e[0m\e[33m with colors."""
+        Test another \e[30;43mhighlight\e[0m\e[33m with colors."""
     hstr = highlight_search(
         lines,
         r"highlight";

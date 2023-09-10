@@ -201,10 +201,6 @@ function textview(
     # Internal Variables
     # ======================================================================================
 
-    # Buffers used to store the entire the line view rendering, created here to reduce the
-    # number of allocations.
-    line_buf = IOBuffer()
-
     # Count how many matches we passed in the current line that is being processed.
     num_matches = 0
 
@@ -282,7 +278,6 @@ function textview(
         if l ≤ title_lines
             _draw_line_view!(
                 buf,
-                line_buf,
                 lines[l],
                 line_search_matches,
                 line_active_match,
@@ -296,7 +291,6 @@ function textview(
         else
             cropped_chars_in_line = _draw_line_view!(
                 buf,
-                line_buf,
                 lines[l],
                 line_search_matches,
                 line_active_match,
@@ -341,8 +335,8 @@ function textview(
             num_matches += length(search_matches[l])
         end
 
-        # If we need to parse the decorations before the view, then obtain the decorations
-        # of the current hidden line, and merge with the decorations of the other lines.
+        # If we need to parse the decorations before the view, obtain the decorations of the
+        # current hidden line, and merge with the decorations of the other lines.
         if parse_decorations_before_view
             pre_decorations *= get_decorations(lines[l])
         end
@@ -351,8 +345,8 @@ function textview(
     if parse_decorations_before_view
         d = parse_decoration(pre_decorations)
 
-        # If the pre_decoration is a reset, then we just need to reinitialize it since the
-        # reset escape sequence was already written to the buffer.
+        # If the pre_decoration is a reset, we just need to reinitialize it since the reset
+        # escape sequence was already written to the buffer.
         !d.reset && write(buf, d |> String)
     end
 
@@ -390,7 +384,6 @@ function textview(
 
         cropped_chars_in_line = _draw_line_view!(
             buf,
-            line_buf,
             lines[l],
             line_search_matches,
             line_active_match,
@@ -426,7 +419,6 @@ end
 # Draw a line view and return the number of right characters that was cropped.
 function _draw_line_view!(
     buf::IO,
-    line_buf::IOBuffer,
     line::AbstractString,
     line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}},
     line_active_match::Int,
@@ -449,7 +441,7 @@ function _draw_line_view!(
         if visual_line
             w = printable_textwidth(left)
             if w < frozen_columns_at_beginning
-                left = left * " "^(frozen_columns_at_beginning - w)
+                left = string(left, " "^(frozen_columns_at_beginning - w))
             end
             left = replace_default_background(left, visual_line_background)
         end
@@ -497,7 +489,7 @@ function _draw_line_view!(
             # We must append the left ANSI escape sequence to keep the decorations at the
             # beginning of the line.
             line_str = replace_default_background(
-                left_ansi * line_str,
+                string(left_ansi, line_str),
                 visual_line_background
             )
         end
@@ -517,7 +509,7 @@ function _draw_line_view!(
     # they exist in the visible area.
     if !isnothing(line_search_matches)
         line_str = highlight_search(
-            line_str,
+            string(left_ansi, line_str),
             line_search_matches;
             active_highlight,
             active_match = line_active_match,
@@ -526,12 +518,15 @@ function _draw_line_view!(
             min_column = start_column,
             max_column = start_column + num_columns - 1
         )
+
+        write(buf, line_str)
+        write(buf, right_ansi)
+    else
+        write(buf, left_ansi)
+        write(buf, line_str)
+        write(buf, right_ansi)
     end
 
-    # Write to the buffer.
-    write(buf, left_ansi)
-    write(buf, line_str)
-    write(buf, right_ansi)
 
     return cropped_chars
 end
