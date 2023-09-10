@@ -485,13 +485,6 @@ function _draw_line_view!(
             if w < num_columns
                 line_str = line_str * " "^(num_columns - w)
             end
-
-            # We must append the left ANSI escape sequence to keep the decorations at the
-            # beginning of the line.
-            line_str = replace_default_background(
-                string(left_ansi, line_str),
-                visual_line_background
-            )
         end
 
         line_str, right = split_string(line_str, num_columns)
@@ -501,15 +494,24 @@ function _draw_line_view!(
 
         # Compute the amount of printable cropped characters in the right string.
         cropped_chars = printable_textwidth(right)
+
+        # Compute the complete line for this view.
+        line_str = string(left_ansi, line_str, right_ansi)
+
+        if visual_line
+            # If this is a visual line, let's change its background.
+            line_str = replace_default_background(line_str, visual_line_background)
+        end
     else
         cropped_chars = 0
+        line_str = string(left_ansi, line_str)
     end
 
     # Now that we have what we will print to the buffer, we can highlight the matches if
     # they exist in the visible area.
     if !isnothing(line_search_matches)
         line_str = highlight_search(
-            string(left_ansi, line_str),
+            line_str,
             line_search_matches;
             active_highlight,
             active_match = line_active_match,
@@ -518,15 +520,9 @@ function _draw_line_view!(
             min_column = start_column,
             max_column = start_column + num_columns - 1
         )
-
-        write(buf, line_str)
-        write(buf, right_ansi)
-    else
-        write(buf, left_ansi)
-        write(buf, line_str)
-        write(buf, right_ansi)
     end
 
+    write(buf, line_str)
 
     return cropped_chars
 end

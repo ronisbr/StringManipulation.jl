@@ -173,6 +173,9 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
 
     str_i = 1
 
+    # Number of code units in the string.
+    str_code_units = ncodeunits(str)
+
     # The first thing we need to do is to set the new background.
     write(buf_new_str, _CSI, new_background, "m")
 
@@ -189,32 +192,42 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
             write(buf_new_str, SubString(str, str_i, str_f))
         end
 
+        # `str_i` now have the index just after the current match.
+        str_i = m.offset + ncodeunits(m.match)
+
         d = parse_decoration(m.match)
         current_decoration = update_decoration(current_decoration, d)
 
-        # We should only the decoration in case of a reset or if the user wants the default
-        # background.
+        # We should only modify the decoration in case of a reset or if the user wants the
+        # default background.
         if d.reset
-            write(buf_new_str, _CSI, "0m", _CSI, new_background, "m")
-            current_decoration = Decoration()
+            # If we are at the end of the string, we should not write the reset sequence and
+            # treat it after the loop, where we will restore background to the default one.
+            # Otherwise, we will have duplicated escape sequences.
+            if str_i <= str_code_units
+                write(buf_new_str, _CSI, "0m", _CSI, new_background, "m")
+                current_decoration = Decoration()
+            end
 
         elseif d.background == "49"
-            new_decoration = Decoration(
-                foreground = d.foreground,
-                background = new_background,
-                bold       = d.bold,
-                underline  = d.underline,
-                reset      = d.reset,
-            )
+            # If we are at the end of the string, we should not write the background
+            # sequence and treat it after the loop, where we will restore background to the
+            # default one. Otherwise, we will have duplicated escape sequences.
+            if str_i <= str_code_units
+                new_decoration = Decoration(
+                    foreground = d.foreground,
+                    background = new_background,
+                    bold       = d.bold,
+                    underline  = d.underline,
+                    reset      = d.reset,
+                )
 
-            write(buf_new_str, String(new_decoration))
+                write(buf_new_str, String(new_decoration))
+            end
 
         else
             write(buf_new_str, m.match)
         end
-
-        # `str_i` now have the index just after the current match.
-        str_i = m.offset + ncodeunits(m.match)
     end
 
     # Write the rest of the string.

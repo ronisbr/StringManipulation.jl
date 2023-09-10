@@ -270,7 +270,7 @@
         \e[1m  Carpitur devorat\e[22m
         \e[1m  ==================\e[22m
 
-        \e[45m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[49m\e[22m
+        \e[45m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[22m\e[49m
           namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
           animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et
           iugis, venit adventus molle adpropera?"""
@@ -291,7 +291,7 @@
         \e[1m  Carpitur\e[0m\e[22m
         \e[1m  ========\e[0m\e[1m==\e[22m
         \e[0m
-        \e[45m  Lorem ma\e[49m\e[0m\e[45m ipsi Emathion Neoptolemum et moenia \e[1mviveret spum\e[49m\e[22m
+        \e[45m  Lorem ma\e[49m\e[0m\e[45m ipsi Emathion Neoptolemum et moenia \e[1mviveret spum\e[22m\e[49m
           namque. \e[0mpi ignis turbamve, \e[4mcruorem quo nubes\e[24m aevi; sensit
           animanti\e[0mnis infelix \e[4mstabantque\e[24m. Ruit et iuvenemque longo;
           iugis, v\e[0mentus molle adpropera?"""
@@ -313,7 +313,7 @@
         \e[1m  Carpitur devorat\e[22m
         \e[1m  ==================\e[22m
 
-        \e[44m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[49m\e[22m
+        \e[44m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[22m\e[49m
           namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
           animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et
           iugis, venit adventus molle adpropera?"""
@@ -385,4 +385,11 @@ end
         visual_lines = [1, 2],
         visual_line_backgrounds = ["44", "45", "46"],
     )
+end
+
+@testset "Issue - Wrong Decoration with Visual Mode" begin
+    expected = "\e[44m\e[1mThis is a \e[0m"
+    a = "\e[1mThis is a test string that will be cropped.\e[0m"
+    vstr, ~, ~ = textview(a, (-1, -1, 0, 10), visual_lines = [1])
+    @test vstr == expected
 end
