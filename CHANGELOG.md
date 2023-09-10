@@ -1,6 +1,16 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.3.3
+-------------
+
+- ![Enhancement][badge-enhancement] Add `sizehint` to `IOBuffer` to reduce the allocations.
+- ![Enhancement][badge-enhancement] The `textview` performance was highly improved. This
+  enhancement required to rewrite the highlighting algorithm. Now, it is cleaner and avoids
+  writing unnecessary escape sequences, meaning that the output is now different. However,
+  we do not consider this a breaking change because the output after applying the decoration
+  is precisely the same.
+
 Version 0.3.2
 -------------
 
