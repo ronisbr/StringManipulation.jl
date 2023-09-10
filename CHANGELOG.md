@@ -1,6 +1,12 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.3.4
+-------------
+
+- ![Bugfix][badge-bugfix] The `textview` was providing a wrong decoration if the visual line
+  is in a line that needs cropping to fit the view.
+
 Version 0.3.3
 -------------
 
