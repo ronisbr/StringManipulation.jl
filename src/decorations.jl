@@ -17,7 +17,6 @@ Drop the inactive properties of `decoration` by changing them to inactive. This 
 can be useful to avoid unnecessary escape sequences if the decorations are reset.
 """
 function drop_inactive_properties(decoration::Decoration)
-
     # Unpack fields.
     foreground = decoration.foreground
     background = decoration.background
@@ -25,8 +24,8 @@ function drop_inactive_properties(decoration::Decoration)
     underline  = decoration.underline
     reversed   = decoration.reversed
 
-    # If a field is inactive or if it is a reset to a default value, drop it by
-    # returning to default.
+    # If a field is inactive or if it is a reset to a default value, drop it by returning to
+    # default.
     if foreground == "39"
         foreground =  ""
     end
@@ -79,14 +78,14 @@ function get_decorations(str::AbstractString)
 end
 
 """
-    get_and_remove_decorations(str::AbstractString)
+    get_and_remove_decorations(str::AbstractString) -> String, String
 
-Get and remove the decorations in `str`. The first returned string contains the
-decorations whereas the second contains the plain text.
+Get and remove the decorations in `str`. The first returned string contains the decorations
+whereas the second contains the plain text.
 """
 function get_and_remove_decorations(str::AbstractString)
     buf_decorations = IOBuffer(sizehint = floor(Int, sizeof(str)))
-    buf_plain_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
+    buf_plain_str   = IOBuffer(sizehint = floor(Int, sizeof(str)))
 
     str_i = 1
 
@@ -112,10 +111,9 @@ function get_and_remove_decorations(str::AbstractString)
 end
 
 """
-    parse_decoration(code::AbstractString)
+    parse_decoration(code::AbstractString) -> Decoration
 
-Parse the decoration in the string `str` and returns an object of type
-`Decoration` with it.
+Parse the decoration in the string `str` and returns an object of type `Decoration` with it.
 """
 function parse_decoration(code::AbstractString)
     state = :text
@@ -126,7 +124,8 @@ function parse_decoration(code::AbstractString)
         state = _process_string_state(c, state)
 
         if state == :escape_state_begin
-            take!(buf)
+            buf.ptr  = 1
+            buf.size = 0
             write(buf, c)
 
         elseif state == :escape_state_end
@@ -135,7 +134,8 @@ function parse_decoration(code::AbstractString)
             decoration = update_decoration(decoration, str)
 
         elseif state == :text
-            take!(buf)
+            buf.ptr  = 1
+            buf.size = 0
 
         else
             write(buf, c)
@@ -152,7 +152,6 @@ end
 Remove all the decorations added by ANSI escape sequences from the string `str`.
 """
 function remove_decorations(str::AbstractString)
-
     # After some testing, it turns out that using the ANSI regex is way faster
     # than using the string state.
     return replace(str, _REGEX_ANSI => "")
@@ -242,20 +241,22 @@ Update the current `decoration` given the decorations in the string `str` or in 
 """
 function update_decoration(decoration::Decoration, code::String)
     state = :text
-    buf = IOBuffer()
+    buf = IOBuffer(sizehint = floor(Int, sizeof(code)))
 
     for c in code
         state = _process_string_state(c, state)
 
         if state == :escape_state_begin
-            take!(buf)
+            buf.ptr  = 1
+            buf.size = 0
 
         elseif state == :escape_state_end
             str = String(take!(buf))
             decoration = _parse_ansi_code(decoration, str)
 
         elseif state == :text
-            take!(buf)
+            buf.ptr  = 1
+            buf.size = 0
 
         elseif state != :escape_state_opening
             write(buf, c)
@@ -291,9 +292,9 @@ function update_decoration(decoration::Decoration, new::Decoration)
     )
 end
 
-################################################################################
-#                                     API
-################################################################################
+############################################################################################
+#                                           API
+############################################################################################
 
 String(d::Decoration) = convert(String, d)
 
@@ -304,37 +305,11 @@ function convert(::Type{String}, d::Decoration)
     d.reset && return "$(_CSI)0m"
 
     # TODO: Check if we can avoid adding so many `_CSI`.
-    buf = IOBuffer()
+    str_foreground = !isempty(d.foreground)   ? "$(_CSI)$(d.foreground)m" : ""
+    str_background = !isempty(d.background)   ? "$(_CSI)$(d.background)m" : ""
+    str_bold       = d.bold      != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
+    str_underline  = d.underline != unchanged ? "$(_CSI)$(d.underline == active ? "4" : "24")m" : ""
+    str_reversed   = d.reversed  != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
 
-    if !isempty(d.foreground)
-        write(buf, _CSI)
-        write(buf, d.foreground)
-        write(buf, "m")
-    end
-
-    if !isempty(d.background)
-        write(buf, _CSI)
-        write(buf, d.background)
-        write(buf, "m")
-    end
-
-    if d.bold != unchanged
-        write(buf, _CSI)
-        d.bold == active ? write(buf, "1") : write(buf, "22")
-        write(buf, "m")
-    end
-
-    if d.underline != unchanged
-        write(buf, _CSI)
-        d.underline == active ? write(buf, "4") : write(buf, "24")
-        write(buf, "m")
-    end
-
-    if d.reversed != unchanged
-        write(buf, _CSI)
-        d.reversed == active ? write(buf, "7") : write(buf, "27")
-        write(buf, "m")
-    end
-
-    return String(take!(buf))
+    return string(str_foreground, str_background, str_bold, str_underline, str_reversed)
 end

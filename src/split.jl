@@ -25,8 +25,10 @@ equal to `str`.
     UTF-8 characters), everything will be filled with spaces.
 """
 function split_string(str::AbstractString, size::Int)
-    buf₀ = IOBuffer() # ...................... Buffer with the string before the split point
-    buf₁ = IOBuffer() # ....................... Buffer with the string after the split point
+    # Buffer with the string before the split point.
+    buf₀ = IOBuffer(sizehint = max(size, 1))
+    # Buffer with the string after the split point.
+    buf₁ = IOBuffer(sizehint = max(length(str) - size, 1))
     state = :text
 
     # If we are splitting just at the point where a non-printable character is, we need to
