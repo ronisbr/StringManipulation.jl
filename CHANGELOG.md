@@ -8,6 +8,7 @@ Version 0.4.0
   `fit_string_in_field`.
 - ![BREAKING][badge-breaking] Rename `get_padding_for_string_alignment` to
   `padding_for_string_alignment`.
+- ![Feature][badge-feature] The package now fully supports hyperlinks (OSC 8).
 - ![Deprecation][[badge-deprecation]: Drop support for Julia versions lower than 1.10.
 
 Version 0.3.4
