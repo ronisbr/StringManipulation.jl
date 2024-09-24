@@ -39,7 +39,7 @@ function split_string(str::AbstractString, size::Int)
     for c in str
         # == String Before the Split Point =================================================
         if size > 0
-            state = _process_string_state(c, state)
+            state = _next_string_state(c, state)
 
             if state == :text
                 cw = textwidth(c)
@@ -63,7 +63,7 @@ function split_string(str::AbstractString, size::Int)
         # == String After the Split Point ==================================================
 
         if check_ansi_after_split
-            state = _process_string_state(c, state)
+            state = _next_string_state(c, state)
 
             # All non-printable character just after splitting must go to `buf₀`.
             if state != :text

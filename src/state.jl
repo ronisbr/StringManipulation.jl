@@ -5,10 +5,9 @@
 ############################################################################################
 
 """
-    _process_string_state(c::Char, state::Symbol = :text)
+    _next_string_state(c::Char, state::Symbol = :text) -> Symbol
 
-Return the current state of the string given the new character `c` and the previous state
-`state`.
+Return the next string state given the character `c` and the current string `state`.
 
 The following states are possible:
 
@@ -26,7 +25,7 @@ The following states are possible:
 - `:escape_hyperlink_close`: Closing of an ANSI hyperlink escape sequence (`\\x1b`).
 - `:escape_state_end`: End of an ANSI escape sequence.
 """
-function _process_string_state(c::Char, state::Symbol = :text)
+function _next_string_state(c::Char, state::Symbol = :text)
     if state == :text
         # Here, we need to check if an escape sequence is found.
         c == '\x1B' && return :escape_state_begin
@@ -37,15 +36,15 @@ function _process_string_state(c::Char, state::Symbol = :text)
         (('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')) && return :escape_state_1
 
     elseif state == :escape_state_opening
-        return _process_string_state(c, :escape_state_1)
+        return _next_string_state(c, :escape_state_1)
 
     elseif state == :escape_state_1
         ('0' ≤ c ≤ '?') && return :escape_state_1
-        return _process_string_state(c, :escape_state_2)
+        return _next_string_state(c, :escape_state_2)
 
     elseif state == :escape_state_2
         (' ' ≤ c ≤ '/') && return :escape_state_2
-        return _process_string_state(c, :escape_state_3)
+        return _next_string_state(c, :escape_state_3)
 
     elseif state == :escape_state_3
         ('@' ≤ c ≤ '~') && return :escape_state_end
@@ -69,7 +68,7 @@ function _process_string_state(c::Char, state::Symbol = :text)
     elseif state == :escape_state_end
         # We need to recall this function because the next character can be the beginning of
         # a new ANSI escape sequence.
-        return _process_string_state(c, :text)
+        return _next_string_state(c, :text)
     end
 
     return :text

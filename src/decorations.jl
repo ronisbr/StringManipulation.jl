@@ -129,7 +129,7 @@ function parse_decoration(code::AbstractString)
     decoration = Decoration()
 
     for c in code
-        state = _process_string_state(c, state)
+        state = _next_string_state(c, state)
 
         if state == :escape_state_begin
             buf.ptr  = 1
@@ -267,7 +267,7 @@ function update_decoration(decoration::Decoration, code::String)
     hyperlink = false
 
     for c in code
-        state = _process_string_state(c, state)
+        state = _next_string_state(c, state)
 
         if state == :escape_state_begin
             buf.ptr  = 1

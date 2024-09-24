@@ -206,7 +206,7 @@ function left_crop(str::AbstractString, crop_width::Int)
             continue
         end
 
-        state = _process_string_state(c, state)
+        state = _next_string_state(c, state)
 
         # If we are not in a text section, just write the character to the ANSI buffer.
         if state != :text
@@ -281,7 +281,7 @@ function right_crop(
     remaining_chars = str_width - crop_width
 
     for c in str
-        state = _process_string_state(c, state)
+        state = _next_string_state(c, state)
 
         if remaining_chars <= 0
             !keep_escape_seq && break
