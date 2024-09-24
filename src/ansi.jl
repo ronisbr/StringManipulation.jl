@@ -4,9 +4,9 @@
 #
 ############################################################################################
 
-# Parse the ANSI style code in `code` and return the updated decoration given the initial
-# `decoration`.
-function _parse_ansi_style_code(decoration::Decoration, code::String)
+# Parse the ANSI decoration code in `code` and return the updated decoration given the
+# initial `decoration`.
+function _parse_ansi_decoration_code(decoration::Decoration, code::String)
     tokens = split(code, ';')
     num_tokens = length(tokens)
 
@@ -14,6 +14,7 @@ function _parse_ansi_style_code(decoration::Decoration, code::String)
     foreground = decoration.foreground
     background = decoration.background
     bold       = decoration.bold
+    italic     = decoration.italic
     underline  = decoration.underline
     reset      = decoration.reset
     reversed   = decoration.reversed
@@ -33,6 +34,9 @@ function _parse_ansi_style_code(decoration::Decoration, code::String)
         elseif code_i == 1
             bold = active
 
+        elseif code_i == 3
+            italic = active
+
         elseif code_i == 4
             underline = active
 
@@ -41,6 +45,9 @@ function _parse_ansi_style_code(decoration::Decoration, code::String)
 
         elseif code_i == 22
             bold = inactive
+
+        elseif code_i == 23
+            italic = inactive
 
         elseif code_i == 24
             underline = inactive
@@ -161,8 +168,9 @@ function _parse_ansi_style_code(decoration::Decoration, code::String)
         foreground,
         background,
         bold,
+        italic,
+        reversed,
         underline,
-        reset,
-        reversed
+        reset
     )
 end

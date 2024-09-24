@@ -63,6 +63,16 @@
     result = convert(String, d)
 
     @test result == expected
+
+    d = Decoration(
+        foreground = "35",
+        background = "45",
+        bold = StringManipulation.active,
+        italic = StringManipulation.active
+    )
+
+    expected = "\e[35m\e[45m\e[1m\e[3m"
+    result = convert(String, d)
 end
 
 @testset "Drop Inactive Decorations" begin
@@ -70,6 +80,7 @@ end
         foreground = "39",
         background = "49",
         bold       = StringManipulation.inactive,
+        italic     = StringManipulation.inactive,
         underline  = StringManipulation.inactive,
         reversed   = StringManipulation.inactive
     )
@@ -82,6 +93,7 @@ end
         foreground = "39",
         background = "245",
         bold       = StringManipulation.inactive,
+        italic     = StringManipulation.inactive,
         underline  = StringManipulation.inactive,
         reversed   = StringManipulation.inactive
     )
@@ -92,22 +104,22 @@ end
 end
 
 @testset "Get Decorations" begin
-    str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
-    expected = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+    str = "Test 😅 \e[38;5;231;48;5;243;3mTest 😅 \e[38;5;201;48;5;243;23mTest\e[0m"
+    expected = "\e[38;5;231;48;5;243;3m\e[38;5;201;48;5;243;23m\e[0m"
     result = get_decorations(str)
     @test expected == result
 end
 
 @testset "Get and Remove Decorations" begin
-    str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
-    expected_decorations = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+    str = "Test 😅 \e[38;5;231;48;5;243;3mTest 😅 \e[38;5;201;48;5;243;23mTest\e[0m"
+    expected_decorations = "\e[38;5;231;48;5;243;3m\e[38;5;201;48;5;243;23m\e[0m"
     expected_text = "Test 😅 Test 😅 Test"
     decorations, text = get_and_remove_decorations(str)
     @test expected_decorations == decorations
     @test expected_text === text
 end
 
-# Those tests are also used to verify the function `_parse_ansi_style_code`.
+# Those tests are also used to verify the function `_parse_ansi_decoration_code`.
 @testset "Parse Decorations" begin
     decoration = parse_decoration("\e[35m\e[48;5;243m\e[4;27m")
 
@@ -115,30 +127,34 @@ end
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.active
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.inactive
 
-    decoration = parse_decoration("\e[45;1m")
+    decoration = parse_decoration("\e[45;1;3m")
 
     @test decoration.foreground == ""
     @test decoration.background == "45"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.active
+    @test decoration.italic     == StringManipulation.active
     @test decoration.reversed   == StringManipulation.unchanged
 
-    decoration = parse_decoration("\e[48;5;243;7;22m")
+    decoration = parse_decoration("\e[48;5;243;7;22;3m")
 
     @test decoration.foreground == ""
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.inactive
+    @test decoration.italic     == StringManipulation.active
     @test decoration.reversed   == StringManipulation.active
 
-    decoration = parse_decoration("\e[39;49;1;7m")
+    decoration = parse_decoration("\e[39;49;1;7;23m")
 
     @test decoration.foreground == "39"
     @test decoration.background == "49"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.active
+    @test decoration.italic     == StringManipulation.inactive
     @test decoration.reversed   == StringManipulation.active
 
     decoration = parse_decoration("\e[92;103;24m")
@@ -147,15 +163,17 @@ end
     @test decoration.background == "103"
     @test decoration.underline  == StringManipulation.inactive
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
 
     # Parse decorations with text in the middle.
-    decoration = parse_decoration("\e[35m\e[48;5;243mThis text should be discarded\e[4;27m")
+    decoration = parse_decoration("\e[35m\e[48;5;243;3mThis text should be discarded\e[4;27m")
 
     @test decoration.foreground == "35"
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.active
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.active
     @test decoration.reversed   == StringManipulation.inactive
 
     # Unsupported escape sequences.
@@ -169,11 +187,12 @@ end
     @test decoration.background == "48;2;216;210;203"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
 end
 
 @testset "Remove Decorations" begin
-    str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
+    str = "Test 😅 \e[38;5;231;48;5;243;3mTest 😅 \e[38;5;201;48;5;243;23mTest\e[0m"
     expected = "Test 😅 Test 😅 Test"
     result = remove_decorations(str)
     @test expected == result
@@ -193,8 +212,7 @@ end
 
 @testset "Update Decorations" begin
 
-    # Update Decorations Given a String
-    # ======================================================================================
+    # == Update Decorations Given a String =================================================
 
     decoration = Decoration()
 
@@ -203,6 +221,7 @@ end
     @test decoration.background == ""
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
     @test decoration.reset      == false
 
@@ -211,6 +230,7 @@ end
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
     @test decoration.reset      == false
 
@@ -219,6 +239,16 @@ end
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.active
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
+    @test decoration.reversed   == StringManipulation.inactive
+    @test decoration.reset      == false
+
+    decoration = update_decoration(decoration, "\e[3m")
+    @test decoration.foreground == "38;5;231"
+    @test decoration.background == "48;5;243"
+    @test decoration.underline  == StringManipulation.active
+    @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.active
     @test decoration.reversed   == StringManipulation.inactive
     @test decoration.reset      == false
 
@@ -227,6 +257,7 @@ end
     @test decoration.background == ""
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
     @test decoration.reset      == true
 
@@ -235,6 +266,7 @@ end
     @test decoration.background == ""
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
     @test decoration.reset      == false
 
@@ -249,17 +281,19 @@ end
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
     @test decoration.reset      == false
 
     decoration = update_decoration(
         decoration,
-        "This also should be discarded\e[4;27m"
+        "This also should \e[23mbe discarded\e[4;27m"
     )
     @test decoration.foreground == "38;5;231"
     @test decoration.background == "48;5;243"
     @test decoration.underline  == StringManipulation.active
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.inactive
     @test decoration.reversed   == StringManipulation.inactive
     @test decoration.reset      == false
 
@@ -274,6 +308,7 @@ end
     @test decoration.background == "48;2;216;210;203"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.unchanged
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
 
     decoration = update_decoration(
@@ -285,28 +320,30 @@ end
     @test decoration.background == "48;2;216;210;203"
     @test decoration.underline  == StringManipulation.unchanged
     @test decoration.bold       == StringManipulation.active
+    @test decoration.italic     == StringManipulation.unchanged
     @test decoration.reversed   == StringManipulation.unchanged
 
-    # Update Decoration Using a New Decoration
-    # ======================================================================================
+    # == Update Decoration Using a New Decoration ==========================================
 
     decoration = Decoration(
         foreground = "33",
-        bold = StringManipulation.active,
-        reversed = StringManipulation.inactive
+        bold       = StringManipulation.active,
+        italic     = StringManipulation.inactive,
+        reversed   = StringManipulation.inactive
     )
 
     new_decoration = Decoration(
         background = "43",
-        bold = StringManipulation.inactive
+        bold       = StringManipulation.inactive
     )
 
     decoration = update_decoration(decoration, new_decoration)
 
-    decoration.foreground == "33"
-    decoration.background == "43"
-    decoration.bold       == StringManipulation.inactive
-    decoration.underline  == StringManipulation.unchanged
-    decoration.reset      == StringManipulation.inactive
-    decoration.reversed   == StringManipulation.inactive
+    @test decoration.foreground == "33"
+    @test decoration.background == "43"
+    @test decoration.bold       == StringManipulation.inactive
+    @test decoration.italic     == StringManipulation.inactive
+    @test decoration.underline  == StringManipulation.unchanged
+    @test decoration.reset      == false
+    @test decoration.reversed   == StringManipulation.inactive
 end

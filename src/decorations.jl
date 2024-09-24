@@ -18,6 +18,7 @@ function drop_inactive_properties(decoration::Decoration)
     foreground = decoration.foreground
     background = decoration.background
     bold       = decoration.bold
+    italic     = decoration.italic
     underline  = decoration.underline
     reversed   = decoration.reversed
 
@@ -35,6 +36,10 @@ function drop_inactive_properties(decoration::Decoration)
         bold = unchanged
     end
 
+    if italic == inactive
+        italic = unchanged
+    end
+
     if underline == inactive
         underline = unchanged
     end
@@ -43,12 +48,14 @@ function drop_inactive_properties(decoration::Decoration)
         reversed = unchanged
     end
 
-    return Decoration(;
+    return Decoration(
         foreground,
         background,
         bold,
+        italic,
+        reversed,
         underline,
-        reversed
+        false
     )
 end
 
@@ -217,6 +224,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
                     foreground = d.foreground,
                     background = new_background,
                     bold       = d.bold,
+                    italic     = d.italic,
                     underline  = d.underline,
                     reset      = d.reset,
                 )
@@ -264,7 +272,7 @@ function update_decoration(decoration::Decoration, code::String)
 
         elseif state == :escape_state_end
             str = String(take!(buf))
-            decoration = _parse_ansi_style_code(decoration, str)
+            decoration = _parse_ansi_decoration_code(decoration, str)
 
         elseif state == :text
             buf.ptr  = 1
@@ -283,6 +291,7 @@ function update_decoration(decoration::Decoration, new::Decoration)
     foreground = decoration.foreground
     background = decoration.background
     bold       = decoration.bold
+    italic     = decoration.italic
     underline  = decoration.underline
     reset      = decoration.reset
     reversed   = decoration.reversed
@@ -290,6 +299,7 @@ function update_decoration(decoration::Decoration, new::Decoration)
     !isempty(new.foreground)   && (foreground = new.foreground)
     !isempty(new.background)   && (background = new.background)
     new.bold != unchanged      && (bold = new.bold)
+    new.italic != unchanged    && (italic = new.italic)
     new.underline != unchanged && (underline = new.underline)
     new.reset                  && (reset = true)
     new.reversed  != unchanged && (reversed = new.reversed)
@@ -298,9 +308,10 @@ function update_decoration(decoration::Decoration, new::Decoration)
         foreground,
         background,
         bold,
+        italic,
+        reversed,
         underline,
         reset,
-        reversed
     )
 end
 
@@ -320,8 +331,16 @@ function convert(::Type{String}, d::Decoration)
     str_foreground = !isempty(d.foreground)   ? "$(_CSI)$(d.foreground)m" : ""
     str_background = !isempty(d.background)   ? "$(_CSI)$(d.background)m" : ""
     str_bold       = d.bold      != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
+    str_italic     = d.italic    != unchanged ? "$(_CSI)$(d.italic == active ? "3" : "23")m" : ""
     str_underline  = d.underline != unchanged ? "$(_CSI)$(d.underline == active ? "4" : "24")m" : ""
     str_reversed   = d.reversed  != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
 
-    return string(str_foreground, str_background, str_bold, str_underline, str_reversed)
+    return string(
+        str_foreground,
+        str_background,
+        str_bold,
+        str_italic,
+        str_underline,
+        str_reversed
+    )
 end

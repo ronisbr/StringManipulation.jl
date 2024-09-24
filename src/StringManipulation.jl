@@ -36,9 +36,10 @@ Structure to hold the current decoration of a string.
     foreground::String         = ""
     background::String         = ""
     bold::DecorationState      = unchanged
+    italic::DecorationState    = unchanged
+    reversed::DecorationState  = unchanged
     underline::DecorationState = unchanged
     reset::Bool                = false
-    reversed::DecorationState  = unchanged
 end
 
 const _DEFAULT_DECORATION = Decoration()
