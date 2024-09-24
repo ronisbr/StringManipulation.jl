@@ -12,7 +12,7 @@ Version 0.4.0
   `crop_width_to_fit_string_in_field`.
 - ![Feature][badge-feature] The package now supports italics in the decorations.
 - ![Feature][badge-feature] The package now fully supports hyperlinks (OSC 8).
-- ![Deprecation][badge-deprecation]: Drop support for Julia versions lower than 1.10.
+- ![Deprecation][badge-deprecation] Drop support for Julia versions lower than 1.10.
 
 Version 0.3.4
 -------------
