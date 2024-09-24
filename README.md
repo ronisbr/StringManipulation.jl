@@ -1,5 +1,4 @@
-StringManipulation.jl
-=====================
+# StringManipulation.jl
 
 [![CI](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ronisbr/StringManipulation.jl/branch/main/graph/badge.svg?token=XELRWB2KOO)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
@@ -148,9 +147,12 @@ Decoration
   foreground: String "38;5;201"
   background: String "48;5;243"
   bold: StringManipulation.DecorationState StringManipulation.unchanged
+  italic: StringManipulation.DecorationState StringManipulation.unchanged
+  reversed: StringManipulation.DecorationState StringManipulation.inactive
   underline: StringManipulation.DecorationState StringManipulation.active
   reset: Bool false
-  reversed: StringManipulation.DecorationState StringManipulation.inactive
+  hyperlink_url: String ""
+  hyperlink_url_changed: Bool false
 ```
 
 ### Updating Decorations
@@ -166,9 +168,24 @@ Decoration
   foreground: String "33"
   background: String "48;5;243"
   bold: StringManipulation.DecorationState StringManipulation.active
+  italic: StringManipulation.DecorationState StringManipulation.unchanged
+  reversed: StringManipulation.DecorationState StringManipulation.inactive
   underline: StringManipulation.DecorationState StringManipulation.active
   reset: Bool false
+  hyperlink_url: String ""
+  hyperlink_url_changed: Bool false
+
+julia> update_decoration(decoration, "\e]8;;https://ronanarraes.com\e\\") |> dump
+Decoration
+  foreground: String "38;5;201"
+  background: String "48;5;243"
+  bold: StringManipulation.DecorationState StringManipulation.unchanged
+  italic: StringManipulation.DecorationState StringManipulation.unchanged
   reversed: StringManipulation.DecorationState StringManipulation.inactive
+  underline: StringManipulation.DecorationState StringManipulation.active
+  reset: Bool false
+  hyperlink_url: String "https://ronanarraes.com"
+  hyperlink_url_changed: Bool true
 ```
 
 ### Replacing the Default Background
