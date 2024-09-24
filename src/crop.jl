@@ -20,7 +20,9 @@ printable width of `crop_width`.
 - `String`: ANSI escape sequence (non-printable string) in the cropped part.
 - `String`: Cropped string.
 
-# Examples
+# Extended Help
+
+## Examples
 
 
 ```julia-repl
@@ -42,9 +44,9 @@ function left_crop(str::AbstractString, crop_width::Int)
             if state == :text
                 crop_width -= textwidth(c)
 
-                # If `crop_width` is negative, then it means that we have a
-                # character that occupies more than 1 character. In this case,
-                # we fill the string with space.
+                # If `crop_width` is negative, it means that we have a character that
+                # occupies more than 1 character. In this case, we fill the string with
+                # space.
                 if crop_width < 0
                     write(buf_str, " "^(-crop_width))
                     crop_width = 0
@@ -83,7 +85,9 @@ Crop the string `str` to fit it in a field with width `field_width`.
     computational burden. If this parameters is lower than 0, the printable width is compute
     internally. (**Default** = -1)
 
-# Examples
+# Extended Help
+
+# # Examples
 
 ```julia-repl
 julia> fit_string_in_field("This is a very long string for a very small field", 10)
@@ -121,8 +125,7 @@ function fit_string_in_field(
 
     cont_str = add_continuation_char ? string(continuation_char) : ""
 
-    # Crop from The Right
-    # ======================================================================================
+    # == Crop From the Right ===============================================================
 
     if crop_side == :right
         cropped_str, ansi = right_crop(
@@ -138,8 +141,7 @@ function fit_string_in_field(
             return cropped_str * cont_str * ansi
         end
 
-    # Crop from The Left
-    # ======================================================================================
+    # == Crop from The Left ================================================================
 
     else
         ansi, cropped_str = left_crop(str, crop)
@@ -176,7 +178,9 @@ field with size `field_width`.
     computational burden. If this parameters is lower than 0, the printable width is compute
     internally. (**Default** = -1)
 
-# Examples
+# Extended Help
+
+## Examples
 
 ```julia-repl
 julia> get_crop_to_fit_string_in_field("This is a very long string for a very small field", 10)
@@ -199,12 +203,10 @@ function get_crop_to_fit_string_in_field(
     Δ = str_width - field_width
 
     # If the field is larger than the string, then we do not need to crop.
-    if Δ ≤ 0
-        return 0
-    end
+    (Δ ≤ 0) && return 0
 
-    # If the user is asking for the continuation char, then we must crop the
-    # string to account for the continuation char.
+    # If the user is asking for the continuation char, then we must crop the string to
+    # account for the continuation char.
     cont_str = ""
 
     if add_continuation_char
@@ -246,6 +248,7 @@ printable width of `crop_width`.
     internally. (**Default** = -1)
 
 !!! warning
+
     If the keyword `keep_escape_seq` is set to `true`, all the string must be processed,
     which can lead to a substantial increase in computational time.
 

@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions related to decorations in strings.
 #
-#   Functions related to decorations in strings.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export drop_inactive_properties, get_decorations, get_and_remove_decorations
 export parse_decoration, remove_decorations, replace_default_background, update_decoration
@@ -60,7 +57,9 @@ end
 
 Return a string with the decorations in `str`.
 
-# Examples
+# Extended Help
+
+## Examples
 
 ```julia
 julia> get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
@@ -70,7 +69,7 @@ julia> get_decorations("This is a \\e[1mbold string\\e[45mwith a different backg
 function get_decorations(str::AbstractString)
     buf = IOBuffer(sizehint = sizeof(str))
 
-    for m in eachmatch(_REGEX_ANSI, str)
+    for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
         write(buf, m.match)
     end
 
@@ -90,9 +89,9 @@ function get_and_remove_decorations(str::AbstractString)
     str_i = 1
 
     # Loop for each match of a ANSI escape sequence.
-    for m in eachmatch(_REGEX_ANSI, str)
-        # Write everything from the previous match up to the last character
-        # before the current match.
+    for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
+        # Write everything from the previous match up to the last character before the
+        # current match.
         if m.offset - 1 > 0
             str_f = prevind(str, m.offset)
             write(buf_plain_str, SubString(str, str_i, str_f))
@@ -154,7 +153,7 @@ Remove all the decorations added by ANSI escape sequences from the string `str`.
 function remove_decorations(str::AbstractString)
     # After some testing, it turns out that using the ANSI regex is way faster
     # than using the string state.
-    return replace(str, _REGEX_ANSI => "")
+    return replace(str, _REGEX_ANSI_SEQUENCES => "")
 end
 
 """
@@ -184,7 +183,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     current_decoration = Decoration()
 
     # Loop for each match of a ANSI escape sequence.
-    for m in eachmatch(_REGEX_ANSI, str)
+    for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
         # Write everything from the previous match up to the last character
         # before the current match.
         if m.offset - 1 > 0
@@ -306,7 +305,7 @@ function update_decoration(decoration::Decoration, new::Decoration)
 end
 
 ############################################################################################
-#                                           API
+#                                        Julia API                                         #
 ############################################################################################
 
 String(d::Decoration) = convert(String, d)

@@ -3,19 +3,19 @@ module StringManipulation
 import Base: convert, String, @kwdef
 
 ############################################################################################
-#                                        Constants
+#                                        Constants                                         #
 ############################################################################################
 
 const _CSI = "\x1b["
 
-# Regex that removes all ANSI escape sequences.
-const _REGEX_ANSI = r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+# This regex match all the ANSI escape sequences that defines decorations.
+const _REGEX_ANSI_SEQUENCES = r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
 
 # Escape sequence that reset all decorations.
 const _RESET_DECORATIONS = _CSI * "0m"
 
 ############################################################################################
-#                                        Structures
+#                                        Structures                                        #
 ############################################################################################
 
 # Enumeration to store the state in `Decoration`.
@@ -45,10 +45,8 @@ const _DEFAULT_DECORATION = Decoration()
 const _RESET_DECORATION = Decoration(reset = true)
 
 ############################################################################################
-#                                         Includes
+#                                         Includes                                         #
 ############################################################################################
-
-include("./constants.jl")
 
 include("./alignment.jl")
 include("./ansi.jl")

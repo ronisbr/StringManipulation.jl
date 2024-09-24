@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions to align strings.
 #
-#   Functions to align strings.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export align_string, align_string_per_line, get_padding_for_string_alignment
 
@@ -20,9 +17,11 @@ be:
 - `:r`: Align the string in the right.
 
 !!! note
+
     If the printable width of `str` is higher than `field_width`, nothing will be changed.
 
 !!! note
+
     This function treats `\\n` as a normal characters. If one wants to align every line, use
     the function [`align_string_per_line`](@ref).
 
@@ -33,9 +32,12 @@ be:
     is lower than it.
 - `printable_string_width::Int`: Provide the printable string width to reduce the
     computational burden. If this parameters is lower than 0, the printable width is compute
-    internally. (**Default** = -1)
+    internally.
+    (**Default** = -1)
 
-# Example
+# Extended Help
+
+## Examples
 
 ```julia-repl
 julia> align_string("My String", 92, :c) |> println
@@ -82,6 +84,7 @@ which can be:
 - `:r`: Align the string in the right.
 
 !!! note
+
     If the printable width of `str` is higher than `field_width`, nothing will be changed.
 
 # Keyword
@@ -90,7 +93,9 @@ which can be:
     resulting string has printable width `field_size` if the initial string printable width
     is lower than it.
 
-# Examples
+# Extended Help
+
+## Examples
 
 ```julia-repl
 julia> align_string_per_line(\"\"\"
@@ -160,6 +165,7 @@ This function can return `nothing` in the following conditions:
 3. The printable width of `str` is longer than `field_width`.
 
 !!! note
+
     This function treats `\\n` as a normal characters.
 
 # Keyword
@@ -169,9 +175,12 @@ This function can return `nothing` in the following conditions:
     is lower than it.
 - `printable_string_width::Int`: Provide the printable string width to reduce the
     computational burden. If this parameters is lower than 0, the printable width is compute
-    internally. (**Default** = -1)
+    internally.
+    (**Default** = -1)
 
-# Examples
+# Extended Help
+
+## Examples
 
 ```julia-repl
 julia> get_padding_for_string_alignment("My string", 92, :c)
@@ -191,9 +200,11 @@ function get_padding_for_string_alignment(
     printable_string_width::Int = -1
 )
 
-    str_width = printable_string_width < 0 ?
-        printable_textwidth(str) :
+    str_width = if printable_string_width < 0
+        printable_textwidth(str)
+    else
         printable_string_width
+    end
 
     field_width ≤ str_width && return nothing
 
@@ -217,4 +228,3 @@ function get_padding_for_string_alignment(
 
     return nothing
 end
-

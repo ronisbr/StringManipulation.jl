@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions to compute the printable width of the string.
 #
-#   Functions to compute the printable width of the string.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export printable_textwidth, printable_textwidth_per_line
 
@@ -16,6 +13,7 @@ Return the text width of `str` considering only the printable characters, *i.e.*
 all ANSI escape sequences related to decorations.
 
 !!! note
+
     Characters like `\\n` and `\\t` are treated as normal characters.
 """
 function printable_textwidth(str::AbstractString)

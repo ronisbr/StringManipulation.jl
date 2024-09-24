@@ -1,31 +1,25 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Precompilation.
 #
-#   Precompilation.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 import PrecompileTools
 
 PrecompileTools.@compile_workload begin
-    # Alignment
-    # ======================================================================================
+    # == Alignment =========================================================================
 
     align_string("Test", 40, :r)
     align_string_per_line("Test\nTest", 40, :r)
 
-    # Crop
-    # ======================================================================================
+    # == Crop ==============================================================================
 
     left_crop("Test", 2)
     fit_string_in_field("Test Test Test Test Test", 10; crop_side = :left)
     fit_string_in_field("Test Test Test Test Test", 10; crop_side = :right)
     right_crop("Test", 2)
 
-    # Decorations
-    # ======================================================================================
+    # == Decorations =======================================================================
 
     drop_inactive_properties(Decoration())
     get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
@@ -39,8 +33,7 @@ PrecompileTools.@compile_workload begin
     update_decoration(Decoration(), "\\e[1;45m")
     convert(String, Decoration(bold = StringManipulation.active))
 
-    # Highlight
-    # ======================================================================================
+    # == Highlight =========================================================================
 
     highlight_search("Test high\e[1mlight\e[0m in a string with no underlines.", r"highlight")
     highlight_search([
@@ -50,8 +43,7 @@ PrecompileTools.@compile_workload begin
         "This is the last line."
     ], r"highlight")
 
-    # String Search
-    # ======================================================================================
+    # == String Search =====================================================================
 
     string_search(
         """
@@ -69,13 +61,11 @@ PrecompileTools.@compile_workload begin
         r"Test 2 😅"
     )
 
-    # Split
-    # ======================================================================================
+    # == Split =============================================================================
 
     split_string("Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m", 8)
 
-    # Text View
-    # ======================================================================================
+    # == Text View =========================================================================
 
     str = """
          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
@@ -90,8 +80,7 @@ PrecompileTools.@compile_workload begin
 
     textview(str, (0, 6, 10, 19))
 
-    # Text Width
-    # ======================================================================================
+    # == Text Width ========================================================================
 
     printable_textwidth("\e[1m😃\e[0m\e[4m😅\e[0m\e[7m🥳\e[0m")
 

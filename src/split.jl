@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions to split strings.
 #
-#   Functions to split strings.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export split_string
 
@@ -21,6 +18,7 @@ first case, the first string is empty, whereas, in the second case, the first st
 equal to `str`.
 
 !!! note
+
     If the character in the split point needs more than 1 character to be printed (like some
     UTF-8 characters), everything will be filled with spaces.
 """

@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions to obtain a view of a text.
 #
-#   Functions to obtain a view of a text.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export textview
 
@@ -85,6 +82,7 @@ However, if `io` is not passed, the function returns:
 - `Int`: Maximum number cropped characters in a row.
 
 !!! note
+
     If only frozen lines are printed, the second returned value is set to 0.
 
     If only frozen columns are printed, the third returned value is set to 0.
@@ -143,8 +141,7 @@ function textview(
     title_lines::Int = 0
 ) where T<:AbstractString
 
-    # Verification of the Input Parameters
-    # ======================================================================================
+    # == Verification of the Input Parameters ==============================================
 
     start_line  = view[1]
     num_lines   = view[2]
@@ -198,8 +195,7 @@ function textview(
         visual_line_background_vec = nothing
     end
 
-    # Internal Variables
-    # ======================================================================================
+    # == Internal Variables ================================================================
 
     # Count how many matches we passed in the current line that is being processed.
     num_matches = 0
@@ -254,8 +250,7 @@ function textview(
         end
     end
 
-    # Frozen Lines
-    # ======================================================================================
+    # == Frozen Lines ======================================================================
 
     for l in 1:frozen_lines_at_beginning
         line_active_match = active_match - num_matches
@@ -350,8 +345,7 @@ function textview(
         !d.reset && write(buf, d |> String)
     end
 
-    # Line Views
-    # ======================================================================================
+    # == Line Views ========================================================================
 
     for k in 1:num_lines
         # Get the current line number.
@@ -413,7 +407,7 @@ function textview(
 end
 
 ############################################################################################
-#                                    Private Functions
+#                                    Private Functions                                     #
 ############################################################################################
 
 # Draw a line view and return the number of right characters that was cropped.
