@@ -29,59 +29,48 @@ The following states are possible:
 function _process_string_state(c::Char, state::Symbol = :text)
     if state == :text
         # Here, we need to check if an escape sequence is found.
-        c == '\x1b' && return :escape_state_begin
-    end
+        c == '\x1B' && return :escape_state_begin
 
-    if state == :escape_state_begin
+    elseif state == :escape_state_begin
         (c == '[') && return :escape_state_opening
         (c == ']') && return :escape_hyperlink_opening
         (('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')) && return :escape_state_1
-    end
 
-    state == :escape_state_opening && return _process_string_state(c, :escape_state_1)
+    elseif state == :escape_state_opening
+        return _process_string_state(c, :escape_state_1)
 
-    if state == :escape_state_1
+    elseif state == :escape_state_1
         ('0' ≤ c ≤ '?') && return :escape_state_1
         return _process_string_state(c, :escape_state_2)
-    end
 
-    if state == :escape_state_2
+    elseif state == :escape_state_2
         (' ' ≤ c ≤ '/') && return :escape_state_2
         return _process_string_state(c, :escape_state_3)
-    end
 
-    if state == :escape_state_3
+    elseif state == :escape_state_3
         ('@' ≤ c ≤ '~') && return :escape_state_end
-    end
 
-    if state == :escape_hyperlink_opening
+    elseif state == :escape_hyperlink_opening
         (c == '8') && return :escape_hyperlink_1
-    end
 
-    if state == :escape_hyperlink_1
+    elseif state == :escape_hyperlink_1
         (c == ';') && return :escape_hyperlink_2
-    end
 
-    if state == :escape_hyperlink_2
+    elseif state == :escape_hyperlink_2
         (c == ';') && return :escape_hyperlink_3
-    end
 
-    if state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
-        (c == '\x1b') && return :escape_hyperlink_end
+    elseif state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
+        (c == '\x1B') && return :escape_hyperlink_end
         return :escape_hyperlink_url
-    end
 
-    if state == :escape_hyperlink_end
+    elseif state == :escape_hyperlink_end
         (c == '\\') && return :escape_state_end
-    end
 
-    if state == :escape_state_end
+    elseif state == :escape_state_end
         # We need to recall this function because the next character can be the beginning of
         # a new ANSI escape sequence.
         return _process_string_state(c, :text)
     end
 
-    # If we reached this point, the character is part of the printable text or it is part of
-    # an unsupported escape sequence. In the latter, we should assume it is printable.
     return :text
 end
