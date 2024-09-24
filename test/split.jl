@@ -69,4 +69,13 @@
         "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m",
         ""
     )
+
+    # == Hyperlinks (OSC 8) ================================================================
+
+    result = split_string("\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test", 6)
+
+    @test result == (
+        "\e]8;;https://ronanarraes.com\e\\My Web",
+        "site\e]8;;\e\\ Test Test"
+    )
 end

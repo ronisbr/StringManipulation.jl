@@ -28,6 +28,35 @@
 
     ansi_escape_seq, ~ = left_crop(str, 17)
     @test ansi_escape_seq == "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m"
+
+    # == Hyperlinks (OSC 8) ================================================================
+
+    str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = "\e]8;;https://ronanarraes.com\e\\"
+    expected_right = "y Website\e]8;;\e\\ Test Test"
+    r = left_crop(str, 1)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
+
+    str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = "\e]8;;https://ronanarraes.com\e\\\e]8;;\e\\"
+    expected_right = "est Test"
+    r = left_crop(str, 12)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
+
+    str = "Test \e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = ""
+    expected_right = "t \e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+    r = left_crop(str, 3)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
 end
 
 @testset "Fit Field" begin
@@ -86,6 +115,53 @@ end
     )
     expected = "\e[38;5;231;48;5;243m…   \e[38;5;201;48;5;243mTest\e[0m"
     @test cropped_str == expected
+
+    # == Hyperlinks (OSC 8) ================================================================
+
+    str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected = "\e]8;;https://ronanarraes.com\e\\My W …\e]8;;\e\\"
+    cropped_str = fit_string_in_field(
+        str,
+        6;
+        add_space_in_continuation_char = true,
+        crop_side = :right
+    )
+
+    @test cropped_str == expected
+
+    expected = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ T …"
+
+    cropped_str = fit_string_in_field(
+        str,
+        14;
+        add_space_in_continuation_char = true,
+        crop_side = :right
+    )
+
+    @test cropped_str == expected
+
+    expected = "\e]8;;https://ronanarraes.com\e\\\e]8;;\e\\… Test"
+
+    cropped_str = fit_string_in_field(
+        str,
+        6;
+        add_space_in_continuation_char = true,
+        crop_side = :left
+    )
+
+    @test cropped_str == expected
+
+    expected = "\e]8;;https://ronanarraes.com\e\\… e\e]8;;\e\\ Test Test"
+
+    cropped_str = fit_string_in_field(
+        str,
+        13;
+        add_space_in_continuation_char = true,
+        crop_side = :left
+    )
+
+    @test cropped_str == expected
 end
 
 @testset "Right Cropping" begin
@@ -115,6 +191,39 @@ end
     expected = "Test 😅 \e[38;5;231;48;5;243mTest 😅\e[38;5;201;48;5;243m\e[0m"
     cropped_str = *(right_crop(str, 5; printable_string_width)...)
     @test cropped_str == expected
+
+    # == Hyperlinks (OSC 8) ================================================================
+
+    str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test"
+    expected_right = ""
+    r = right_crop(str, 5)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
+
+    str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = "\e]8;;https://ronanarraes.com\e\\My Websi"
+    expected_right = "\e]8;;\e\\"
+    r = right_crop(str, 12)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
+
+    r = right_crop(str, 12; keep_escape_seq = false)
+    @test first(r) == expected_left
+    @test last(r)  == ""
+
+    str = "Test \e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
+
+    expected_left = "Test"
+    expected_right = "\e]8;;https://ronanarraes.com\e\\\e]8;;\e\\"
+    r = right_crop(str, 21)
+
+    @test first(r) == expected_left
+    @test last(r)  == expected_right
 end
 
 @testset "Corner Cases" begin
