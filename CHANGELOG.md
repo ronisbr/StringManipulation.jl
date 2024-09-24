@@ -1,6 +1,15 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.0
+-------------
+
+- ![BREAKING][badge-breaking] Rename keyword `keep_ansi` to `keep_escape_seq` in
+  `fit_string_in_field`.
+- ![BREAKING][badge-breaking] Rename `get_padding_for_string_alignment` to
+  `padding_for_string_alignment`.
+- ![Deprecation][[badge-deprecation]: Drop support for Julia versions lower than 1.10.
+
 Version 0.3.4
 -------------
 
