@@ -79,8 +79,9 @@ Crop the string `str` to fit it in a field with width `field_width`.
     string into the field. It can be `:right` or `:left`. (**Default** = `:right`)
 - `field_margin::Int`: Consider an additional margin in the field if it must be cropped.
     (**Default** = 0)
-- `keep_ansi::Bool`: If `true`, the ANSI escape sequences found in the cropped part will be
-    kept. (**Default** = `true`)
+- `keep_escape_seq::Bool`: If `true`, the ANSI escape sequences found in the cropped part
+    will be kept.
+    (**Default** = `true`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
     computational burden. If this parameters is lower than 0, the printable width is compute
     internally. (**Default** = -1)
@@ -105,7 +106,7 @@ function fit_string_in_field(
     continuation_char::Char = '…',
     crop_side::Symbol = :right,
     field_margin::Int = 0,
-    keep_ansi::Bool = true,
+    keep_escape_seq::Bool = true,
     printable_string_width::Int = -1
 )
     str_width = printable_string_width < 0 ?
@@ -131,7 +132,7 @@ function fit_string_in_field(
         cropped_str, ansi = right_crop(
             str,
             crop;
-            keep_escape_seq = keep_ansi,
+            keep_escape_seq,
             printable_string_width = str_width
         )
 
@@ -215,6 +216,7 @@ function get_crop_to_fit_string_in_field(
         if add_space_in_continuation_char
             cont_str_width += 1
         end
+        result = keep_escape_seq ? ansi : ""
 
         Δ += cont_str_width
 

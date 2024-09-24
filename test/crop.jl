@@ -57,7 +57,7 @@ end
         str,
         8;
         add_space_in_continuation_char = true,
-        keep_ansi = false
+        keep_escape_seq = false
     )
     expected = "Test   …"
     @test cropped_str == expected
@@ -127,6 +127,6 @@ end
     @test cropped_str == expected
 
     expected = "…"
-    cropped_str = fit_string_in_field(str, 0; keep_ansi = false)
+    cropped_str = fit_string_in_field(str, 0; keep_escape_seq = false)
     @test cropped_str == expected
 end
