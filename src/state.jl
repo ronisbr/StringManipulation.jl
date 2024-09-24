@@ -36,7 +36,6 @@ function _process_string_state(c::Char, state::Symbol = :text)
         (c == '[') && return :escape_state_opening
         (c == ']') && return :escape_hyperlink_opening
         (('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')) && return :escape_state_1
-        return :text
     end
 
     state == :escape_state_opening && return _process_string_state(c, :escape_state_1)
@@ -53,22 +52,18 @@ function _process_string_state(c::Char, state::Symbol = :text)
 
     if state == :escape_state_3
         ('@' ≤ c ≤ '~') && return :escape_state_end
-        return :text
     end
 
     if state == :escape_hyperlink_opening
         (c == '8') && return :escape_hyperlink_1
-        return :text
     end
 
     if state == :escape_hyperlink_1
         (c == ';') && return :escape_hyperlink_2
-        return :text
     end
 
     if state == :escape_hyperlink_2
         (c == ';') && return :escape_hyperlink_3
-        return :text
     end
 
     if state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
@@ -78,7 +73,6 @@ function _process_string_state(c::Char, state::Symbol = :text)
 
     if state == :escape_hyperlink_end
         (c == '\\') && return :escape_state_end
-        return :text
     end
 
     if state == :escape_state_end
@@ -87,5 +81,7 @@ function _process_string_state(c::Char, state::Symbol = :text)
         return _process_string_state(c, :text)
     end
 
+    # If we reached this point, the character is part of the printable text or it is part of
+    # an unsupported escape sequence. In the latter, we should assume it is printable.
     return :text
 end
