@@ -264,7 +264,7 @@ function update_decoration(decoration::Decoration, code::String)
 
         elseif state == :escape_state_end
             str = String(take!(buf))
-            decoration = _parse_ansi_code(decoration, str)
+            decoration = _parse_ansi_style_code(decoration, str)
 
         elseif state == :text
             buf.ptr  = 1

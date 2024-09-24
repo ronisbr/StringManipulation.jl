@@ -4,9 +4,9 @@
 #
 ############################################################################################
 
-# Parse the ANSI code in `code` and return the updated decoration given the initial
+# Parse the ANSI style code in `code` and return the updated decoration given the initial
 # `decoration`.
-function _parse_ansi_code(decoration::Decoration, code::String)
+function _parse_ansi_style_code(decoration::Decoration, code::String)
     tokens = split(code, ';')
     num_tokens = length(tokens)
 

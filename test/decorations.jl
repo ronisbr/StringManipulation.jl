@@ -107,7 +107,7 @@ end
     @test expected_text === text
 end
 
-# Those tests are also used to verify the function `_parse_ansi_code`.
+# Those tests are also used to verify the function `_parse_ansi_style_code`.
 @testset "Parse Decorations" begin
     decoration = parse_decoration("\e[35m\e[48;5;243m\e[4;27m")
 
