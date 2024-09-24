@@ -25,11 +25,19 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
     i = 1
     while i ≤ num_tokens
         code_i = tryparse(Int, tokens[i], base = 10)
-        isnothing(code_i) && continue
+        if isnothing(code_i)
+            i += 1
+            continue
+        end
 
         if code_i == 0
-            # If we have a reset, neglect all the other configurations.
-            return Decoration(reset = true)
+            # If we have a reset, neglect all the other configurations except the
+            # hyperlinks.
+            return Decoration(
+                reset = true,
+                hyperlink_url = decoration.hyperlink_url,
+                hyperlink_url_changed = decoration.hyperlink_url_changed
+            )
 
         elseif code_i == 1
             bold = active
@@ -171,6 +179,8 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         italic,
         reversed,
         underline,
-        reset
+        reset,
+        decoration.hyperlink_url,
+        decoration.hyperlink_url_changed
     )
 end

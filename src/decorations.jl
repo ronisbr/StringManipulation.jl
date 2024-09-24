@@ -55,7 +55,9 @@ function drop_inactive_properties(decoration::Decoration)
         italic,
         reversed,
         underline,
-        false
+        false,
+        decoration.hyperlink_url,
+        decoration.hyperlink_url_changed
     )
 end
 
@@ -262,6 +264,7 @@ Update the current `decoration` given the decorations in the string `str` or in 
 function update_decoration(decoration::Decoration, code::String)
     state = :text
     buf = IOBuffer(sizehint = floor(Int, sizeof(code)))
+    hyperlink = false
 
     for c in code
         state = _process_string_state(c, state)
@@ -270,7 +273,38 @@ function update_decoration(decoration::Decoration, code::String)
             buf.ptr  = 1
             buf.size = 0
 
+        elseif state == :escape_hyperlink_3
+            # If we reached this state, the next one is the URL. Hence, we clean the buffer
+            # and inform that we are processing a hyperlink.
+            buf.ptr  = 1
+            buf.size = 0
+            hyperlink = true
+
+        elseif state == :escape_hyperlink_url
+            write(buf, c)
+
+        elseif state == :escape_hyperlink_end
+            # The buffer will contain only the new URL.
+            hl_url = String(take!(buf))
+
+            decoration = Decoration(
+                decoration.foreground,
+                decoration.background,
+                decoration.bold,
+                decoration.italic,
+                decoration.reversed,
+                decoration.underline,
+                decoration.reset,
+                hl_url,
+                true
+            )
+
         elseif state == :escape_state_end
+            if hyperlink
+                hyperlink = false
+                continue
+            end
+
             str = String(take!(buf))
             decoration = _parse_ansi_decoration_code(decoration, str)
 
@@ -295,6 +329,9 @@ function update_decoration(decoration::Decoration, new::Decoration)
     underline  = decoration.underline
     reset      = decoration.reset
     reversed   = decoration.reversed
+    hl_url     = decoration.hyperlink_url
+
+    hl_url_changed = new.hyperlink_url_changed
 
     !isempty(new.foreground)   && (foreground = new.foreground)
     !isempty(new.background)   && (background = new.background)
@@ -303,6 +340,7 @@ function update_decoration(decoration::Decoration, new::Decoration)
     new.underline != unchanged && (underline = new.underline)
     new.reset                  && (reset = true)
     new.reversed  != unchanged && (reversed = new.reversed)
+    hl_url_changed             && (hl_url = new.hyperlink_url)
 
     return Decoration(
         foreground,
@@ -312,6 +350,8 @@ function update_decoration(decoration::Decoration, new::Decoration)
         reversed,
         underline,
         reset,
+        hl_url,
+        hl_url_changed
     )
 end
 
@@ -323,9 +363,16 @@ String(d::Decoration) = convert(String, d)
 
 # Convert  `Decoration` to string.
 function convert(::Type{String}, d::Decoration)
-    # Check if we have a reset.
+    # Check if we must change the hyperlink.
+    str_hyperlink = if d.hyperlink_url_changed
+        "\x1B]8;;$(d.hyperlink_url)\x1B\\"
+    else
+        ""
+    end
+
+    # Check if we have a reset. Notice that a reset **does not** clean the hyperlink.
     d === _DEFAULT_DECORATION && return ""
-    d.reset && return "$(_CSI)0m"
+    d.reset && return "$(str_hyperlink)$(_CSI)0m"
 
     # TODO: Check if we can avoid adding so many `_CSI`.
     str_foreground = !isempty(d.foreground)   ? "$(_CSI)$(d.foreground)m" : ""
@@ -336,6 +383,7 @@ function convert(::Type{String}, d::Decoration)
     str_reversed   = d.reversed  != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
 
     return string(
+        str_hyperlink,
         str_foreground,
         str_background,
         str_bold,

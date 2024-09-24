@@ -13,59 +13,79 @@ Return the current state of the string given the new character `c` and the previ
 The following states are possible:
 
 - `:text`: The character is part of the printable text.
-- `:escape_state_begin`: Beginning of an ANSI escape sequence.
+- `:escape_state_begin`: Beginning of an ANSI escape sequence (`\\x1b`).
 - `:escape_state_opening`: Matches the `[`.
 - `:escape_state_1`: First state of an ANSI escape sequence.
 - `:escape_state_2`: Second state of an ANSI escape sequence.
 - `:escape_state_3`: Third state of an ANSI escape sequence.
+- `:escape_hyperlink_opening`: Beginning of an ANSI hyperlink escape sequence (`]`).
+- `:escape_hyperlink_1`: First state of an ANSI hyperlink escape sequence (`8`).
+- `:escape_hyperlink_2`: Second state of an ANSI hyperlink escape sequence (`;`).
+- `:escape_hyperlink_3`: Third state of an ANSI hyperlink escape sequence (`;`).
+- `:escape_hyperlink_url`: URL in an ANSI hyperlink escape sequence.
+- `:escape_hyperlink_close`: Closing of an ANSI hyperlink escape sequence (`\\x1b`).
 - `:escape_state_end`: End of an ANSI escape sequence.
 """
 function _process_string_state(c::Char, state::Symbol = :text)
     if state == :text
         # Here, we need to check if an escape sequence is found.
-        if c == '\x1b'
-            state = :escape_state_begin
-        end
-
-    elseif state == :escape_state_begin
-        if (c == '[')
-            state = :escape_state_opening
-
-        elseif ('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')
-            state = :escape_state_1
-        else
-            state = :text
-        end
-
-    elseif state == :escape_state_opening
-        state = :escape_state_1
-        return _process_string_state(c, state)
-
-    elseif state == :escape_state_1
-        if !('0' ≤ c ≤ '?')
-            state = :escape_state_2
-            return _process_string_state(c, state)
-        end
-
-    elseif state == :escape_state_2
-        if !(' ' ≤ c ≤ '/')
-            state = :escape_state_3
-            return _process_string_state(c, state)
-        end
-
-    elseif state == :escape_state_3
-        if ('@' ≤ c ≤ '~')
-            state = :escape_state_end
-        else
-            state = :text
-        end
-    elseif state == :escape_state_end
-        state = :text
-
-        # We need to recall this function because the next character can be the beginning of
-        # a new ANSI escape sequence.
-        return _process_string_state(c, state)
+        c == '\x1b' && return :escape_state_begin
     end
 
-    return state
+    if state == :escape_state_begin
+        (c == '[') && return :escape_state_opening
+        (c == ']') && return :escape_hyperlink_opening
+        (('@' ≤ c ≤ 'Z') || ('\\' ≤ c ≤ '_')) && return :escape_state_1
+        return :text
+    end
+
+    state == :escape_state_opening && return _process_string_state(c, :escape_state_1)
+
+    if state == :escape_state_1
+        ('0' ≤ c ≤ '?') && return :escape_state_1
+        return _process_string_state(c, :escape_state_2)
+    end
+
+    if state == :escape_state_2
+        (' ' ≤ c ≤ '/') && return :escape_state_2
+        return _process_string_state(c, :escape_state_3)
+    end
+
+    if state == :escape_state_3
+        ('@' ≤ c ≤ '~') && return :escape_state_end
+        return :text
+    end
+
+    if state == :escape_hyperlink_opening
+        (c == '8') && return :escape_hyperlink_1
+        return :text
+    end
+
+    if state == :escape_hyperlink_1
+        (c == ';') && return :escape_hyperlink_2
+        return :text
+    end
+
+    if state == :escape_hyperlink_2
+        (c == ';') && return :escape_hyperlink_3
+        return :text
+    end
+
+    if state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
+        (c == '\x1b') && return :escape_hyperlink_end
+        return :escape_hyperlink_url
+    end
+
+    if state == :escape_hyperlink_end
+        (c == '\\') && return :escape_state_end
+        return :text
+    end
+
+    if state == :escape_state_end
+        # We need to recall this function because the next character can be the beginning of
+        # a new ANSI escape sequence.
+        return _process_string_state(c, :text)
+    end
+
+    return :text
 end
