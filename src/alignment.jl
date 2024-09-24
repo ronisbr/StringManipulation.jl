@@ -4,7 +4,7 @@
 #
 ############################################################################################
 
-export align_string, align_string_per_line, get_padding_for_string_alignment
+export align_string, align_string_per_line, padding_for_string_alignment
 
 """
     align_string(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> String
@@ -30,6 +30,7 @@ be:
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_size` if the initial string printable width
     is lower than it.
+    (**Default** = `false`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
     computational burden. If this parameters is lower than 0, the printable width is compute
     internally.
@@ -57,7 +58,7 @@ function align_string(
     fill::Bool = false,
     printable_string_width::Int = -1
 )
-    padding = get_padding_for_string_alignment(
+    padding = padding_for_string_alignment(
         str,
         field_width,
         alignment;
@@ -65,12 +66,10 @@ function align_string(
         printable_string_width
     )
 
-    if isnothing(padding)
-        return str
-    else
-        lpad, rpad = padding
-        return " "^lpad * str * " "^rpad
-    end
+    isnothing(padding) && return str
+
+    lpad, rpad = padding
+    return " "^lpad * str * " "^rpad
 end
 
 """
@@ -92,6 +91,7 @@ which can be:
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_size` if the initial string printable width
     is lower than it.
+    (**Default** = `false`)
 
 # Extended Help
 
@@ -129,9 +129,7 @@ function align_string_per_line(
     alignment::Symbol;
     fill::Bool = false
 )
-    if field_width ≤ 0
-        return str
-    end
+    (field_width ≤ 0) && return str
 
     # Split the lines.
     lines = split(str, '\n')
@@ -149,7 +147,7 @@ function align_string_per_line(
 end
 
 """
-    get_padding_for_string_alignment(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> Union{Nothing, NTuple{2, Int}}
+    padding_for_string_alignment(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> Union{Nothing, NTuple{2, Int}}
 
 Return the left and right padding required to align the string `str` in a field with width
 `field_width` using the `alignment`, which can be:
@@ -173,6 +171,7 @@ This function can return `nothing` in the following conditions:
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_size` if the initial string printable width
     is lower than it.
+    (**Default** = `false`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
     computational burden. If this parameters is lower than 0, the printable width is compute
     internally.
@@ -183,38 +182,34 @@ This function can return `nothing` in the following conditions:
 ## Examples
 
 ```julia-repl
-julia> get_padding_for_string_alignment("My string", 92, :c)
+julia> padding_for_string_alignment("My string", 92, :c)
 (41, 0)
 
-julia> get_padding_for_string_alignment("My string", 92, :l)
+julia> padding_for_string_alignment("My string", 92, :l)
 
-julia> get_padding_for_string_alignment("My string", 92, :r)
+julia> padding_for_string_alignment("My string", 92, :r)
 (83, 0)
 ```
 """
-function get_padding_for_string_alignment(
+function padding_for_string_alignment(
     str::AbstractString,
     field_width::Int,
     alignment::Symbol;
     fill::Bool = false,
     printable_string_width::Int = -1
 )
-
     str_width = if printable_string_width < 0
         printable_textwidth(str)
     else
         printable_string_width
     end
 
-    field_width ≤ str_width && return nothing
+    (field_width ≤ str_width) && return nothing
 
     # Compute the padding given the alignment type.
-    if alignment == :l
-        # In this case, we only need to modify the string if `fill` is `true`.
-        if fill
-            rpad = field_width - str_width
-            return 0, rpad
-        end
+    if (alignment == :l) && fill
+        rpad = field_width - str_width
+        return 0, rpad
 
     elseif alignment == :c
         lpad = div(field_width - str_width, 2)
