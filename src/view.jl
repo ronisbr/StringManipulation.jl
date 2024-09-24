@@ -102,9 +102,11 @@ function textview(
 )
     lines = split(text, '\n')
 
-    search_matches = !isnothing(search_regex) ?
-        string_search_per_line(lines, search_regex) :
+    search_matches = if !isnothing(search_regex)
+        string_search_per_line(lines, search_regex)
+    else
         nothing
+    end
 
     return textview(
         buf,
@@ -181,13 +183,11 @@ function textview(
 
     if !isnothing(visual_lines)
         if visual_line_backgrounds isa AbstractVector
-            if (length(visual_lines) != length(visual_line_backgrounds))
-                throw(ArgumentError(
-                    "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`."
-                ))
-            else
-                visual_line_background_vec = visual_line_backgrounds
-            end
+            (length(visual_lines) != length(visual_line_backgrounds)) && throw(ArgumentError(
+                "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`."
+            ))
+
+            visual_line_background_vec = visual_line_backgrounds
         else
             visual_line_background_vec = fill("44", length(visual_lines))
         end
@@ -214,7 +214,6 @@ function textview(
     if maximum_number_of_lines ≥ 0
         if frozen_lines_at_beginning ≥ maximum_number_of_lines
             frozen_lines_at_beginning = maximum_number_of_lines
-            start_lines = frozen_lines_at_beginning + 1
             num_lines = 0
 
         else
@@ -428,7 +427,7 @@ function _draw_line_view!(
 
     # Frozen columns.
     if frozen_columns_at_beginning > 0
-        left, frozen_str = split_string(line_str, frozen_columns_at_beginning)
+        left, _ = split_string(line_str, frozen_columns_at_beginning)
 
         # If this is a visual line, we must ensure that the frozen row has the minimum
         # number of characters to fill the frozen space.

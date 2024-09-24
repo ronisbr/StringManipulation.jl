@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Functions to crop strings.
 #
-#   Functions to crop strings.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 export crop_width_to_fit_string_in_field, left_crop, fit_string_in_field, right_crop
 
@@ -78,58 +75,6 @@ function crop_width_to_fit_string_in_field(
     end
 
     return Δ
-end
-
-"""
-    left_crop(str::AbstractString, crop_width::Int) -> String, String
-
-Return a string obtained by cropping the left characters of `str` so that its printable
-width is reduced by `crop_width` display units.
-
-# Returns
-
-- `String`: ANSI escape sequence (non-printable string) in the cropped part.
-- `String`: Cropped string.
-
-# Extended Help
-
-## Examples
-
-```julia-repl
-julia> left_crop("\\e[1mPlease, crop this string.", 8)
-("\\e[1m", "crop this string.")
-```
-"""
-function left_crop(str::AbstractString, crop_width::Int)
-    buf_ansi = IOBuffer()
-    buf_str  = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
-    state    = :text
-
-    for c in str
-        if crop_width ≤ 0
-            write(buf_str, c)
-            continue
-        end
-
-        state = _process_string_state(c, state)
-
-        # If we are not in a text section, just write the character to the ANSI buffer.
-        if state != :text
-            write(buf_ansi, c)
-            continue
-        end
-
-        crop_width -= textwidth(c)
-
-        # If `crop_width` is negative, it means that we have a character that occupies
-        # more than 1 character. In this case, we fill the string with space.
-        if crop_width < 0
-            write(buf_str, " "^(-crop_width))
-            crop_width = 0
-        end
-    end
-
-    return String(take!(buf_ansi)), String(take!(buf_str))
 end
 
 """
@@ -231,6 +176,58 @@ function fit_string_in_field(
 end
 
 """
+    left_crop(str::AbstractString, crop_width::Int) -> String, String
+
+Return a string obtained by cropping the left characters of `str` so that its printable
+width is reduced by `crop_width` display units.
+
+# Returns
+
+- `String`: ANSI escape sequence (non-printable string) in the cropped part.
+- `String`: Cropped string.
+
+# Extended Help
+
+## Examples
+
+```julia-repl
+julia> left_crop("\\e[1mPlease, crop this string.", 8)
+("\\e[1m", "crop this string.")
+```
+"""
+function left_crop(str::AbstractString, crop_width::Int)
+    buf_ansi = IOBuffer()
+    buf_str  = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
+    state    = :text
+
+    for c in str
+        if crop_width ≤ 0
+            write(buf_str, c)
+            continue
+        end
+
+        state = _process_string_state(c, state)
+
+        # If we are not in a text section, just write the character to the ANSI buffer.
+        if state != :text
+            write(buf_ansi, c)
+            continue
+        end
+
+        crop_width -= textwidth(c)
+
+        # If `crop_width` is negative, it means that we have a character that occupies
+        # more than 1 character. In this case, we fill the string with space.
+        if crop_width < 0
+            write(buf_str, " "^(-crop_width))
+            crop_width = 0
+        end
+    end
+
+    return String(take!(buf_ansi)), String(take!(buf_str))
+end
+
+"""
     right_crop(str::AbstractString, crop_width::Int; kwargs...) -> String, String
 
 Return a string obtained by cropping the right characters of `str` given a field with a
@@ -272,14 +269,16 @@ function right_crop(
     printable_string_width::Int = -1
 )
     buf_ansi = IOBuffer()
-    buf_str = IOBuffer(sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
+    buf_str  = IOBuffer(sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
+    state    = :text
 
-    str_width = printable_string_width < 0 ?
-        printable_textwidth(str) :
+    str_width = if printable_string_width < 0
+        printable_textwidth(str)
+    else
         printable_string_width
+    end
 
     remaining_chars = str_width - crop_width
-    state = :text
 
     for c in str
         state = _process_string_state(c, state)
@@ -287,25 +286,28 @@ function right_crop(
         if remaining_chars <= 0
             !keep_escape_seq && break
             state != :text && write(buf_ansi, c)
-
-        else
-            if state == :text
-                Δ = textwidth(c)
-                remaining_chars -= Δ
-
-                # If `remaining_chars` is negative, it means that we have a character that
-                # occupies more than 1 character. In this case, we fill the string with
-                # space.
-                if remaining_chars < 0
-                    write(buf_str, " "^(-remaining_chars))
-                    remaining_chars = 0
-                else
-                    write(buf_str, c)
-                end
-            else
-                write(buf_str, c)
-            end
+            continue
         end
+
+        # If we are not in a text section, just write the character to the ANSI buffer.
+        if state != :text
+            write(buf_str, c)
+            continue
+        end
+
+        Δ = textwidth(c)
+        remaining_chars -= Δ
+
+        # If `remaining_chars` is negative, it means that we have a character that
+        # occupies more than 1 character. In this case, we fill the string with
+        # space.
+        if remaining_chars < 0
+            write(buf_str, " "^(-remaining_chars))
+            remaining_chars = 0
+            continue
+        end
+
+        write(buf_str, c)
     end
 
     return String(take!(buf_str)), String(take!(buf_ansi))

@@ -60,9 +60,8 @@ function highlight_search(
     # Count how many matches we have before this line.
     num_matches = 0
     for l in 1:(start_line - 1)
-        if haskey(search_matches, l)
-            num_matches += length(search_matches[l])
-        end
+        !haskey(search_matches, l) && continue
+        num_matches += length(search_matches[l])
     end
 
     for l in start_line:end_line
@@ -86,7 +85,7 @@ function highlight_search(
             write(buf, lines[l])
         end
 
-        l != end_line && write(buf, '\n')
+        (l != end_line) && write(buf, '\n')
     end
 
     return String(take!(buf))
@@ -137,7 +136,7 @@ function highlight_search(
 )
     num_matches = length(search_matches)
 
-    num_matches == 0 && return str
+    (num_matches == 0) && return str
 
     reset_decoration = convert(String, _RESET_DECORATION)
     h_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
@@ -153,7 +152,7 @@ function highlight_search(
         match = search_matches[i]
 
         # If the match is before `start_column`, just skip it.
-        (match[1] + match[2] - 1) < start_column && continue
+        ((match[1] + match[2] - 1) < start_column) && continue
 
         # If the match is before `min_column`, just skip it.
         ((min_column > 0) && ((match[1] + match[2] - 1) < min_column)) && continue

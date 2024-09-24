@@ -25,8 +25,10 @@ equal to `str`.
 function split_string(str::AbstractString, size::Int)
     # Buffer with the string before the split point.
     buf₀ = IOBuffer(sizehint = max(size, 1))
+
     # Buffer with the string after the split point.
     buf₁ = IOBuffer(sizehint = max(length(str) - size, 1))
+
     state = :text
 
     # If we are splitting just at the point where a non-printable character is, we need to
@@ -35,22 +37,8 @@ function split_string(str::AbstractString, size::Int)
     check_ansi_after_split = true
 
     for c in str
-        if size ≤ 0
-            if check_ansi_after_split
-                state = _process_string_state(c, state)
-
-                # All non-printable character just after splitting must go to `buf₀`.
-                if state != :text
-                    print(buf₀, c)
-                else
-                    check_ansi_after_split = false
-                    print(buf₁, c)
-                end
-            else
-                print(buf₁, c)
-            end
-
-        else
+        # == String Before the Split Point =================================================
+        if size > 0
             state = _process_string_state(c, state)
 
             if state == :text
@@ -69,7 +57,25 @@ function split_string(str::AbstractString, size::Int)
             end
 
             print(buf₀, c)
+            continue
         end
+
+        # == String After the Split Point ==================================================
+
+        if check_ansi_after_split
+            state = _process_string_state(c, state)
+
+            # All non-printable character just after splitting must go to `buf₀`.
+            if state != :text
+                print(buf₀, c)
+                continue
+            end
+
+            # After the first text character, we should add everything to `buf₁`.
+            check_ansi_after_split = false
+        end
+
+        print(buf₁, c)
     end
 
     return String(take!(buf₀)), String(take!(buf₁))

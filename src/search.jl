@@ -22,9 +22,9 @@ function string_search(str::AbstractString, r::Regex)
 
     # Find all matches.
     for m in eachmatch(r, undecorated_str)
-        # `m.offset` contains the byte in which the match starts. However,
-        # we need to obtain the character. Hence, it is necessary to compute
-        # the text width from the beginning to the offset.
+        # `m.offset` contains the byte in which the match starts. However, we need to obtain
+        # the character. Hence, it is necessary to compute the text width from the beginning
+        # to the offset.
         push!(search_result, (
             textwidth(@view(undecorated_str[1:m.offset])),
             textwidth(m.match)
@@ -51,7 +51,7 @@ function string_search_per_line(lines::AbstractVector{T}, r::Regex) where T<:Abs
     search_results = Dict{Int, Vector{Tuple{Int, Int}}}()
 
     # Find the matches in each line.
-    for l in 1:length(lines)
+    for l in eachindex(lines)
         search_results_l = string_search(lines[l], r)
 
         if !isempty(search_results_l)
