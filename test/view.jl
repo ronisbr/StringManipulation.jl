@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Tests related with text views.
 #
-#   Tests related with text views.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 @testset "Text view" begin
     md_str = md"""
@@ -47,8 +44,7 @@
     show(io, MIME("text/plain"), md_str)
     str = String(take!(buf))
 
-    # Without Frozen Lines or Columns
-    # ======================================================================================
+    # == Without Frozen Lines or Columns ===================================================
 
     expected = """
         e\e[30;43mqu\e[0me umbra patulas Laurentes de
@@ -71,12 +67,11 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
-    # With Frozen Lines or Columns
-    # ======================================================================================
+    # == With Frozen Lines or Columns ======================================================
 
     expected = """
         \e[1m  \e[0m\e[1m\e[7mentae\e[0m\e[22m
-        \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
+        \e[1m  \e[0m\e[1m≡≡≡≡≡\e[22m
         \e[0m
         \e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
           \e[0me\e[30;43mqu\e[0me umbra patulas Laurentes de
@@ -101,16 +96,14 @@
     @test num_cropped_lines == 11
     @test max_cropped_chars == 13
 
-    # View The Entire Text without Any Modification
-    # ======================================================================================
+    # == View The Entire Text without Any Modification =====================================
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(str, (-1, -1, -1, -1))
     @test vstr == str
     @test num_cropped_lines_at_end == 0
     @test max_cropped_chars == 0
 
-    # Maximum Number of Lines and Columns
-    # ======================================================================================
+    # == Maximum Number of Lines and Columns ===============================================
 
     expected = """
         eque umbra patulas Laure
@@ -133,10 +126,10 @@
 
     expected = """
         \e[1m  Si distentae\e[22m\e[0m\e[22m
-        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m\e[0m\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡\e[22m\e[0m\e[22m
         \e[0m
         \e[1m  Carpitur devorat\e[22m\e[0m\e[22m
-        \e[1m  ==================\e[22m\e[0m\e[22m
+        \e[1m  ================\e[22m\e[0m\e[22m
         \e[0m
           Lorem markdownum i\e[0m\e[22m
           namque. Iam excepi\e[0m\e[24m\e[0m"""
@@ -175,8 +168,7 @@
     @test num_cropped_lines_at_end == 18
     @test max_cropped_chars == 51
 
-    # Test Related to Multiple Dispatch
-    # ======================================================================================
+    # == Test Related to Multiple Dispatch =================================================
 
     lines = split(str, '\n')
     search_matches = string_search_per_line(lines, r"qu")
@@ -202,12 +194,11 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
-    # Ruler
-    # ======================================================================================
+    # == Ruler =============================================================================
 
     expected = """
         \e[90m  1 │\e[0m\e[1m  \e[0m\e[1m\e[7mentae\e[0m\e[22m
-        \e[90m  2 │\e[0m\e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m
+        \e[90m  2 │\e[0m\e[1m  \e[0m\e[1m≡≡≡≡≡\e[22m
         \e[90m  3 │\e[0m\e[0m
         \e[90m  4 │\e[0m\e[1m  \e[0m\e[1mr devorat\e[22m\e[0m
         \e[90m 14 │\e[0m  \e[0me\e[30;43mqu\e[0me umbra patulas Laurentes de
@@ -233,12 +224,11 @@
     @test num_cropped_lines == 11
     @test max_cropped_chars == 13
 
-    # Title Lines
-    # ======================================================================================
+    # == Title Lines =======================================================================
 
     expected = """
         \e[1m  Si distentae\e[22m\e[0m\e[1m\e[22m
-        \e[1m  \e[0m\e[1m≡≡≡≡≡≡≡\e[22m\e[0m
+        \e[1m  \e[0m\e[1m≡≡≡≡≡\e[22m\e[0m
           \e[0meque umbra patulas Laurentes de
         \e[0m
         \e[36m  \e[0m\e[36mte recursively `sin(m*ϕ)` and `\e[39m
@@ -260,15 +250,14 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
-    # Visual Lines
-    # ======================================================================================
+    # == Visual Lines ======================================================================
 
     expected = """
         \e[1m  Si distentae\e[22m
-        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
         \e[44m                                                 \e[49m
         \e[1m  Carpitur devorat\e[22m
-        \e[1m  ==================\e[22m
+        \e[1m  ================\e[22m
 
         \e[45m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[22m\e[49m
           namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
@@ -289,7 +278,7 @@
         \e[1m  ≡≡≡≡≡≡≡≡\e[0m\e[22m
         \e[44m          \e[49m\e[0m\e[44m                                                 \e[49m
         \e[1m  Carpitur\e[0m\e[22m
-        \e[1m  ========\e[0m\e[1m==\e[22m
+        \e[1m  ========\e[0m\e[22m
         \e[0m
         \e[45m  Lorem ma\e[49m\e[0m\e[45m ipsi Emathion Neoptolemum et moenia \e[1mviveret spum\e[22m\e[49m
           namque. \e[0mpi ignis turbamve, \e[4mcruorem quo nubes\e[24m aevi; sensit
@@ -308,10 +297,10 @@
 
     expected = """
         \e[1m  Si distentae\e[22m
-        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
+        \e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
         \e[44m                                                 \e[49m
         \e[1m  Carpitur devorat\e[22m
-        \e[1m  ==================\e[22m
+        \e[1m  ================\e[22m
 
         \e[44m  Lorem markdownum ipsi Emathion Neoptolemum et m\e[22m\e[49m
           namque. Iam excepi ignis turbamve, \e[4mcruorem quo \e[24m
@@ -326,8 +315,7 @@
 
     @test vstr == expected
 
-    # Consider Decorations in Hidden Lines
-    # ======================================================================================
+    # == Consider Decorations in Hidden Lines ==============================================
 
     str = """
          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
