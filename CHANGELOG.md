@@ -1,6 +1,11 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.1
+-------------
+
+- ![Bugfix][badge-bugfix] We fixed the tests against the upcoming Julia 1.12.
+
 Version 0.4.0
 -------------
 
