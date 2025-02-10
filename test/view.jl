@@ -5,44 +5,84 @@
 ############################################################################################
 
 @testset "Text view" begin
-    md_str = md"""
-        # Si distentae
+    # We will use a hard-coded string instead of the output from the markdown rendering
+    # function because breaking changes in the output would make this test fail. For more
+    # information, see:
+    #
+    #   https://github.com/ronisbr/StringManipulation.jl/issues/4
 
-        ## Carpitur devorat
+    # md_str = md"""
+    #     # Si distentae
+    #
+    #     ## Carpitur devorat
+    #
+    #     Lorem markdownum ipsi Emathion Neoptolemum et moenia **viveret spumantis**
+    #     namque. Iam excepi ignis turbamve, *cruorem quo nubes* aevi; sensit esse
+    #     animantis, Chironis infelix *stabantque*. Ruit et iuvenemque longo; ut at iugis,
+    #     venit adventus molle adpropera?
+    #
+    #     Putat quibus Phaethon manet sanguine elige, orbem palearia iuvenum age prior
+    #     mollibat *Pallas* est fera curru naribus. Constituis priore orbae generosque
+    #     insidiaeque umbra patulas Laurentes denique senior?
+    #
+    #     ```julia
+    #     # Compute recursively `sin(m*ϕ)` and `cos(m*ϕ)`.
+    #     sin_mϕ = 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ
+    #     cos_mϕ = 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ
+    #     ```
+    #
+    #     ## Et carus quo inceptaque urbem quibus loqui
+    #
+    #     Perspicuus *bello*, rates siqua profatur tumulumque Taygetenque cauda multas ut
+    #     enixa. Cum aenea est exhibuere procubuere terraeque virgo decimum victorem
+    #     silvis dumque cunctatus excidit [piget](http://ea.org/pecorumquemunera) nam, tu.
+    #     Suo quod ab funesta atque Thessalus idem trabe et **quamvis** lacrimis rerum sed
+    #     erat per.
+    #
+    #     > Nec male regia, et tela, videns vultibus ut faciem plangore versantem. Obscena
+    #     > admoveam nominis pater *est confundas decimo* humus indigenae aquae absit. Nos
+    #     > nox acta videt animae, Phineus caput nec.
+    #     """
+    #
+    # # Render the markdown with decorations.
+    # buf = IOBuffer()
+    # io  = IOContext(buf, :color => true, :displaysize => (100, 80))
+    # show(io, MIME("text/plain"), md_str)
+    # str = String(take!(buf))
 
-        Lorem markdownum ipsi Emathion Neoptolemum et moenia **viveret spumantis**
-        namque. Iam excepi ignis turbamve, *cruorem quo nubes* aevi; sensit esse
-        animantis, Chironis infelix *stabantque*. Ruit et iuvenemque longo; ut at iugis,
-        venit adventus molle adpropera?
+    str = """
+\e[1m  Si distentae\e[22m
+\e[1m  ≡≡≡≡≡≡≡≡≡≡≡≡\e[22m
 
-        Putat quibus Phaethon manet sanguine elige, orbem palearia iuvenum age prior
-        mollibat *Pallas* est fera curru naribus. Constituis priore orbae generosque
-        insidiaeque umbra patulas Laurentes denique senior?
+\e[1m  Carpitur devorat\e[22m
+\e[1m  ================\e[22m
 
-        ```julia
-        # Compute recursively `sin(m*ϕ)` and `cos(m*ϕ)`.
-        sin_mϕ = 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ
-        cos_mϕ = 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ
-        ```
+  Lorem markdownum ipsi Emathion Neoptolemum et moenia \e[1mviveret spumantis\e[22m
+  namque. Iam excepi ignis turbamve, \e[4mcruorem quo nubes\e[24m aevi; sensit esse
+  animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et iuvenemque longo; ut at
+  iugis, venit adventus molle adpropera?
 
-        ## Et carus quo inceptaque urbem quibus loqui
+  Putat quibus Phaethon manet sanguine elige, orbem palearia iuvenum age prior
+  mollibat \e[4mPallas\e[24m est fera curru naribus. Constituis priore orbae generosque
+  insidiaeque umbra patulas Laurentes denique senior?
 
-        Perspicuus *bello*, rates siqua profatur tumulumque Taygetenque cauda multas ut
-        enixa. Cum aenea est exhibuere procubuere terraeque virgo decimum victorem
-        silvis dumque cunctatus excidit [piget](http://ea.org/pecorumquemunera) nam, tu.
-        Suo quod ab funesta atque Thessalus idem trabe et **quamvis** lacrimis rerum sed
-        erat per.
+\e[36m  # Compute recursively `sin(m*ϕ)` and `cos(m*ϕ)`.\e[39m
+\e[36m  sin_mϕ = 2cos_ϕ * sin_m_1ϕ - sin_m_2ϕ\e[39m
+\e[36m  cos_mϕ = 2cos_ϕ * cos_m_1ϕ - cos_m_2ϕ\e[39m
 
-        > Nec male regia, et tela, videns vultibus ut faciem plangore versantem. Obscena
-        > admoveam nominis pater *est confundas decimo* humus indigenae aquae absit. Nos
-        > nox acta videt animae, Phineus caput nec.
-        """
+\e[1m  Et carus quo inceptaque urbem quibus loqui\e[22m
+\e[1m  ==========================================\e[22m
 
-    # Render the markdown with decorations.
-    buf = IOBuffer()
-    io  = IOContext(buf, :color => true, :displaysize => (100, 80))
-    show(io, MIME("text/plain"), md_str)
-    str = String(take!(buf))
+  Perspicuus \e[4mbello\e[24m, rates siqua profatur tumulumque Taygetenque cauda multas
+  ut enixa. Cum aenea est exhibuere procubuere terraeque virgo decimum
+  victorem silvis dumque cunctatus excidit piget
+  (http://ea.org/pecorumquemunera) nam, tu. Suo quod ab funesta atque
+  Thessalus idem trabe et \e[1mquamvis\e[22m lacrimis rerum sed erat per.
+
+  │  Nec male regia, et tela, videns vultibus ut faciem plangore
+  │  versantem. Obscena admoveam nominis pater \e[4mest confundas decimo\e[24m
+  │  humus indigenae aquae absit. Nos nox acta videt animae, Phineus
+  │  caput nec."""
 
     # == Without Frozen Lines or Columns ===================================================
 
