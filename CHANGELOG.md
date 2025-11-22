@@ -1,6 +1,13 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.2
+-------------
+
+- ![Feature][badge-feature] The function `parse_ansi_string` can be used to parse a string
+  and obtain the text and decorations one must apply to obtain the same result as if the
+  string was printed to the terminal.
+
 Version 0.4.1
 -------------
 
