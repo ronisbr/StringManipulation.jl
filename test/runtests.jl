@@ -6,6 +6,10 @@ using Markdown
     include("./alignment.jl")
 end
 
+@testset "ANSI Parsing" verbose = true begin
+    include("./ansi.jl")
+end
+
 @testset "Cropping" verbose = true begin
     include("./crop.jl")
 end

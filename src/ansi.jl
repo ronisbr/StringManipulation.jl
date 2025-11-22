@@ -4,8 +4,74 @@
 #
 ############################################################################################
 
-# Parse the ANSI decoration code in `code` and return the updated decoration given the
-# initial `decoration`.
+export parse_ansi_string
+
+"""
+    parse_ansi_string(str::AbstractString) -> Vector{Pair{String, Decoration}}
+
+Parse the ANSI escape sequences in `str` and return a vector of pairs where each pair
+contains a substring and its corresponding `Decoration`.
+"""
+function parse_ansi_string(str::AbstractString)
+    # Buffers to store the tokens and the ANSI escape sequences.
+    str_len  = length(str)
+    buf_text = IOBuffer(sizehint = max(str_len, 1))
+    buf_ansi = IOBuffer(sizehint = max(str_len, 64))
+
+    # Output vector with the string parts and their decoration.
+    voutput = Pair{String, Decoration}[]
+
+    # Store the current state of the string parsing.
+    state = :text
+
+    # Indicate if we are currently capturing an ANSI escape sequence.
+    capturing_ansi = false
+
+    # Store the current decoration of the string.
+    decoration = Decoration()
+
+    @inbounds for i in eachindex(str)
+        c = str[i]
+
+        state = _next_string_state(c, state)
+
+        if state == :text
+            capturing_ansi = false
+            print(buf_text, c)
+            continue
+        end
+
+        if !capturing_ansi && (i != firstindex(str))
+            ansi  = String(take!(buf_ansi))
+            token = String(take!(buf_text))
+
+            decoration = update_decoration(decoration, ansi)
+            push!(voutput, token => decoration)
+        end
+
+        print(buf_ansi, c)
+        capturing_ansi = true
+    end
+
+    ansi  = String(take!(buf_ansi))
+    token = String(take!(buf_text))
+
+    decoration = update_decoration(decoration, ansi)
+    push!(voutput, token => decoration)
+
+    return voutput
+end
+
+############################################################################################
+#                                    Private Functions                                     #
+############################################################################################
+
+"""
+    _parse_ansi_decoration_code(decoration::Decoration, code::String) -> Decoration
+
+Parse the ANSI decoration `code` and return the updated decoration given the initial
+`decoration`.
+"""
 function _parse_ansi_decoration_code(decoration::Decoration, code::String)
     tokens = split(code, ';')
     num_tokens = length(tokens)

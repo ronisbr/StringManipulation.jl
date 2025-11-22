@@ -12,6 +12,10 @@ PrecompileTools.@compile_workload begin
     align_string("Test", 40, :r)
     align_string_per_line("Test\nTest", 40, :r)
 
+    # == ANSI Parsing ======================================================================
+
+    parse_ansi_string("Test \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m End")
+
     # == Crop ==============================================================================
 
     left_crop("Test", 2)
