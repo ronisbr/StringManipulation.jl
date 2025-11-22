@@ -42,6 +42,23 @@ julia> align_string_per_line(str, 80, :r) |> print
                                                We now have the 😊 second 😃 line
 ```
 
+## ANSI String Parsing
+
+The function `parse_ansi_string` can be used to obtain a vector of text together with the
+decorations one must apply to obtain the same result as if this string is printed to the
+terminal.
+
+```julia
+julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
+
+julia> parse_ansi_string(str)
+4-element Vector{Pair{String, Decoration}}:
+ "Test 😅 " => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+ "Test 😅 " => Decoration("38;5;231", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+     "Test" => Decoration("38;5;201", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+         "" => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, true, "", false)
+```
+
 ## Cropping
 
 ### Fit String in a Field
