@@ -21,17 +21,19 @@ function string_search(str::AbstractString, r::Regex)
     search_result = Tuple{Int, Int}[]
 
     # Find all matches.
-    for m in eachmatch(r, undecorated_str)
-        # `m.offset` contains the byte in which the match starts. However, we need to obtain
-        # the character. Hence, it is necessary to compute the text width from the beginning
-        # to the offset.
-        push!(
-            search_result,
-            (
-                textwidth(@view(undecorated_str[1:m.offset])),
-                textwidth(m.match)
-            )
-        )
+    # We track the current byte offset and accumulated text width so that each match only
+    # scans the delta from the previous one, giving O(n) total work instead of O(n * k) when
+    # there are k matches.
+    prev_offset       = 1
+    accumulated_width = 0
+
+    @views for m in eachmatch(r, undecorated_str)
+        # Advance the accumulated width only from the previous offset to the start of this
+        # match, avoiding a full rescan from byte 1 each time.
+        accumulated_width += textwidth(undecorated_str[prev_offset:m.offset])
+        prev_offset = m.offset + 1
+
+        push!(search_result, (accumulated_width, textwidth(m.match)))
     end
 
     return search_result
@@ -46,20 +48,21 @@ the line, beginning of the match in this line, and its length, where the two las
 related to the width of printable characters.
 """
 function string_search_per_line(str::AbstractString, r::Regex)
-    tokens = split(str, '\n')
-    return string_search_per_line(tokens, r)
+    return _internal__string_search_per_line(eachsplit(str, '\n'), r)
 end
 
 function string_search_per_line(lines::AbstractVector{T}, r::Regex) where T<:AbstractString
+    return _internal__string_search_per_line(lines, r)
+end
+
+function _internal__string_search_per_line(it, r::Regex)
     search_results = Dict{Int, Vector{Tuple{Int, Int}}}()
 
     # Find the matches in each line.
-    for l in eachindex(lines)
-        search_results_l = string_search(lines[l], r)
-
-        if !isempty(search_results_l)
-            search_results[l] = search_results_l
-        end
+    for (i, line) in enumerate(it)
+        search_results_l = string_search(line, r)
+        isempty(search_results_l) && continue
+        search_results[i] = search_results_l
     end
 
     return search_results
