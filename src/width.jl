@@ -27,13 +27,7 @@ Return a vector with the printable textwidth of each line in `str`. The lines ar
 considering the character `\n`.
 """
 function printable_textwidth_per_line(str::AbstractString)
-    lines       = split(str, '\n')
-    num_lines   = length(lines)
-    lines_width = zeros(Int, num_lines)
-
-    @inbounds for k in 1:num_lines
-        lines_width[k] = printable_textwidth(lines[k])
-    end
-
-    return lines_width
+    return [
+        printable_textwidth(line) for line in eachsplit(str, '\n')
+    ]
 end

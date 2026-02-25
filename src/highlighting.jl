@@ -70,15 +70,18 @@ function highlight_search(
 
             search_matches_l = search_matches[l]
 
-            write(buf, highlight_search(
-                lines[l],
-                search_matches_l;
-                active_match = line_active_match,
-                highlight,
-                active_highlight,
-                min_column,
-                max_column
-            ))
+            write(
+                buf,
+                highlight_search(
+                    lines[l],
+                    search_matches_l;
+                    active_match = line_active_match,
+                    highlight,
+                    active_highlight,
+                    min_column,
+                    max_column
+                )
+            )
 
             num_matches += length(search_matches_l)
         else

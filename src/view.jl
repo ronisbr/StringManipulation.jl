@@ -409,7 +409,31 @@ end
 #                                    Private Functions                                     #
 ############################################################################################
 
-# Draw a line view and return the number of right characters that was cropped.
+"""
+    _draw_line_view!(buf::IO, line::AbstractString, line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}}, line_active_match::Int, highlight::String, active_highlight::String, start_column::Int, num_columns::Int, frozen_columns_at_beginning::Int, visual_line::Bool = false, visual_line_background::String = "")
+
+Draw a line view to the provided IO buffer `buf` with syntax highlighting and search match
+indicators.
+
+# Arguments
+- `buf::IO`: The output buffer to write the formatted line view to.
+- `line::AbstractString`: The line content to be displayed.
+- `line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}}`: Vector of tuples
+    indicating start and end positions of search matches, or nothing if no matches.
+- `line_active_match::Int`: Index of the currently active/selected match to highlight
+    differently.
+- `highlight::String`: ANSI color code string for regular search match highlighting.
+- `active_highlight::String`: ANSI color code string for the active match highlighting.
+- `start_column::Int`: The column index where the view should begin (for horizontal
+    scrolling).
+- `num_columns::Int`: The number of columns to display in the view.
+- `frozen_columns_at_beginning::Int`: Number of columns to keep frozen/always visible at the
+    start.
+- `visual_line::Bool`: Whether to apply visual line mode styling.
+    (**Default**: `false``).
+- `visual_line_background::String`: ANSI color code for visual line background.
+    (**Default**: "").
+"""
 function _draw_line_view!(
     buf::IO,
     line::AbstractString,

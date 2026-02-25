@@ -138,9 +138,9 @@ function align_string_per_line(
     # Align each one of them.
     buf = IOBuffer(sizehint = floor(Int, sizeof(str) + num_lines * div(field_width, 2)))
 
-    @inbounds for i in 1:num_lines
-        write(buf, align_string(lines[i], field_width, alignment; fill))
-        i != num_lines && write(buf, '\n')
+    for (i, line) in enumerate(lines)
+        write(buf, align_string(line, field_width, alignment; fill))
+        i != last(eachindex(lines)) && write(buf, '\n')
     end
 
     return String(take!(buf))

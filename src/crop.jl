@@ -59,8 +59,6 @@ function crop_width_to_fit_string_in_field(
 
     # If the user is asking for the continuation char, we must crop the string to account
     # for the continuation char.
-    cont_str = ""
-
     if add_continuation_char
         cont_str_width = textwidth(continuation_char)
 
@@ -148,6 +146,7 @@ function fit_string_in_field(
     (crop ≤ field_margin) && return str
 
     cont_str = add_continuation_char ? string(continuation_char) : ""
+    spc_str  = add_space_in_continuation_char ? " " : ""
 
     # == Crop From the Right ===============================================================
 
@@ -159,9 +158,9 @@ function fit_string_in_field(
             printable_string_width = str_width
         )
 
-        add_space_in_continuation_char && return cropped_str * " " * cont_str * ansi
+        add_space_in_continuation_char && return "$cropped_str $cont_str$ansi"
 
-        return cropped_str * cont_str * ansi
+        return "$cropped_str$cont_str$ansi"
 
     # == Crop from The Left ================================================================
 
@@ -169,9 +168,9 @@ function fit_string_in_field(
         ansi, cropped_str = left_crop(str, crop)
         result = keep_escape_seq ? ansi : ""
 
-        add_space_in_continuation_char && return result * cont_str * " " * cropped_str
+        add_space_in_continuation_char && return "$result$cont_str $cropped_str"
 
-        return result * cont_str * cropped_str
+        return "$result$cont_str$cropped_str"
     end
 end
 

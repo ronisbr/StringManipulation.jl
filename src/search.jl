@@ -25,10 +25,13 @@ function string_search(str::AbstractString, r::Regex)
         # `m.offset` contains the byte in which the match starts. However, we need to obtain
         # the character. Hence, it is necessary to compute the text width from the beginning
         # to the offset.
-        push!(search_result, (
-            textwidth(@view(undecorated_str[1:m.offset])),
-            textwidth(m.match)
-        ))
+        push!(
+            search_result,
+            (
+                textwidth(@view(undecorated_str[1:m.offset])),
+                textwidth(m.match)
+            )
+        )
     end
 
     return search_result
