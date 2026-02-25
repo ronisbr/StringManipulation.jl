@@ -1,6 +1,11 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.3
+-------------
+
+- ![Enhancement][badge-enhancement] General improvements.
+
 Version 0.4.2
 -------------
 
