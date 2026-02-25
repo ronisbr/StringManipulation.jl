@@ -1,6 +1,11 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.4
+-------------
+
+- ![Enhancement][badge-enhancement] Improve performance of string search.
+
 Version 0.4.3
 -------------
 
