@@ -24,35 +24,48 @@ used.
 # Keywords
 
 - `active_highlight::String`: ANSI escape sequence that contains the decoration of the
-    active highlight. (**Default** = `\\e[30;43m`)
+    active highlight.
+    (**Default** = `\\e[30;43m`)
 - `active_match::Int`: The match number that is considered active. This match is highlighted
-    using `active_highlight` instead of `highlight`.  (**Default** = 0)
+    using `active_highlight` instead of `highlight`.
+    (**Default** = 0)
 - `frozen_columns_at_beginning::Int`: Number of frozen columns that are drawn in the
-    beginning. (**Default** = 0)
+    beginning.
+    (**Default** = 0)
 - `frozen_lines_at_beginning::Int`: Number of frozen lines that are drawn in the beginning.
     (**Default** = 0)
 - `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
     (**Default** = `\\e[7m`)
+- `hide_title_lines::Bool`: If `true`, title lines are hidden from the frozen block, and the
+    view is filled with the remaining lines up to its limits.
+    (**Default** = `false`)
 - `maximum_number_of_columns::Int`: Maximum number of columns in the view, regardless the
-    view width. If it is -1, the entire view width will be used. (**Default** = -1)
+    view width. If it is -1, the entire view width will be used.
+    (**Default** = -1)
 - `maximum_number_of_lines::Int`: Maximum number of lines in the view, regardless the view
-    height. If it is -1, the entire view height will be used. (**Default** = -1)
+    height. If it is -1, the entire view height will be used.
+    (**Default** = -1)
 - `parse_decorations_before_view::Bool`: If `true`, we will scan all the decorations in the
     lines before the view and consider them when rendering the output. Otherwise, everything
     before the beginning of the view will be discarded. If this option is `false`, the
     decoration can be wrong. However, this feature can require a high amount of processing
-    depending on the input string size and the view position. (**Default** = `false`)
+    depending on the input string size and the view position.
+    (**Default** = `false`)
 - `ruler_decoration::String`: ANSI escape sequence that contains the decoration of the
-    ruler. (**Default** = `\\e[90m`)
+    ruler.
+    (**Default** = `\\e[90m`)
 - `show_ruler::Bool`: If `true`, a ruler with the row numbers will be shown to the left of
-    the view. (**Default** = `false`)
+    the view.
+    (**Default** = `false`)
 - `visual_lines::Union{Nothing, Vector{Int}}`: Vector containing the number of the lines
     that will be highlighted with a different background (visual mode). If it is `nothing`,
-    no line will be changed. (**Default** = `nothing`)
+    no line will be changed.
+    (**Default** = `nothing`)
 - `visual_line_backgrounds::Union{String, Vector{String}}`: ANSI code for the background
     decorations of the lines in `visual_lines`. It can be a `Vector{String}`, where a
     background can be specified for each line, or a `String`, where all backgrounds will
-    have the same decoration. (**Default** = "44")
+    have the same decoration.
+    (**Default** = "44")
 - `title_lines::Int`: Number of lines at the beginning of the text to be considered as
     title, meaning that they will be printed statically on the screen regardless the view.
     (**Default** = 0)
@@ -60,13 +73,15 @@ used.
 If `text::AbstractString` is passed, the following keyword is available:
 
 - `search_regex::Uniont{Nothing, Regex}`: A regex used to highlight matches in the text
-    view. (**Default** = `nothing`).
+    view.
+    (**Default** = `nothing`).
 
 If `lines::Vector{AbstractString}` is passed, the following keyword is available:
 
 - `search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}}`: The search matches
     that are highlighted in the text view. This dictionary must be created using the
-    function [`string_search_per_line`](@ref). (**Default** = `nothing`)
+    function [`string_search_per_line`](@ref).
+    (**Default** = `nothing`)
 
 # Returns
 
@@ -132,6 +147,7 @@ function textview(
     frozen_columns_at_beginning::Int = 0,
     frozen_lines_at_beginning::Int = 0,
     highlight::String = _CSI * "7m",
+    hide_title_lines::Bool = false,
     maximum_number_of_columns::Int = -1,
     maximum_number_of_lines::Int = -1,
     parse_decorations_before_view::Bool = false,
@@ -149,16 +165,25 @@ function textview(
     num_lines   = view[2]
     total_lines = length(lines)
 
-    start_line = clamp(start_line, 1, total_lines)
-    num_lines = num_lines ≥ 0 ? clamp(num_lines, 0, total_lines - start_line + 1) : total_lines
+    total_lines == 0 && return 0, 0
 
-    if start_line + num_lines - 1 > total_lines
-        num_lines = total_lines - start_line + 1
-    end
+    frozen_lines_at_beginning = clamp(frozen_lines_at_beginning, 0, total_lines)
+    title_lines = clamp(title_lines, 0, frozen_lines_at_beginning)
+
+    start_line = clamp(start_line, 1, total_lines)
 
     if frozen_lines_at_beginning > 0
-        start_line = clamp(start_line, frozen_lines_at_beginning + 1, total_lines)
+        first_non_frozen_line = frozen_lines_at_beginning + 1
+
+        start_line = if first_non_frozen_line > total_lines
+            total_lines + 1
+        else
+            clamp(start_line, first_non_frozen_line, total_lines)
+        end
     end
+
+    available_lines = max(total_lines - start_line + 1, 0)
+    num_lines = num_lines ≥ 0 ? clamp(num_lines, 0, available_lines) : available_lines
 
     start_column = max(view[3], 1)
 
@@ -181,6 +206,8 @@ function textview(
         end
     end
 
+    visual_line_background_vec = nothing
+
     if !isnothing(visual_lines)
         if visual_line_backgrounds isa AbstractVector
             (length(visual_lines) != length(visual_line_backgrounds)) && throw(ArgumentError(
@@ -191,11 +218,16 @@ function textview(
         else
             visual_line_background_vec = fill("44", length(visual_lines))
         end
-    else
-        visual_line_background_vec = nothing
     end
 
     # == Internal Variables ================================================================
+
+    hidden_title_lines = hide_title_lines ? title_lines : 0
+    visible_frozen_lines_at_beginning = frozen_lines_at_beginning - hidden_title_lines
+
+    if hidden_title_lines > 0
+        num_lines = clamp(num_lines + hidden_title_lines, 0, total_lines - start_line + 1)
+    end
 
     # Count how many matches we passed in the current line that is being processed.
     num_matches = 0
@@ -212,19 +244,19 @@ function textview(
 
     # Check if we have a maximum number of lines.
     if maximum_number_of_lines ≥ 0
-        if frozen_lines_at_beginning ≥ maximum_number_of_lines
-            frozen_lines_at_beginning = maximum_number_of_lines
+        if visible_frozen_lines_at_beginning ≥ maximum_number_of_lines
+            frozen_lines_at_beginning = hidden_title_lines + maximum_number_of_lines
             num_lines = 0
 
         else
-            if num_lines > maximum_number_of_lines - frozen_lines_at_beginning
-                num_lines = maximum_number_of_lines - frozen_lines_at_beginning
+            if num_lines > maximum_number_of_lines - visible_frozen_lines_at_beginning
+                num_lines = maximum_number_of_lines - visible_frozen_lines_at_beginning
             end
 
             num_cropped_lines_at_end = total_lines - start_line - (num_lines - 1)
         end
     else
-       num_cropped_lines_at_end = total_lines - start_line - (num_lines - 1)
+        num_cropped_lines_at_end = total_lines - start_line - (num_lines - 1)
     end
 
     # Check if we have a maximum number of columns.
@@ -237,8 +269,7 @@ function textview(
 
         else
             if num_columns < 0
-                num_columns =
-                    maximum_number_of_columns - frozen_columns_at_beginning
+                num_columns = maximum_number_of_columns - frozen_columns_at_beginning
             else
                 num_columns = clamp(
                     num_columns,
@@ -252,13 +283,25 @@ function textview(
     # == Frozen Lines ======================================================================
 
     for l in 1:frozen_lines_at_beginning
-        line_active_match = active_match - num_matches
-
-        if !isnothing(search_matches) && haskey(search_matches, l)
-            line_search_matches = search_matches[l]
+        line_search_matches = if !isnothing(search_matches) && haskey(search_matches, l)
+            search_matches[l]
         else
-            line_search_matches = nothing
+            nothing
         end
+
+        if hide_title_lines && (l ≤ title_lines)
+            if !isnothing(line_search_matches)
+                num_matches += length(line_search_matches)
+            end
+
+            if parse_decorations_before_view
+                pre_decorations *= get_decorations(lines[l])
+            end
+
+            continue
+        end
+
+        line_active_match = active_match - num_matches
 
         if show_ruler
             line_number_str = lpad(l, ruler_spacing)
@@ -270,6 +313,14 @@ function textview(
         cropped_chars_in_line = 0
 
         if l ≤ title_lines
+            title_num_columns = 0
+            title_frozen_columns_at_beginning = num_columns + frozen_columns_at_beginning
+
+            if title_frozen_columns_at_beginning < 0
+                title_num_columns = -1
+                title_frozen_columns_at_beginning = 0
+            end
+
             _draw_line_view!(
                 buf,
                 lines[l],
@@ -278,8 +329,8 @@ function textview(
                 highlight,
                 active_highlight,
                 1,
-                0,
-                num_columns + frozen_columns_at_beginning
+                title_num_columns,
+                title_frozen_columns_at_beginning
             )
 
         else

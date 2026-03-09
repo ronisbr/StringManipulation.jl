@@ -290,6 +290,88 @@
     @test num_cropped_lines_at_end == 11
     @test max_cropped_chars == 13
 
+    vstr, ~, ~ = textview(
+        lines,
+        (14, 8, 10, 31),
+        frozen_columns_at_beginning = 0,
+        frozen_lines_at_beginning = 2,
+        title_lines = 1
+    )
+
+    @test occursin("Si distentae", vstr)
+
+    vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
+        lines,
+        (14, 8, 10, 31),
+        frozen_columns_at_beginning = 2,
+        frozen_lines_at_beginning = 2,
+        hide_title_lines = true,
+        title_lines = 1
+    )
+
+    @test !occursin("Si distentae", vstr)
+    @test startswith(vstr, "\e[1m  \e[0m\e[1m≡≡≡≡≡\e[22m\e[0m\n")
+    @test length(split(vstr, '\n')) == 10
+    @test num_cropped_lines_at_end == 10
+    @test max_cropped_chars == 13
+
+    vstr_1, num_cropped_lines_at_end_1, max_cropped_chars_1 = textview(
+        lines,
+        (14, 8, 10, 31),
+        frozen_columns_at_beginning = 2,
+        frozen_lines_at_beginning = 2,
+        hide_title_lines = true,
+        title_lines = 10
+    )
+
+    vstr_2, num_cropped_lines_at_end_2, max_cropped_chars_2 = textview(
+        lines,
+        (14, 8, 10, 31),
+        frozen_columns_at_beginning = 2,
+        frozen_lines_at_beginning = 2,
+        hide_title_lines = true,
+        title_lines = 2
+    )
+
+    @test vstr_1 == vstr_2
+    @test num_cropped_lines_at_end_1 == num_cropped_lines_at_end_2
+    @test max_cropped_chars_1 == max_cropped_chars_2
+
+    edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
+        ["a", "b"],
+        (-1, -1, -1, 10),
+        frozen_lines_at_beginning = 10,
+        title_lines = 10
+    )
+
+    @test occursin("a", edge_vstr)
+    @test occursin("b", edge_vstr)
+    @test edge_num_cropped_lines_at_end == 0
+    @test edge_max_cropped_chars == 0
+
+    edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
+        ["a", "b"],
+        (-1, -1, -1, -1),
+        frozen_lines_at_beginning = 1,
+        title_lines = 1
+    )
+
+    @test occursin("a", edge_vstr)
+    @test occursin("b", edge_vstr)
+    @test edge_num_cropped_lines_at_end == 0
+    @test edge_max_cropped_chars == 0
+
+    edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
+        String[],
+        (-1, -1, -1, 10),
+        frozen_lines_at_beginning = 10,
+        title_lines = 10
+    )
+
+    @test edge_vstr == ""
+    @test edge_num_cropped_lines_at_end == 0
+    @test edge_max_cropped_chars == 0
+
     # == Visual Lines ======================================================================
 
     expected = """
