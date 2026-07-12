@@ -4,7 +4,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/ronisbr/StringManipulation.jl?token=XELRWB2KOO&style=flat-square&logo=codecov&logoColor=white&labelColor=475569)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495D1?style=flat-square&logo=julia&logoColor=white&labelColor=475569)](https://github.com/invenia/BlueStyle)
 [![License](https://img.shields.io/github/license/ronisbr/StringManipulation.jl?style=flat-square&logo=readme&logoColor=white&labelColor=475569&color=0284C7)](https://github.com/ronisbr/StringManipulation.jl/blob/main/LICENSE.txt)
-[![DOI](https://img.shields.io/badge/DOI-Zenodo-DB2777?style=flat-square&logo=doi&logoColor=white&labelColor=475569)](https://zenodo.org/badge/latestdoi/421645319)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.8327572-DB2777?style=flat-square&logo=doi&logoColor=white&labelColor=475569)](https://doi.org/10.5281/zenodo.8327572)
 
 This package has the purpose to provide functions to manipulate strings with ANSI escape
 sequences.
