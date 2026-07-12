@@ -1,9 +1,10 @@
 # StringManipulation.jl
 
-[![CI](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ronisbr/StringManipulation.jl/branch/main/graph/badge.svg?token=XELRWB2KOO)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
-[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
-[![DOI](https://zenodo.org/badge/421645319.svg)](https://zenodo.org/badge/latestdoi/421645319)
+[![CI](https://img.shields.io/github/actions/workflow/status/ronisbr/StringManipulation.jl/ci.yml?style=flat-square&logo=githubactions&logoColor=white&labelColor=475569&label=CI)](https://github.com/ronisbr/StringManipulation.jl/actions/workflows/ci.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ronisbr/StringManipulation.jl?token=XELRWB2KOO&style=flat-square&logo=codecov&logoColor=white&labelColor=475569)](https://codecov.io/gh/ronisbr/StringManipulation.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495D1?style=flat-square&logo=julia&logoColor=white&labelColor=475569)](https://github.com/invenia/BlueStyle)
+[![License](https://img.shields.io/github/license/ronisbr/StringManipulation.jl?style=flat-square&logo=readme&logoColor=white&labelColor=475569&color=0284C7)](https://github.com/ronisbr/StringManipulation.jl/blob/main/LICENSE.txt)
+[![DOI](https://img.shields.io/badge/DOI-Zenodo-DB2777?style=flat-square&logo=doi&logoColor=white&labelColor=475569)](https://zenodo.org/badge/latestdoi/421645319)
 
 This package has the purpose to provide functions to manipulate strings with ANSI escape
 sequences.
