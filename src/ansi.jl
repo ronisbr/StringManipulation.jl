@@ -137,40 +137,39 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
             # Check if we have 256-color or true-color (24-bit) definition.
             if i + 1 ≤ num_tokens
                 color_type = tryparse(Int, tokens[i + 1], base = 10)
-                isnothing(color_type) && continue
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
                         color_code = tryparse(Int, tokens[i + 2], base = 10)
-                        isnothing(color_code) && continue
-
-                        foreground = "38;5;" * string(color_code)
-                        i += 2
+                        if !isnothing(color_code)
+                            foreground = "38;5;" * string(color_code)
+                        end
                     end
+                    i = min(i + 2, num_tokens)
 
                 # True-color (24-bit) mode.
                 elseif color_type == 2
                     # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
-                        isnothing(color_r) && continue
-
                         color_g = tryparse(Int, tokens[i + 3], base = 10)
-                        isnothing(color_g) && continue
-
                         color_b = tryparse(Int, tokens[i + 4], base = 10)
-                        isnothing(color_b) && continue
 
-                        foreground =
-                            "38;2;" *
-                            string(color_r) * ";" *
-                            string(color_g) * ";" *
-                            string(color_b)
-
-                        i += 4
+                        if !any(isnothing, (color_r, color_g, color_b))
+                            foreground =
+                                "38;2;" *
+                                string(color_r) * ";" *
+                                string(color_g) * ";" *
+                                string(color_b)
+                        end
                     end
+                    i = min(i + 4, num_tokens)
+
+                else
+                    # Consume malformed or unsupported extended-color modes.
+                    i += 1
                 end
             end
 
@@ -185,40 +184,39 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
             # Check if we have 256-color or truecolor definition.
             if i + 1 ≤ num_tokens
                 color_type = tryparse(Int, tokens[i + 1], base = 10)
-                isnothing(color_type) && continue
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
                         color_code = tryparse(Int, tokens[i + 2], base = 10)
-                        isnothing(color_code) && continue
-
-                        background = "48;5;" * string(color_code)
-                        i += 2
+                        if !isnothing(color_code)
+                            background = "48;5;" * string(color_code)
+                        end
                     end
+                    i = min(i + 2, num_tokens)
 
                 # Truecolor mode.
                 elseif color_type == 2
                     # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
                         color_r = tryparse(Int, tokens[i + 2], base = 10)
-                        isnothing(color_r) && continue
-
                         color_g = tryparse(Int, tokens[i + 3], base = 10)
-                        isnothing(color_g) && continue
-
                         color_b = tryparse(Int, tokens[i + 4], base = 10)
-                        isnothing(color_b) && continue
 
-                        background =
-                            "48;2;" *
-                            string(color_r) * ";" *
-                            string(color_g) * ";" *
-                            string(color_b)
-
-                        i += 4
+                        if !any(isnothing, (color_r, color_g, color_b))
+                            background =
+                                "48;2;" *
+                                string(color_r) * ";" *
+                                string(color_g) * ";" *
+                                string(color_b)
+                        end
                     end
+                    i = min(i + 4, num_tokens)
+
+                else
+                    # Consume malformed or unsupported extended-color modes.
+                    i += 1
                 end
             end
 
