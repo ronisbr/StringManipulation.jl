@@ -61,14 +61,10 @@ function align_string(
     field_width::Int,
     alignment::Symbol;
     fill::Bool = false,
-    printable_string_width::Int = -1
+    printable_string_width::Int = -1,
 )
     padding = padding_for_string_alignment(
-        str,
-        field_width,
-        alignment;
-        fill,
-        printable_string_width
+        str, field_width, alignment; fill, printable_string_width
     )
 
     isnothing(padding) && return str
@@ -134,15 +130,12 @@ julia> align_string_per_line(\"\"\"
 ```
 """
 function align_string_per_line(
-    str::AbstractString,
-    field_width::Int,
-    alignment::Symbol;
-    fill::Bool = false
+    str::AbstractString, field_width::Int, alignment::Symbol; fill::Bool = false
 )
     (field_width ≤ 0) && return str
 
     # Align each line without materializing the collection of lines.
-    buf = IOBuffer(sizehint = sizeof(str))
+    buf = IOBuffer(; sizehint = sizeof(str))
     first_line = true
 
     for line in eachsplit(str, '\n'; keepempty = true)
@@ -209,7 +202,7 @@ function padding_for_string_alignment(
     field_width::Int,
     alignment::Symbol;
     fill::Bool = false,
-    printable_string_width::Int = -1
+    printable_string_width::Int = -1,
 )
     str_width = if printable_string_width < 0
         printable_textwidth(str)

@@ -30,7 +30,7 @@ function string_search(str::AbstractString, r::Regex)
     @views for m in eachmatch(r, undecorated_str)
         # Advance the accumulated width only from the previous offset to the start of this
         # match, avoiding a full rescan from byte 1 each time.
-        accumulated_width += textwidth(undecorated_str[prev_offset:m.offset])
+        accumulated_width += textwidth(undecorated_str[prev_offset:(m.offset)])
         prev_offset = nextind(undecorated_str, m.offset)
 
         push!(search_result, (accumulated_width, textwidth(m.match)))
@@ -54,7 +54,9 @@ function string_search_per_line(str::AbstractString, r::Regex)
     return _internal__string_search_per_line(eachsplit(str, '\n'), r)
 end
 
-function string_search_per_line(lines::AbstractVector{T}, r::Regex) where T<:AbstractString
+function string_search_per_line(
+    lines::AbstractVector{T}, r::Regex
+) where {T <: AbstractString}
     return _internal__string_search_per_line(lines, r)
 end
 

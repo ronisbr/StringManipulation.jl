@@ -47,7 +47,7 @@ function crop_width_to_fit_string_in_field(
     add_continuation_char::Bool = true,
     add_space_in_continuation_char::Bool = false,
     continuation_char::Char = '…',
-    printable_string_width::Int = -1
+    printable_string_width::Int = -1,
 )
     str_width = if printable_string_width < 0
         printable_textwidth(str)
@@ -132,7 +132,7 @@ function fit_string_in_field(
     crop_side::Symbol = :right,
     field_margin::Int = 0,
     keep_escape_seq::Bool = true,
-    printable_string_width::Int = -1
+    printable_string_width::Int = -1,
 )
     str_width = if printable_string_width < 0
         printable_textwidth(str)
@@ -146,7 +146,7 @@ function fit_string_in_field(
         add_continuation_char,
         add_space_in_continuation_char,
         continuation_char,
-        printable_string_width = str_width
+        printable_string_width = str_width,
     )
 
     (crop ≤ field_margin) && return str
@@ -158,17 +158,14 @@ function fit_string_in_field(
 
     if crop_side == :right
         cropped_str, ansi = right_crop(
-            str,
-            crop;
-            keep_escape_seq,
-            printable_string_width = str_width
+            str, crop; keep_escape_seq, printable_string_width = str_width
         )
 
         add_space_in_continuation_char && return "$cropped_str $cont_str$ansi"
 
         return "$cropped_str$cont_str$ansi"
 
-    # == Crop from The Left ================================================================
+        # == Crop from The Left ================================================================
 
     else
         ansi, cropped_str = left_crop(str, crop)
@@ -202,7 +199,7 @@ julia> left_crop("\\e[1mPlease, crop this string.", 8)
 """
 function left_crop(str::AbstractString, crop_width::Int)
     buf_ansi = IOBuffer()
-    buf_str  = IOBuffer(sizehint = floor(Int, sizeof(str) - crop_width))
+    buf_str  = IOBuffer(; sizehint = floor(Int, sizeof(str) - crop_width))
     state    = :text
 
     for c in str
@@ -271,10 +268,10 @@ function right_crop(
     str::AbstractString,
     crop_width::Int;
     keep_escape_seq::Bool = true,
-    printable_string_width::Int = -1
+    printable_string_width::Int = -1,
 )
     buf_ansi = IOBuffer()
-    buf_str  = IOBuffer(sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
+    buf_str  = IOBuffer(; sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
     state    = :text
 
     str_width = if printable_string_width < 0

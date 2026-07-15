@@ -85,7 +85,7 @@ end
         (:c, false, " a\n bb"),
         (:c, true, " a  \n bb "),
         (:r, false, "   a\n  bb"),
-        (:r, true, "   a\n  bb")
+        (:r, true, "   a\n  bb"),
     )
 
     for (alignment, fill, expected) in cases
@@ -93,8 +93,7 @@ end
     end
 
     ansi = "\e[31mA\e[0m\n\e[1mB\e[0m"
-    @test align_string_per_line(ansi, 3, :r) ==
-        "  \e[31mA\e[0m\n  \e[1mB\e[0m"
+    @test align_string_per_line(ansi, 3, :r) == "  \e[31mA\e[0m\n  \e[1mB\e[0m"
 
     unicode = "界\né"
     @test align_string_per_line(unicode, 4, :r) == "  界\n   é"

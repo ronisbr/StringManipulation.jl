@@ -118,7 +118,7 @@ function textview(
     text::AbstractString,
     view::NTuple{4, Int};
     search_regex::Union{Nothing, Regex} = nothing,
-    kwargs...
+    kwargs...,
 )
     lines = split(text, '\n')
 
@@ -128,16 +128,12 @@ function textview(
         nothing
     end
 
-    return textview(
-        buf,
-        lines,
-        view;
-        search_matches,
-        kwargs...
-    )
+    return textview(buf, lines, view; search_matches, kwargs...)
 end
 
-function textview(lines::Vector{T}, view::NTuple{4, Int}; kwargs...) where T<:AbstractString
+function textview(
+    lines::Vector{T}, view::NTuple{4, Int}; kwargs...
+) where {T <: AbstractString}
     buf = IOBuffer()
     num_cropped_lines, max_cropped_chars = textview(buf, lines, view; kwargs...)
     return String(take!(buf)), num_cropped_lines, max_cropped_chars
@@ -161,8 +157,8 @@ function textview(
     show_ruler::Bool = false,
     visual_lines::Union{Nothing, Vector{Int}} = nothing,
     visual_line_backgrounds::Union{String, Vector{String}} = "44",
-    title_lines::Int = 0
-) where T<:AbstractString
+    title_lines::Int = 0,
+) where {T <: AbstractString}
 
     # == Verification of the Input Parameters ==============================================
 
@@ -207,7 +203,9 @@ function textview(
         # If the user selected a maximum number of columns, we need to decrease it to take
         # into account the ruler.
         if maximum_number_of_columns ≥ 0
-            maximum_number_of_columns = max(maximum_number_of_columns - ruler_spacing - 3, 0)
+            maximum_number_of_columns = max(
+                maximum_number_of_columns - ruler_spacing - 3, 0
+            )
         end
     end
 
@@ -215,16 +213,15 @@ function textview(
 
     if !isnothing(visual_lines)
         if visual_line_backgrounds isa AbstractVector
-            (length(visual_lines) != length(visual_line_backgrounds)) && throw(ArgumentError(
-                "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`."
-            ))
+            (length(visual_lines) != length(visual_line_backgrounds)) && throw(
+                ArgumentError(
+                    "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`.",
+                ),
+            )
 
             backgrounds = visual_line_backgrounds
         else
-            backgrounds = Iterators.repeated(
-                visual_line_backgrounds,
-                length(visual_lines)
-            )
+            backgrounds = Iterators.repeated(visual_line_backgrounds, length(visual_lines))
         end
 
         visual_line_backgrounds_by_line = Dict{Int, String}()
@@ -288,9 +285,7 @@ function textview(
                 num_columns = maximum_number_of_columns - frozen_columns_at_beginning
             else
                 num_columns = clamp(
-                    num_columns,
-                    -1,
-                    maximum_number_of_columns - frozen_columns_at_beginning
+                    num_columns, -1, maximum_number_of_columns - frozen_columns_at_beginning
                 )
             end
         end
@@ -346,7 +341,7 @@ function textview(
                 active_highlight,
                 1,
                 title_num_columns,
-                title_frozen_columns_at_beginning
+                title_frozen_columns_at_beginning,
             )
 
         else
@@ -359,7 +354,7 @@ function textview(
                 active_highlight,
                 start_column,
                 num_columns,
-                frozen_columns_at_beginning
+                frozen_columns_at_beginning,
             )
         end
 
@@ -389,7 +384,7 @@ function textview(
         end
     end
 
-    for l = (frozen_lines_at_beginning + 1):(start_line - 1)
+    for l in (frozen_lines_at_beginning + 1):(start_line - 1)
         # Sum the number of matches between the frozen line and the displayed line. This
         # computation is important to find which match is active.
         if !isnothing(search_matches) && haskey(search_matches, l)
@@ -456,7 +451,7 @@ function textview(
             num_columns,
             frozen_columns_at_beginning,
             is_visual_line,
-            visual_line_background
+            visual_line_background,
         )
 
         # We should not compute the number of cropped chars if we are only printing frozen
@@ -527,7 +522,7 @@ function _draw_line_view!(
     num_columns::Int,
     frozen_columns_at_beginning::Int,
     visual_line::Bool = false,
-    visual_line_background::String = ""
+    visual_line_background::String = "",
 )
     line_str = string(line)
 
@@ -555,7 +550,7 @@ function _draw_line_view!(
                 highlight,
                 min_column = 1,
                 max_column = frozen_columns_at_beginning,
-                start_column = 1
+                start_column = 1,
             )
         end
 
@@ -617,7 +612,7 @@ function _draw_line_view!(
             highlight,
             start_column = start_column,
             min_column = start_column,
-            max_column = start_column + num_columns - 1
+            max_column = start_column + num_columns - 1,
         )
     end
 

@@ -27,25 +27,34 @@ PrecompileTools.@compile_workload begin
 
     drop_inactive_properties(Decoration())
     get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
-    get_and_remove_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
+    get_and_remove_decorations(
+        "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
+    )
     parse_decoration("\\e[1;45m")
-    remove_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
+    remove_decorations(
+        "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
+    )
     replace_default_background(
         "\e[35mThis is a \e[45;1mtest string to \e[0mverify if \e[45mthe background \e[49;1mwas replaced correctly.",
-        "43"
+        "43",
     )
     update_decoration(Decoration(), "\\e[1;45m")
-    convert(String, Decoration(bold = StringManipulation.active))
+    convert(String, Decoration(; bold = StringManipulation.active))
 
     # == Highlight =========================================================================
 
-    highlight_search("Test high\e[1mlight\e[0m in a string with no underlines.", r"highlight")
-    highlight_search([
-        "Test \e[7mhighlight\e[0m\e[0m in a string with no underlines.",
-        "Test \e[7mhighlight\e[0m\e[4m in a string with underlines\e[0m.",
-        "Test another \e[7mhighlight\e[0m\e[33m with colors.",
-        "This is the last line."
-    ], r"highlight")
+    highlight_search(
+        "Test high\e[1mlight\e[0m in a string with no underlines.", r"highlight"
+    )
+    highlight_search(
+        [
+            "Test \e[7mhighlight\e[0m\e[0m in a string with no underlines.",
+            "Test \e[7mhighlight\e[0m\e[4m in a string with underlines\e[0m.",
+            "Test another \e[7mhighlight\e[0m\e[33m with colors.",
+            "This is the last line.",
+        ],
+        r"highlight",
+    )
 
     # == String Search =====================================================================
 
@@ -54,7 +63,7 @@ PrecompileTools.@compile_workload begin
         Test 1 😅 \e[38;5;231;48;5;243mTest 2 😅 \e[38;5;201;48;5;243mTest\e[0m
         Test 1 😅 \e[38;5;231;48;5;243mTest 2 😅 \e[38;5;201;48;5;243mTest\e[0m
         """,
-        r"Test 2 😅"
+        r"Test 2 😅",
     )
 
     string_search_per_line(
@@ -62,7 +71,7 @@ PrecompileTools.@compile_workload begin
         Test 1 😅 \e[38;5;231;48;5;243mTest 2 😅 \e[38;5;201;48;5;243mTest\e[0m
         Test 1 😅 \e[38;5;231;48;5;243mTest 2 😅 \e[38;5;201;48;5;243mTest\e[0m
         """,
-        r"Test 2 😅"
+        r"Test 2 😅",
     )
 
     # == Split =============================================================================
@@ -95,6 +104,5 @@ PrecompileTools.@compile_workload begin
         \u001b[30;1m A \u001b[31;1m B \u001b[32;1m C \u001b[33;1m D \u001b[0m
         \u001b[44;1m A \u001b[45;1m B \u001b[46;1m C \u001b[47;1m D \u001b[0m
         \u001b[1m BOLD \u001b[0m\u001b[4m Underline \u001b[0m\u001b[7m Reversed \u001b[0m
-        \u001b[1m\u001b[4m\u001b[7m BOLD Underline Reversed \u001b[0m"""
-    )
+        \u001b[1m\u001b[4m\u001b[7m BOLD Underline Reversed \u001b[0m""")
 end

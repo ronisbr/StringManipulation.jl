@@ -24,10 +24,10 @@ equal to `str`.
 """
 function split_string(str::AbstractString, size::Int)
     # Buffer with the string before the split point.
-    buf₀ = IOBuffer(sizehint = max(size, 1))
+    buf₀ = IOBuffer(; sizehint = max(size, 1))
 
     # Buffer with the string after the split point.
-    buf₁ = IOBuffer(sizehint = max(length(str) - size, 1))
+    buf₁ = IOBuffer(; sizehint = max(length(str) - size, 1))
 
     state = :text
 

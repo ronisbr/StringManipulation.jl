@@ -54,9 +54,8 @@ function highlight_search(
     highlight::String = _CSI * "7m",
     max_column::Int = 0,
     min_column::Int = 0,
-    start_line::Int = 0
-) where T <: AbstractString
-
+    start_line::Int = 0,
+) where {T <: AbstractString}
     buf = IOBuffer()
 
     start_line = max(start_line, 1)
@@ -87,8 +86,8 @@ function highlight_search(
                     highlight,
                     active_highlight,
                     min_column,
-                    max_column
-                )
+                    max_column,
+                ),
             )
 
             num_matches += length(search_matches_l)
@@ -102,7 +101,9 @@ function highlight_search(
     return String(take!(buf))
 end
 
-function highlight_search(lines::Vector{T}, regex::Regex; kwargs...) where T <: AbstractString
+function highlight_search(
+    lines::Vector{T}, regex::Regex; kwargs...
+) where {T <: AbstractString}
     search_matches = string_search_per_line(lines, regex)
     return highlight_search(lines, search_matches; kwargs...)
 end
@@ -147,14 +148,14 @@ function highlight_search(
     highlight::String = _CSI * "7m",
     max_column::Int = 0,
     min_column::Int = 0,
-    start_column::Int = 1
+    start_column::Int = 1,
 )
     num_matches = length(search_matches)
 
     (num_matches == 0) && return str
 
     reset_decoration = convert(String, _RESET_DECORATION)
-    h_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
+    h_str = IOBuffer(; sizehint = floor(Int, sizeof(str)))
 
     # Auxiliary variable to store the index of the first character in the current string
     # part we are processing.

@@ -38,7 +38,7 @@
     r = left_crop(str, 1)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 
     str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
 
@@ -47,7 +47,7 @@
     r = left_crop(str, 12)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 
     str = "Test \e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
 
@@ -56,7 +56,7 @@
     r = left_crop(str, 3)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 end
 
 @testset "Fit Field" begin
@@ -70,11 +70,7 @@ end
     expected = "Test 😅…\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
     @test cropped_str == expected
 
-    cropped_str = fit_string_in_field(
-        str,
-        8;
-        printable_string_width
-    )
+    cropped_str = fit_string_in_field(str, 8; printable_string_width)
     expected = "Test 😅…\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
     @test cropped_str == expected
 
@@ -83,10 +79,7 @@ end
     @test cropped_str == expected
 
     cropped_str = fit_string_in_field(
-        str,
-        8;
-        add_space_in_continuation_char = true,
-        keep_escape_seq = false
+        str, 8; add_space_in_continuation_char = true, keep_escape_seq = false
     )
     expected = "Test   …"
     @test cropped_str == expected
@@ -98,20 +91,12 @@ end
     expected = "\e[38;5;231;48;5;243m…😅 \e[38;5;201;48;5;243mTest\e[0m"
     @test cropped_str == expected
 
-    cropped_str = fit_string_in_field(
-        str,
-        8;
-        crop_side = :left,
-        printable_string_width
-    )
+    cropped_str = fit_string_in_field(str, 8; crop_side = :left, printable_string_width)
     expected = "\e[38;5;231;48;5;243m…😅 \e[38;5;201;48;5;243mTest\e[0m"
     @test cropped_str == expected
 
     cropped_str = fit_string_in_field(
-        str,
-        8;
-        add_space_in_continuation_char = true,
-        crop_side = :left
+        str, 8; add_space_in_continuation_char = true, crop_side = :left
     )
     expected = "\e[38;5;231;48;5;243m…   \e[38;5;201;48;5;243mTest\e[0m"
     @test cropped_str == expected
@@ -122,10 +107,7 @@ end
 
     expected = "\e]8;;https://ronanarraes.com\e\\My W …\e]8;;\e\\"
     cropped_str = fit_string_in_field(
-        str,
-        6;
-        add_space_in_continuation_char = true,
-        crop_side = :right
+        str, 6; add_space_in_continuation_char = true, crop_side = :right
     )
 
     @test cropped_str == expected
@@ -133,10 +115,7 @@ end
     expected = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ T …"
 
     cropped_str = fit_string_in_field(
-        str,
-        14;
-        add_space_in_continuation_char = true,
-        crop_side = :right
+        str, 14; add_space_in_continuation_char = true, crop_side = :right
     )
 
     @test cropped_str == expected
@@ -144,10 +123,7 @@ end
     expected = "\e]8;;https://ronanarraes.com\e\\\e]8;;\e\\… Test"
 
     cropped_str = fit_string_in_field(
-        str,
-        6;
-        add_space_in_continuation_char = true,
-        crop_side = :left
+        str, 6; add_space_in_continuation_char = true, crop_side = :left
     )
 
     @test cropped_str == expected
@@ -155,10 +131,7 @@ end
     expected = "\e]8;;https://ronanarraes.com\e\\… e\e]8;;\e\\ Test Test"
 
     cropped_str = fit_string_in_field(
-        str,
-        13;
-        add_space_in_continuation_char = true,
-        crop_side = :left
+        str, 13; add_space_in_continuation_char = true, crop_side = :left
     )
 
     @test cropped_str == expected
@@ -201,7 +174,7 @@ end
     r = right_crop(str, 5)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 
     str = "\e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
 
@@ -210,11 +183,11 @@ end
     r = right_crop(str, 12)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 
     r = right_crop(str, 12; keep_escape_seq = false)
     @test first(r) == expected_left
-    @test last(r)  == ""
+    @test last(r) == ""
 
     str = "Test \e]8;;https://ronanarraes.com\e\\My Website\e]8;;\e\\ Test Test"
 
@@ -223,7 +196,7 @@ end
     r = right_crop(str, 21)
 
     @test first(r) == expected_left
-    @test last(r)  == expected_right
+    @test last(r) == expected_right
 end
 
 @testset "Corner Cases" begin

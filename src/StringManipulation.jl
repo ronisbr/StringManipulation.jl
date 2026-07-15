@@ -9,8 +9,7 @@ import Base: convert, String, @kwdef
 const _CSI = "\x1b["
 
 # This regex matches all the ANSI escape sequences that defines decorations.
-const _REGEX_ANSI_SEQUENCES =
-    r"\x1B(?:]8;;[^\x1B]*\x1B\\|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+const _REGEX_ANSI_SEQUENCES = r"\x1B(?:]8;;[^\x1B]*\x1B\\|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
 
 # Escape sequence that reset all decorations.
 const _RESET_DECORATIONS = _CSI * "0m"
@@ -46,7 +45,7 @@ Structure to hold the current decoration of a string.
 end
 
 const _DEFAULT_DECORATION = Decoration()
-const _RESET_DECORATION = Decoration(reset = true)
+const _RESET_DECORATION = Decoration(; reset = true)
 
 ############################################################################################
 #                                         Includes                                         #

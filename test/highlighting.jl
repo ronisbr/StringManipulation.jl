@@ -56,11 +56,7 @@ end
         Test \e[7mhighlight\e[0m\e[4m in a string with underlines\e[0m.
         Test another \e[30;43mhighlight\e[0m\e[33m with colors."""
     hstr = highlight_search(
-        lines,
-        r"highlight";
-        active_match = 3,
-        start_line = 2,
-        end_line = 3
+        lines, r"highlight"; active_match = 3, start_line = 2, end_line = 3
     )
     @test hstr == expected
 
@@ -70,11 +66,7 @@ end
         Test high\e[4mlight in a string with underlines\e[0m.
         Test another high\e[33mlight with colors."""
     hstr = highlight_search(
-        lines,
-        r"nothing to match";
-        active_match = 3,
-        start_line = 1,
-        end_line = 3
+        lines, r"nothing to match"; active_match = 3, start_line = 1, end_line = 3
     )
     @test hstr == expected
 end

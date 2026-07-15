@@ -15,8 +15,8 @@ contains a substring and its corresponding `Decoration`.
 function parse_ansi_string(str::AbstractString)
     # Buffers to store the tokens and the ANSI escape sequences.
     str_len  = length(str)
-    buf_text = IOBuffer(sizehint = max(str_len, 1))
-    buf_ansi = IOBuffer(sizehint = max(str_len, 64))
+    buf_text = IOBuffer(; sizehint = max(str_len, 1))
+    buf_ansi = IOBuffer(; sizehint = max(str_len, 64))
 
     # Output vector with the string parts and their decoration.
     voutput = Pair{String, Decoration}[]
@@ -90,7 +90,7 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
 
     i = 1
     while i ≤ num_tokens
-        code_i = tryparse(Int, tokens[i], base = 10)
+        code_i = tryparse(Int, tokens[i]; base = 10)
         if isnothing(code_i)
             i += 1
             continue
@@ -99,10 +99,10 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         if code_i == 0
             # If we have a reset, neglect all the other configurations except the
             # hyperlinks.
-            return Decoration(
+            return Decoration(;
                 reset = true,
                 hyperlink_url = decoration.hyperlink_url,
-                hyperlink_url_changed = decoration.hyperlink_url_changed
+                hyperlink_url_changed = decoration.hyperlink_url_changed,
             )
 
         elseif code_i == 1
@@ -132,36 +132,38 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         elseif 30 <= code_i <= 37
             foreground = string(code_i)
 
-        # 256-color / true-color (24-bit) support for foreground.
+            # 256-color / true-color (24-bit) support for foreground.
         elseif code_i == 38
             # Check if we have 256-color or true-color (24-bit) definition.
             if i + 1 ≤ num_tokens
-                color_type = tryparse(Int, tokens[i + 1], base = 10)
+                color_type = tryparse(Int, tokens[i + 1]; base = 10)
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
-                        color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        color_code = tryparse(Int, tokens[i + 2]; base = 10)
                         if !isnothing(color_code)
                             foreground = "38;5;" * string(color_code)
                         end
                     end
                     i = min(i + 2, num_tokens)
 
-                # True-color (24-bit) mode.
+                    # True-color (24-bit) mode.
                 elseif color_type == 2
                     # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
-                        color_r = tryparse(Int, tokens[i + 2], base = 10)
-                        color_g = tryparse(Int, tokens[i + 3], base = 10)
-                        color_b = tryparse(Int, tokens[i + 4], base = 10)
+                        color_r = tryparse(Int, tokens[i + 2]; base = 10)
+                        color_g = tryparse(Int, tokens[i + 3]; base = 10)
+                        color_b = tryparse(Int, tokens[i + 4]; base = 10)
 
                         if !any(isnothing, (color_r, color_g, color_b))
                             foreground =
                                 "38;2;" *
-                                string(color_r) * ";" *
-                                string(color_g) * ";" *
+                                string(color_r) *
+                                ";" *
+                                string(color_g) *
+                                ";" *
                                 string(color_b)
                         end
                     end
@@ -179,36 +181,38 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         elseif 40 <= code_i <= 47
             background = string(code_i)
 
-        # 256-color / truecolor support for background.
+            # 256-color / truecolor support for background.
         elseif code_i == 48
             # Check if we have 256-color or truecolor definition.
             if i + 1 ≤ num_tokens
-                color_type = tryparse(Int, tokens[i + 1], base = 10)
+                color_type = tryparse(Int, tokens[i + 1]; base = 10)
 
                 # 256-color mode.
                 if color_type == 5
                     # In this case, we must have another token for the color.
                     if i + 2 ≤ num_tokens
-                        color_code = tryparse(Int, tokens[i + 2], base = 10)
+                        color_code = tryparse(Int, tokens[i + 2]; base = 10)
                         if !isnothing(color_code)
                             background = "48;5;" * string(color_code)
                         end
                     end
                     i = min(i + 2, num_tokens)
 
-                # Truecolor mode.
+                    # Truecolor mode.
                 elseif color_type == 2
                     # In this case, we must have another three tokens for the RGB color.
                     if i + 4 ≤ num_tokens
-                        color_r = tryparse(Int, tokens[i + 2], base = 10)
-                        color_g = tryparse(Int, tokens[i + 3], base = 10)
-                        color_b = tryparse(Int, tokens[i + 4], base = 10)
+                        color_r = tryparse(Int, tokens[i + 2]; base = 10)
+                        color_g = tryparse(Int, tokens[i + 3]; base = 10)
+                        color_b = tryparse(Int, tokens[i + 4]; base = 10)
 
                         if !any(isnothing, (color_r, color_g, color_b))
                             background =
                                 "48;2;" *
-                                string(color_r) * ";" *
-                                string(color_g) * ";" *
+                                string(color_r) *
+                                ";" *
+                                string(color_g) *
+                                ";" *
                                 string(color_b)
                         end
                     end
@@ -223,14 +227,13 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         elseif code_i == 49
             background = "49"
 
-        # Bright foreground colors defined by Aixterm.
+            # Bright foreground colors defined by Aixterm.
         elseif 90 <= code_i <= 97
             foreground = string(code_i)
 
-        # Bright background colors defined by Aixterm.
+            # Bright background colors defined by Aixterm.
         elseif 100 <= code_i <= 107
             background = string(code_i)
-
         end
 
         i += 1
@@ -245,6 +248,6 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         underline,
         reset,
         decoration.hyperlink_url,
-        decoration.hyperlink_url_changed
+        decoration.hyperlink_url_changed,
     )
 end

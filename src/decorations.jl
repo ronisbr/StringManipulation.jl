@@ -25,7 +25,7 @@ function drop_inactive_properties(decoration::Decoration)
     # If a field is inactive or if it is a reset to a default value, drop it by returning to
     # default.
     if foreground == "39"
-        foreground =  ""
+        foreground = ""
     end
 
     if background == "49"
@@ -57,7 +57,7 @@ function drop_inactive_properties(decoration::Decoration)
         underline,
         false,
         decoration.hyperlink_url,
-        decoration.hyperlink_url_changed
+        decoration.hyperlink_url_changed,
     )
 end
 
@@ -78,7 +78,7 @@ julia> get_decorations(
 ```
 """
 function get_decorations(str::AbstractString)
-    buf = IOBuffer(sizehint = sizeof(str))
+    buf = IOBuffer(; sizehint = sizeof(str))
 
     for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
         write(buf, m.match)
@@ -94,8 +94,8 @@ Get and remove the decorations in `str`. The first returned string contains the 
 whereas the second contains the plain text.
 """
 function get_and_remove_decorations(str::AbstractString)
-    buf_decorations = IOBuffer(sizehint = floor(Int, sizeof(str)))
-    buf_plain_str   = IOBuffer(sizehint = floor(Int, sizeof(str)))
+    buf_decorations = IOBuffer(; sizehint = floor(Int, sizeof(str)))
+    buf_plain_str   = IOBuffer(; sizehint = floor(Int, sizeof(str)))
 
     str_i = 1
 
@@ -127,7 +127,7 @@ Parse the decoration in `code` and return the resulting `Decoration` object.
 """
 function parse_decoration(code::AbstractString)
     state = :text
-    buf = IOBuffer(sizehint = floor(Int, sizeof(code)))
+    buf = IOBuffer(; sizehint = floor(Int, sizeof(code)))
     decoration = Decoration()
 
     for c in code
@@ -149,7 +149,6 @@ function parse_decoration(code::AbstractString)
 
         else
             write(buf, c)
-
         end
     end
 
@@ -182,7 +181,7 @@ other supported decorations.
 """
 function replace_default_background(str::AbstractString, new_background::AbstractString)
     # Buffer to store the new string.
-    buf_new_str = IOBuffer(sizehint = floor(Int, sizeof(str)))
+    buf_new_str = IOBuffer(; sizehint = floor(Int, sizeof(str)))
 
     str_i = 1
 
@@ -227,7 +226,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
             # sequence and treat it after the loop, where we will restore background to the
             # default one. Otherwise, we will have duplicated escape sequences.
             if str_i <= str_code_units
-                new_decoration = Decoration(
+                new_decoration = Decoration(;
                     foreground = d.foreground,
                     background = new_background,
                     bold       = d.bold,
@@ -251,8 +250,8 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     if current_decoration.reset
         write(buf_new_str, _CSI, "0m")
 
-    # If the last decoration is a background change, or if the background is not modified,
-    # we should reset to the terminal default background.
+        # If the last decoration is a background change, or if the background is not modified,
+        # we should reset to the terminal default background.
     elseif isempty(current_decoration.background) || (current_decoration.background == "49")
         write(buf_new_str, _CSI, "49m")
     end
@@ -268,7 +267,7 @@ Update the current `decoration` given the decorations in the string `str` or in 
 """
 function update_decoration(decoration::Decoration, code::String)
     state = :text
-    buf = IOBuffer(sizehint = floor(Int, sizeof(code)))
+    buf = IOBuffer(; sizehint = floor(Int, sizeof(code)))
     hyperlink = false
 
     for c in code
@@ -281,7 +280,7 @@ function update_decoration(decoration::Decoration, code::String)
         elseif state == :escape_hyperlink_3
             # If we reached this state, the next one is the URL. Hence, we clean the buffer
             # and inform that we are processing a hyperlink.
-            buf.ptr  = 1
+            buf.ptr = 1
             buf.size = 0
             hyperlink = true
 
@@ -301,7 +300,7 @@ function update_decoration(decoration::Decoration, code::String)
                 decoration.underline,
                 decoration.reset,
                 hl_url,
-                true
+                true,
             )
 
         elseif state == :escape_state_end
@@ -319,7 +318,6 @@ function update_decoration(decoration::Decoration, code::String)
 
         elseif state != :escape_state_opening
             write(buf, c)
-
         end
     end
 
@@ -338,14 +336,14 @@ function update_decoration(decoration::Decoration, new::Decoration)
 
     hl_url_changed = new.hyperlink_url_changed
 
-    !isempty(new.foreground)   && (foreground = new.foreground)
-    !isempty(new.background)   && (background = new.background)
-    new.bold != unchanged      && (bold = new.bold)
-    new.italic != unchanged    && (italic = new.italic)
+    !isempty(new.foreground) && (foreground = new.foreground)
+    !isempty(new.background) && (background = new.background)
+    new.bold != unchanged && (bold = new.bold)
+    new.italic != unchanged && (italic = new.italic)
     new.underline != unchanged && (underline = new.underline)
-    new.reset                  && (reset = true)
-    new.reversed  != unchanged && (reversed = new.reversed)
-    hl_url_changed             && (hl_url = new.hyperlink_url)
+    new.reset && (reset = true)
+    new.reversed != unchanged && (reversed = new.reversed)
+    hl_url_changed && (hl_url = new.hyperlink_url)
 
     return Decoration(
         foreground,
@@ -356,7 +354,7 @@ function update_decoration(decoration::Decoration, new::Decoration)
         underline,
         reset,
         hl_url,
-        hl_url_changed
+        hl_url_changed,
     )
 end
 
@@ -380,12 +378,12 @@ function convert(::Type{String}, d::Decoration)
     d.reset && return "$(str_hyperlink)$(_CSI)0m"
 
     # TODO: Check if we can avoid adding so many `_CSI`.
-    str_foreground = !isempty(d.foreground)   ? "$(_CSI)$(d.foreground)m" : ""
-    str_background = !isempty(d.background)   ? "$(_CSI)$(d.background)m" : ""
-    str_bold       = d.bold      != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
-    str_italic     = d.italic    != unchanged ? "$(_CSI)$(d.italic == active ? "3" : "23")m" : ""
+    str_foreground = !isempty(d.foreground) ? "$(_CSI)$(d.foreground)m" : ""
+    str_background = !isempty(d.background) ? "$(_CSI)$(d.background)m" : ""
+    str_bold       = d.bold != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
+    str_italic     = d.italic != unchanged ? "$(_CSI)$(d.italic == active ? "3" : "23")m" : ""
     str_underline  = d.underline != unchanged ? "$(_CSI)$(d.underline == active ? "4" : "24")m" : ""
-    str_reversed   = d.reversed  != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
+    str_reversed   = d.reversed != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
 
     return string(
         str_hyperlink,
@@ -394,6 +392,6 @@ function convert(::Type{String}, d::Decoration)
         str_bold,
         str_italic,
         str_underline,
-        str_reversed
+        str_reversed,
     )
 end

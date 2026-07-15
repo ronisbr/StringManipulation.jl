@@ -11,19 +11,11 @@
 
     @test length(parsed) == 4
     @test parsed[1] == ("Test " => Decoration())
-    @test parsed[2] == (
-        "Test 😅 " => Decoration(
-            foreground = "38;5;231",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[3] == (
-        "Test" => Decoration(
-            foreground = "38;5;201",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[4] == (" End" => Decoration(reset = true))
+    @test parsed[2] ==
+        ("Test 😅 " => Decoration(; foreground = "38;5;231", background = "48;5;243"))
+    @test parsed[3] ==
+        ("Test" => Decoration(; foreground = "38;5;201", background = "48;5;243"))
+    @test parsed[4] == (" End" => Decoration(; reset = true))
 
     str = "Test \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
 
@@ -31,38 +23,22 @@
 
     @test length(parsed) == 4
     @test parsed[1] == ("Test " => Decoration())
-    @test parsed[2] == (
-        "Test 😅 " => Decoration(
-            foreground = "38;5;231",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[3] == (
-        "Test" => Decoration(
-            foreground = "38;5;201",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[4] == ("" => Decoration(reset = true))
+    @test parsed[2] ==
+        ("Test 😅 " => Decoration(; foreground = "38;5;231", background = "48;5;243"))
+    @test parsed[3] ==
+        ("Test" => Decoration(; foreground = "38;5;201", background = "48;5;243"))
+    @test parsed[4] == ("" => Decoration(; reset = true))
 
     str = "\e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m"
 
     parsed = parse_ansi_string(str)
 
     @test length(parsed) == 3
-    @test parsed[1] == (
-        "Test 😅 " => Decoration(
-            foreground = "38;5;231",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[2] == (
-        "Test" => Decoration(
-            foreground = "38;5;201",
-            background = "48;5;243"
-        )
-    )
-    @test parsed[3] == ("" => Decoration(reset = true))
+    @test parsed[1] ==
+        ("Test 😅 " => Decoration(; foreground = "38;5;231", background = "48;5;243"))
+    @test parsed[2] ==
+        ("Test" => Decoration(; foreground = "38;5;201", background = "48;5;243"))
+    @test parsed[3] == ("" => Decoration(; reset = true))
 end
 
 @testset "Malformed Extended ANSI Colors" begin
@@ -100,7 +76,7 @@ end
     @test parse_code("48;2;$overflow;20;30;7").reversed == StringManipulation.active
 
     # Missing components terminate cleanly and preserve the current decoration.
-    current = Decoration(foreground = "32", background = "44")
+    current = Decoration(; foreground = "32", background = "44")
     for code in ("38", "38;5", "38;2;1;2", "48", "48;5", "48;2;1;2")
         @test StringManipulation._parse_ansi_decoration_code(current, code) == current
     end

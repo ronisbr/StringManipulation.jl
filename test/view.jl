@@ -97,10 +97,7 @@
         \e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
-        str,
-        (14, 8, 10, 31);
-        active_match = 7,
-        search_regex = r"qu"
+        str, (14, 8, 10, 31); active_match = 7, search_regex = r"qu"
     )
 
     @test vstr == expected
@@ -129,7 +126,7 @@
         active_match = 8,
         frozen_lines_at_beginning = 4,
         frozen_columns_at_beginning = 2,
-        search_regex = r"qu|Si distentae"
+        search_regex = r"qu|Si distentae",
     )
 
     @test vstr == expected
@@ -154,10 +151,7 @@
         """
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
-        str,
-        (14, 8, 10, 31);
-        maximum_number_of_lines = 6,
-        maximum_number_of_columns = 24
+        str, (14, 8, 10, 31); maximum_number_of_lines = 6, maximum_number_of_columns = 24
     )
 
     @test vstr == expected
@@ -180,7 +174,7 @@
         frozen_columns_at_beginning = 30,
         frozen_lines_at_beginning = 10,
         maximum_number_of_columns = 20,
-        maximum_number_of_lines = 8
+        maximum_number_of_lines = 8,
     )
 
     @test vstr == expected
@@ -198,10 +192,7 @@
       \e[0meque umbra patulas"""
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
-        str,
-        (7, 8, 10, -1);
-        frozen_columns_at_beginning = 2,
-        maximum_number_of_columns = 20,
+        str, (7, 8, 10, -1); frozen_columns_at_beginning = 2, maximum_number_of_columns = 20
     )
 
     @test vstr == expected
@@ -224,10 +215,7 @@
         \e[1m===============================\e[22m"""
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
-        lines,
-        (14, 8, 10, 31);
-        active_match = 7,
-        search_matches = search_matches
+        lines, (14, 8, 10, 31); active_match = 7, search_matches = search_matches
     )
 
     @test vstr == expected
@@ -257,7 +245,7 @@
         frozen_lines_at_beginning = 4,
         frozen_columns_at_beginning = 2,
         search_regex = r"qu|Si distentae",
-        show_ruler = true
+        show_ruler = true,
     )
 
     @test vstr == expected
@@ -280,10 +268,10 @@
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
         lines,
-        (14, 8, 10, 31),
+        (14, 8, 10, 31);
         frozen_columns_at_beginning = 2,
         frozen_lines_at_beginning = 2,
-        title_lines = 1
+        title_lines = 1,
     )
 
     @test vstr == expected
@@ -292,21 +280,21 @@
 
     vstr, ~, ~ = textview(
         lines,
-        (14, 8, 10, 31),
+        (14, 8, 10, 31);
         frozen_columns_at_beginning = 0,
         frozen_lines_at_beginning = 2,
-        title_lines = 1
+        title_lines = 1,
     )
 
     @test occursin("Si distentae", vstr)
 
     vstr, num_cropped_lines_at_end, max_cropped_chars = textview(
         lines,
-        (14, 8, 10, 31),
+        (14, 8, 10, 31);
         frozen_columns_at_beginning = 2,
         frozen_lines_at_beginning = 2,
         hide_title_lines = true,
-        title_lines = 1
+        title_lines = 1,
     )
 
     @test !occursin("Si distentae", vstr)
@@ -317,20 +305,20 @@
 
     vstr_1, num_cropped_lines_at_end_1, max_cropped_chars_1 = textview(
         lines,
-        (14, 8, 10, 31),
+        (14, 8, 10, 31);
         frozen_columns_at_beginning = 2,
         frozen_lines_at_beginning = 2,
         hide_title_lines = true,
-        title_lines = 10
+        title_lines = 10,
     )
 
     vstr_2, num_cropped_lines_at_end_2, max_cropped_chars_2 = textview(
         lines,
-        (14, 8, 10, 31),
+        (14, 8, 10, 31);
         frozen_columns_at_beginning = 2,
         frozen_lines_at_beginning = 2,
         hide_title_lines = true,
-        title_lines = 2
+        title_lines = 2,
     )
 
     @test vstr_1 == vstr_2
@@ -338,10 +326,7 @@
     @test max_cropped_chars_1 == max_cropped_chars_2
 
     edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
-        ["a", "b"],
-        (-1, -1, -1, 10),
-        frozen_lines_at_beginning = 10,
-        title_lines = 10
+        ["a", "b"], (-1, -1, -1, 10); frozen_lines_at_beginning = 10, title_lines = 10
     )
 
     @test occursin("a", edge_vstr)
@@ -350,10 +335,7 @@
     @test edge_max_cropped_chars == 0
 
     edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
-        ["a", "b"],
-        (-1, -1, -1, -1),
-        frozen_lines_at_beginning = 1,
-        title_lines = 1
+        ["a", "b"], (-1, -1, -1, -1); frozen_lines_at_beginning = 1, title_lines = 1
     )
 
     @test occursin("a", edge_vstr)
@@ -362,10 +344,7 @@
     @test edge_max_cropped_chars == 0
 
     edge_vstr, edge_num_cropped_lines_at_end, edge_max_cropped_chars = textview(
-        String[],
-        (-1, -1, -1, 10),
-        frozen_lines_at_beginning = 10,
-        title_lines = 10
+        String[], (-1, -1, -1, 10); frozen_lines_at_beginning = 10, title_lines = 10
     )
 
     @test edge_vstr == ""
@@ -387,10 +366,7 @@
           iugis, venit adventus molle adpropera?"""
 
     vstr, ~ = textview(
-        str,
-        (0, 10, 0, 49);
-        visual_lines = [3, 7],
-        visual_line_backgrounds = ["44", "45"]
+        str, (0, 10, 0, 49); visual_lines = [3, 7], visual_line_backgrounds = ["44", "45"]
     )
 
     @test vstr == expected
@@ -412,7 +388,7 @@
         (0, 10, 19, 49);
         frozen_columns_at_beginning = 10,
         visual_lines = [3, 7],
-        visual_line_backgrounds = ["44", "45"]
+        visual_line_backgrounds = ["44", "45"],
     )
 
     @test vstr == expected
@@ -429,11 +405,7 @@
           animantis, Chironis infelix \e[4mstabantque\e[24m. Ruit et
           iugis, venit adventus molle adpropera?"""
 
-    vstr, ~ = textview(
-        str,
-        (0, 10, 0, 49);
-        visual_lines = [3, 7],
-    )
+    vstr, ~ = textview(str, (0, 10, 0, 49); visual_lines = [3, 7])
 
     @test vstr == expected
 
@@ -441,7 +413,7 @@
         ["one", "two", "three"],
         (1, -1, 1, 5);
         visual_lines = [2],
-        visual_line_backgrounds = "45"
+        visual_line_backgrounds = "45",
     )
 
     @test scalar_vstr == "one\n\e[45mtwo  \e[49m\nthree"
@@ -450,7 +422,7 @@
         ["one", "two", "three"],
         (1, -1, 1, 5);
         visual_lines = [3, 2, 2, 0, 9],
-        visual_line_backgrounds = ["46", "45", "44", "41", "42"]
+        visual_line_backgrounds = ["46", "45", "44", "41", "42"],
     )
 
     @test indexed_vstr == "one\n\e[45mtwo  \e[49m\n\e[46mthree\e[49m"
@@ -482,7 +454,7 @@
         (4, -1, -1, -1);
         active_match = 3,
         frozen_lines_at_beginning = 1,
-        search_regex = r"ing"
+        search_regex = r"ing",
     )
 
     @test vstr == expected
@@ -502,34 +474,27 @@
         active_match = 3,
         frozen_lines_at_beginning = 1,
         parse_decorations_before_view = true,
-        search_regex = r"ing"
+        search_regex = r"ing",
     )
 
     @test vstr == expected
 
     no_decoration_vstr, ~ = textview(
-        ["hidden", "shown"],
-        (2, 1, 1, -1);
-        parse_decorations_before_view = true
+        ["hidden", "shown"], (2, 1, 1, -1); parse_decorations_before_view = true
     )
     @test no_decoration_vstr == "shown"
 
     decoration_vstr, ~ = textview(
         ["\e[31mcolor", "\e]8;;https://example.com\e\\link", "shown"],
         (3, 1, 1, -1);
-        parse_decorations_before_view = true
+        parse_decorations_before_view = true,
     )
     @test decoration_vstr == "\e]8;;https://example.com\e\\\e[31mshown"
 
     reset_vstr, ~ = textview(
-        [
-            "\e[31mcolor",
-            "\e]8;;https://example.com\e\\link",
-            "\e[0mreset",
-            "shown"
-        ],
+        ["\e[31mcolor", "\e]8;;https://example.com\e\\link", "\e[0mreset", "shown"],
         (4, 1, 1, -1);
-        parse_decorations_before_view = true
+        parse_decorations_before_view = true,
     )
     @test reset_vstr == "shown"
 
@@ -537,7 +502,7 @@
         ["\e[31mfrozen", "\e[1mhidden", "shown"],
         (3, 1, 1, -1);
         frozen_lines_at_beginning = 1,
-        parse_decorations_before_view = true
+        parse_decorations_before_view = true,
     )
     @test frozen_vstr == "\e[31mfrozen\e[0m\n\e[31m\e[1mshown"
 
@@ -547,7 +512,7 @@
         frozen_lines_at_beginning = 2,
         hide_title_lines = true,
         parse_decorations_before_view = true,
-        title_lines = 1
+        title_lines = 1,
     )
     @test hidden_title_vstr == "\e[1mfrozen\e[0m\n\e[31m\e[1mshown"
 end
@@ -564,6 +529,6 @@ end
 @testset "Issue - Wrong Decoration with Visual Mode" begin
     expected = "\e[44m\e[1mThis is a \e[0m"
     a = "\e[1mThis is a test string that will be cropped.\e[0m"
-    vstr, ~, ~ = textview(a, (-1, -1, 0, 10), visual_lines = [1])
+    vstr, ~, ~ = textview(a, (-1, -1, 0, 10); visual_lines = [1])
     @test vstr == expected
 end
