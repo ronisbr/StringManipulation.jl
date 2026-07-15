@@ -7,7 +7,9 @@
 export align_string, align_string_per_line, padding_for_string_alignment
 
 """
-    align_string(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> String
+    align_string(
+        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+    ) -> String
 
 Align the string `str` in the field with width `field_width` using `alignment`, which can
 be:
@@ -22,17 +24,17 @@ be:
 
 !!! note
 
-    This function treats `\\n` as a normal characters. If one wants to align every line, use
+    This function treats `\\n` as normal characters. To align every line, use
     the function [`align_string_per_line`](@ref).
 
 # Keyword
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
-    resulting string has printable width `field_size` if the initial string printable width
-    is lower than it.
+    resulting string has printable width `field_width` if the initial string's printable
+    width is lower than it.
     (**Default** = `false`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
-    computational burden. If this parameters is lower than 0, the printable width is compute
+    computational burden. If this parameter is lower than 0, the printable width is computed
     internally.
     (**Default** = -1)
 
@@ -73,7 +75,9 @@ function align_string(
 end
 
 """
-    align_string_per_line(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> String
+    align_string_per_line(
+        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+    ) -> String
 
 Align each line of the string `str` in the field with width `field_width` using `alignment`,
 which can be:
@@ -89,8 +93,8 @@ which can be:
 # Keyword
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
-    resulting string has printable width `field_size` if the initial string printable width
-    is lower than it.
+    resulting string has printable width `field_width` if the initial string's printable
+    width is lower than it.
     (**Default** = `false`)
 
 # Extended Help
@@ -131,23 +135,23 @@ function align_string_per_line(
 )
     (field_width ≤ 0) && return str
 
-    # Split the lines.
-    lines = split(str, '\n')
-    num_lines = length(lines)
+    # Align each line without materializing the collection of lines.
+    buf = IOBuffer(sizehint = sizeof(str))
+    first_line = true
 
-    # Align each one of them.
-    buf = IOBuffer(sizehint = floor(Int, sizeof(str) + num_lines * div(field_width, 2)))
-
-    for (i, line) in enumerate(lines)
+    for line in eachsplit(str, '\n'; keepempty = true)
+        first_line || write(buf, '\n')
         write(buf, align_string(line, field_width, alignment; fill))
-        i != last(eachindex(lines)) && write(buf, '\n')
+        first_line = false
     end
 
     return String(take!(buf))
 end
 
 """
-    padding_for_string_alignment(str::AbstractString, field_width::Int, alignment::Symbol; kwargs...) -> Union{Nothing, NTuple{2, Int}}
+    padding_for_string_alignment(
+        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+    ) -> Union{Nothing, NTuple{2, Int}}
 
 Return the left and right padding required to align the string `str` in a field with width
 `field_width` using the `alignment`, which can be:
@@ -164,16 +168,16 @@ This function can return `nothing` in the following conditions:
 
 !!! note
 
-    This function treats `\\n` as a normal characters.
+    This function treats `\\n` as normal characters.
 
 # Keyword
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
-    resulting string has printable width `field_size` if the initial string printable width
-    is lower than it.
+    resulting string has printable width `field_width` if the initial string's printable
+    width is lower than it.
     (**Default** = `false`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
-    computational burden. If this parameters is lower than 0, the printable width is compute
+    computational burden. If this parameter is lower than 0, the printable width is computed
     internally.
     (**Default** = -1)
 
