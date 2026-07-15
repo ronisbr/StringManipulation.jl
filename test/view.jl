@@ -437,6 +437,24 @@
 
     @test vstr == expected
 
+    scalar_vstr, ~ = textview(
+        ["one", "two", "three"],
+        (1, -1, 1, 5);
+        visual_lines = [2],
+        visual_line_backgrounds = "45"
+    )
+
+    @test scalar_vstr == "one\n\e[45mtwo  \e[49m\nthree"
+
+    indexed_vstr, ~ = textview(
+        ["one", "two", "three"],
+        (1, -1, 1, 5);
+        visual_lines = [3, 2, 2, 0, 9],
+        visual_line_backgrounds = ["46", "45", "44", "41", "42"]
+    )
+
+    @test indexed_vstr == "one\n\e[45mtwo  \e[49m\n\e[46mthree\e[49m"
+
     # == Consider Decorations in Hidden Lines ==============================================
 
     str = """
@@ -455,7 +473,7 @@
         auctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
         augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
         sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
-        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30m\e[43ming\e[0milla
+        ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30;43ming\e[0milla
         id ac turpis.
         """
 
@@ -466,6 +484,8 @@
         frozen_lines_at_beginning = 1,
         search_regex = r"ing"
     )
+
+    @test vstr == expected
 
     expected = """
         Lorem ipsum dolor sit amet, consectetur adipisc\e[7ming\e[0m elit. Pellentesque tempor\e[0m
@@ -486,6 +506,50 @@
     )
 
     @test vstr == expected
+
+    no_decoration_vstr, ~ = textview(
+        ["hidden", "shown"],
+        (2, 1, 1, -1);
+        parse_decorations_before_view = true
+    )
+    @test no_decoration_vstr == "shown"
+
+    decoration_vstr, ~ = textview(
+        ["\e[31mcolor", "\e]8;;https://example.com\e\\link", "shown"],
+        (3, 1, 1, -1);
+        parse_decorations_before_view = true
+    )
+    @test decoration_vstr == "\e]8;;https://example.com\e\\\e[31mshown"
+
+    reset_vstr, ~ = textview(
+        [
+            "\e[31mcolor",
+            "\e]8;;https://example.com\e\\link",
+            "\e[0mreset",
+            "shown"
+        ],
+        (4, 1, 1, -1);
+        parse_decorations_before_view = true
+    )
+    @test reset_vstr == "shown"
+
+    frozen_vstr, ~ = textview(
+        ["\e[31mfrozen", "\e[1mhidden", "shown"],
+        (3, 1, 1, -1);
+        frozen_lines_at_beginning = 1,
+        parse_decorations_before_view = true
+    )
+    @test frozen_vstr == "\e[31mfrozen\e[0m\n\e[31m\e[1mshown"
+
+    hidden_title_vstr, ~ = textview(
+        ["\e[31mtitle", "\e[1mfrozen", "shown"],
+        (3, 1, 1, -1);
+        frozen_lines_at_beginning = 2,
+        hide_title_lines = true,
+        parse_decorations_before_view = true,
+        title_lines = 1
+    )
+    @test hidden_title_vstr == "\e[1mfrozen\e[0m\n\e[31m\e[1mshown"
 end
 
 @testset "Text view [ERRORS]" begin

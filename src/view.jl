@@ -8,7 +8,9 @@ export textview
 
 """
     textview([io::IO,] text::AbstractString, view::NTuple{4, Int}; kwargs...)
-    textview([io::IO,] lines::Vector{AbstractString}, view::NTuple{4, Int}; kwargs...)
+    textview(
+        [io::IO,] lines::Vector{T}, view::NTuple{4, Int}; kwargs...
+    ) where T <: AbstractString
 
 Create a view of `text` or `lines` considering a `view` configuration. The latter is a tuple
 with four integers that has the following meaning:
@@ -72,11 +74,12 @@ used.
 
 If `text::AbstractString` is passed, the following keyword is available:
 
-- `search_regex::Uniont{Nothing, Regex}`: A regex used to highlight matches in the text
+- `search_regex::Union{Nothing, Regex}`: A regex used to highlight matches in the text
     view.
     (**Default** = `nothing`).
 
-If `lines::Vector{AbstractString}` is passed, the following keyword is available:
+If `lines::Vector{T}` where `T <: AbstractString` is passed, the following keyword is
+available:
 
 - `search_matches::Union{Nothing, Dict{Int, Vector{Tuple{Int, Int}}}}`: The search matches
     that are highlighted in the text view. This dictionary must be created using the
@@ -85,16 +88,16 @@ If `lines::Vector{AbstractString}` is passed, the following keyword is available
 
 # Returns
 
-If `io` is passed, the view is written to it and the function returns:
+If `io` is passed, the view is written to it and the function returns a tuple containing:
 
 - `Int`: Number of cropped lines at the end.
-- `Int`: Maximum number cropped characters in a row.
+- `Int`: Maximum number of cropped characters in a row.
 
-However, if `io` is not passed, the function returns:
+If `io` is not passed, the function returns a tuple containing:
 
 - `String`: Text view.
 - `Int`: Number of cropped lines at the end.
-- `Int`: Maximum number cropped characters in a row.
+- `Int`: Maximum number of cropped characters in a row.
 
 !!! note
 
@@ -206,7 +209,7 @@ function textview(
         end
     end
 
-    visual_line_background_vec = nothing
+    visual_line_backgrounds_by_line = nothing
 
     if !isnothing(visual_lines)
         if visual_line_backgrounds isa AbstractVector
@@ -214,9 +217,20 @@ function textview(
                 "The length of `visual_line` must be equal to the length of `visual_line_backgrounds`."
             ))
 
-            visual_line_background_vec = visual_line_backgrounds
+            backgrounds = visual_line_backgrounds
         else
-            visual_line_background_vec = fill("44", length(visual_lines))
+            backgrounds = Iterators.repeated(
+                visual_line_backgrounds,
+                length(visual_lines)
+            )
+        end
+
+        visual_line_backgrounds_by_line = Dict{Int, String}()
+
+        for (line, background) in zip(visual_lines, backgrounds)
+            if !haskey(visual_line_backgrounds_by_line, line)
+                visual_line_backgrounds_by_line[line] = background
+            end
         end
     end
 
@@ -240,7 +254,7 @@ function textview(
 
     # Variable to store the decorations before the view, including those in the frozen
     # lines. It is used if the option `parse_decorations_before_view` is `true`.
-    pre_decorations = ""
+    pre_decorations = parse_decorations_before_view ? IOBuffer() : nothing
 
     # Check if we have a maximum number of lines.
     if maximum_number_of_lines ≥ 0
@@ -295,7 +309,7 @@ function textview(
             end
 
             if parse_decorations_before_view
-                pre_decorations *= get_decorations(lines[l])
+                write(pre_decorations, get_decorations(lines[l]))
             end
 
             continue
@@ -369,7 +383,7 @@ function textview(
         # the text up to the first line in the view. Here, we accumulate those related to
         # the frozen lines.
         if parse_decorations_before_view
-            pre_decorations *= get_decorations(lines[l])
+            write(pre_decorations, get_decorations(lines[l]))
         end
     end
 
@@ -383,12 +397,12 @@ function textview(
         # If we need to parse the decorations before the view, obtain the decorations of the
         # current hidden line, and merge with the decorations of the other lines.
         if parse_decorations_before_view
-            pre_decorations *= get_decorations(lines[l])
+            write(pre_decorations, get_decorations(lines[l]))
         end
     end
 
     if parse_decorations_before_view
-        d = parse_decoration(pre_decorations)
+        d = parse_decoration(String(take!(pre_decorations)))
 
         # If the pre_decoration is a reset, we just need to reinitialize it since the reset
         # escape sequence was already written to the buffer.
@@ -416,11 +430,14 @@ function textview(
             write(buf, _CSI, "0m")
         end
 
-        i_vl = isnothing(visual_lines) ? nothing : findfirst(==(l), visual_lines)
+        visual_line_background = if isnothing(visual_line_backgrounds_by_line)
+            nothing
+        else
+            get(visual_line_backgrounds_by_line, l, nothing)
+        end
 
-        if !isnothing(i_vl)
+        if !isnothing(visual_line_background)
             is_visual_line = true
-            visual_line_background = visual_line_background_vec[i_vl]
         else
             is_visual_line = false
             visual_line_background = ""
@@ -461,7 +478,19 @@ end
 ############################################################################################
 
 """
-    _draw_line_view!(buf::IO, line::AbstractString, line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}}, line_active_match::Int, highlight::String, active_highlight::String, start_column::Int, num_columns::Int, frozen_columns_at_beginning::Int, visual_line::Bool = false, visual_line_background::String = "")
+    _draw_line_view!(
+        buf::IO,
+        line::AbstractString,
+        line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}},
+        line_active_match::Int,
+        highlight::String,
+        active_highlight::String,
+        start_column::Int,
+        num_columns::Int,
+        frozen_columns_at_beginning::Int,
+        visual_line::Bool = false,
+        visual_line_background::String = ""
+    )
 
 Draw a line view to the provided IO buffer `buf` with syntax highlighting and search match
 indicators.
@@ -470,7 +499,7 @@ indicators.
 - `buf::IO`: The output buffer to write the formatted line view to.
 - `line::AbstractString`: The line content to be displayed.
 - `line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}}`: Vector of tuples
-    indicating start and end positions of search matches, or nothing if no matches.
+    indicating the start and length of search matches, or `nothing` if there are no matches.
 - `line_active_match::Int`: Index of the currently active/selected match to highlight
     differently.
 - `highlight::String`: ANSI color code string for regular search match highlighting.
@@ -481,9 +510,9 @@ indicators.
 - `frozen_columns_at_beginning::Int`: Number of columns to keep frozen/always visible at the
     start.
 - `visual_line::Bool`: Whether to apply visual line mode styling.
-    (**Default**: `false``).
+    (**Default**: `false`).
 - `visual_line_background::String`: ANSI color code for visual line background.
-    (**Default**: "").
+    (**Default**: `""`).
 """
 function _draw_line_view!(
     buf::IO,
@@ -514,7 +543,7 @@ function _draw_line_view!(
             left = replace_default_background(left, visual_line_background)
         end
 
-        # If we have matches, we should have highlight those in the frozen columns.
+        # If we have matches, we should highlight those in the frozen columns.
         if !isnothing(line_search_matches)
             left = highlight_search(
                 left,
@@ -536,7 +565,7 @@ function _draw_line_view!(
 
     if start_column > 0
         # TODO: Can we improve this?
-        # Maybe we can improve the performance by creating a function that remove a certain
+        # Maybe we can improve performance by creating a function that removes a certain
         # number of characters from the left/right and also returns the ANSI escape
         # sequence.
         left, line_str = split_string(line_str, start_column - 1)
