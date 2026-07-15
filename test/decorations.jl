@@ -16,6 +16,7 @@
 
     expected = "\e[35m\e[48;5;243m\e[4m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "35",
@@ -25,6 +26,7 @@
 
     expected = "\e[35m\e[48;5;243m\e[24m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "35",
@@ -34,6 +36,7 @@
 
     expected = "\e[35m\e[1m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "35",
@@ -43,6 +46,7 @@
 
     expected = "\e[35m\e[22m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "",
@@ -52,6 +56,7 @@
 
     expected = "\e[45m\e[7m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "",
@@ -87,6 +92,7 @@
 
     expected = "\e[35m\e[45m\e[1m\e[3m"
     result = convert(String, d)
+    @test result == expected
 
     d = Decoration(
         foreground = "35",
@@ -97,8 +103,9 @@
         hyperlink_url_changed = true
     )
 
-    expected = "\e[35m\e[45m\e[1m\e[3m\e]8;;https://ronanarraes.com\e\\"
+    expected = "\e]8;;https://ronanarraes.com\e\\\e[35m\e[45m\e[1m\e[3m"
     result = convert(String, d)
+    @test result == expected
 end
 
 @testset "Drop Inactive Decorations" begin
