@@ -169,7 +169,8 @@ end
 
 """
     replace_default_background(
-        str::AbstractString, new_background::AbstractString
+        str::AbstractString,
+        new_background::AbstractString
     ) -> String
 
 Replace the default background in `str` by the one in `new_background`. The latter must be

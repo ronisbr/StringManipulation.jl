@@ -8,10 +8,14 @@ export highlight_search
 
 """
     highlight_search(
-        lines::Vector{T}, search_matches::Dict{Int, Vector{Tuple{Int, Int}}}; kwargs...
+        lines::Vector{T},
+        search_matches::Dict{Int, Vector{Tuple{Int, Int}}};
+        kwargs...
     ) where T <: AbstractString -> String
     highlight_search(
-        lines::Vector{T}, regex::Regex; kwargs...
+        lines::Vector{T},
+        regex::Regex;
+        kwargs...
     ) where T <: AbstractString -> String
 
 Return the text composed of the `lines` with the `search_matches` (see
@@ -105,7 +109,9 @@ end
 
 """
     highlight_search(
-        str::AbstractString, search_matches::Vector{Tuple{Int, Int}}; kwargs...
+        str::AbstractString,
+        search_matches::Vector{Tuple{Int, Int}};
+        kwargs...
     ) -> String
     highlight_search(str::AbstractString, regex::Regex; kwargs...) -> String
 

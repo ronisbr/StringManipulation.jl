@@ -8,7 +8,10 @@ export align_string, align_string_per_line, padding_for_string_alignment
 
 """
     align_string(
-        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+        str::AbstractString,
+        field_width::Int,
+        alignment::Symbol;
+        kwargs...
     ) -> String
 
 Align the string `str` in the field with width `field_width` using `alignment`, which can
@@ -76,7 +79,10 @@ end
 
 """
     align_string_per_line(
-        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+        str::AbstractString,
+        field_width::Int,
+        alignment::Symbol;
+        kwargs...
     ) -> String
 
 Align each line of the string `str` in the field with width `field_width` using `alignment`,
@@ -150,7 +156,10 @@ end
 
 """
     padding_for_string_alignment(
-        str::AbstractString, field_width::Int, alignment::Symbol; kwargs...
+        str::AbstractString,
+        field_width::Int,
+        alignment::Symbol;
+        kwargs...
     ) -> Union{Nothing, NTuple{2, Int}}
 
 Return the left and right padding required to align the string `str` in a field with width

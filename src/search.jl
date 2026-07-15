@@ -41,7 +41,8 @@ end
 
 """
     string_search_per_line(
-        str::AbstractString, r::Regex
+        str::AbstractString,
+        r::Regex
     ) -> Dict{Int, Vector{Tuple{Int, Int}}}
 
 Search for the pattern in regex `r` in each line of the string `str`, which can also be

@@ -9,7 +9,9 @@ export textview
 """
     textview([io::IO,] text::AbstractString, view::NTuple{4, Int}; kwargs...)
     textview(
-        [io::IO,] lines::Vector{T}, view::NTuple{4, Int}; kwargs...
+        [io::IO,] lines::Vector{T},
+        view::NTuple{4, Int};
+        kwargs...
     ) where T <: AbstractString
 
 Create a view of `text` or `lines` considering a `view` configuration. The latter is a tuple
