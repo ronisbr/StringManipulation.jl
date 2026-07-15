@@ -7,25 +7,25 @@
 export crop_width_to_fit_string_in_field, left_crop, fit_string_in_field, right_crop
 
 """
-    crop_width_to_fit_string_in_field(str::AbstractString, field_width::Int; kwargs...) -> Int
+    crop_width_to_fit_string_in_field(
+        str::AbstractString, field_width::Int; kwargs...
+    ) -> Int
 
 Get the number of printable characters to be cropped so that the string `str` can fit in the
 field with size `field_width`.
 
 # Keywords
 
-- `add_continuation_char::Bool`: If `true`, a continuation character is added to the cropped
-    string end. Notice that the returned string always has a printable width of
-    `field_size`.
+- `add_continuation_char::Bool`: If `true`, the width of the continuation character is
+    included when computing how much of the string must be cropped.
     (**Default** = `true`)
-- `add_space_in_continuation_char::Bool`: If `true`, a space is added before the
-    continuation character if `crop_size` is `:right`, or after the continuation character
-    if `crop_side` if `:left`.
+- `add_space_in_continuation_char::Bool`: If `true`, the width of a space next to the
+    continuation character is also included in the result.
     (**Default** = `false`)
 - `continuation_char::Char`: The continuation character to add if the string is cropped.
     (**Default** = `…`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
-    computational burden. If this parameters is lower than 0, the printable width is compute
+    computational burden. If this parameter is lower than 0, the printable width is computed
     internally.
     (**Default** = -1)
 
@@ -34,7 +34,10 @@ field with size `field_width`.
 ## Examples
 
 ```julia-repl
-julia> crop_width_to_fit_string_in_field("This is a very long string for a very small field", 10)
+julia> crop_width_to_fit_string_in_field(
+           "This is a very long string for a very small field",
+           10
+       )
 40
 ```
 """
@@ -82,13 +85,12 @@ Crop the string `str` to fit within a field of width `field_width`.
 
 # Keywords
 
-- `add_continuation_char::Bool`: If `true`, a continuation character is added to the cropped
-    string end. Notice that the returned string always has a printable width of
-    `field_size`.
+- `add_continuation_char::Bool`: If `true`, a continuation character is added to the fitted
+    string when cropping is needed. Its width is reserved when computing the crop.
     (**Default** = `true`)
 - `add_space_in_continuation_char::Bool`: If `true`, a space is added before the
-    continuation character if `crop_size` is `:right`, or after the continuation character
-    if `crop_side` if `:left`.
+    continuation character if `crop_side` is `:right`, or after the continuation character
+    if `crop_side` is `:left`.
     (**Default** = `false`)
 - `continuation_char::Char`: The continuation character to add if the string is cropped.
     (**Default** = `…`)
@@ -101,7 +103,7 @@ Crop the string `str` to fit within a field of width `field_width`.
     will be kept.
     (**Default** = `true`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
-    computational burden. If this parameters is lower than 0, the printable width is compute
+    computational burden. If this parameter is lower than 0, the printable width is computed
     internally.
     (**Default** = -1)
 
@@ -113,7 +115,11 @@ Crop the string `str` to fit within a field of width `field_width`.
 julia> fit_string_in_field("This is a very long string for a very small field", 10)
 "This is a…"
 
-julia> fit_string_in_field("This is a very long string for a very small field", 10; crop_side = :left)
+julia> fit_string_in_field(
+           "This is a very long string for a very small field",
+           10;
+           crop_side = :left
+       )
 "…all field"
 ```
 """
@@ -229,8 +235,8 @@ end
 """
     right_crop(str::AbstractString, crop_width::Int; kwargs...) -> String, String
 
-Return a string obtained by cropping the right characters of `str` given a field with a
-printable width of `crop_width`.
+Return a string obtained by cropping characters from the right of `str` so that its printable
+width is reduced by `crop_width` display units.
 
 # Returns
 
@@ -243,7 +249,7 @@ printable width of `crop_width`.
     not be computed. In this case, the second argument returned is always empty.
     (**Default** = `true`)
 - `printable_string_width::Int`: Provide the printable string width to reduce the
-    computational burden. If this parameters is lower than 0, the printable width is compute
+    computational burden. If this parameter is lower than 0, the printable width is computed
     internally. (**Default** = -1)
 
 !!! warning

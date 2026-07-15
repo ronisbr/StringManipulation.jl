@@ -7,8 +7,12 @@
 export highlight_search
 
 """
-    highlight_search(lines::Vector{T}, search_matches::Dict{Int, Vector{Tuple{Int, Int}}}; kwargs...) where T <: AbstractString -> String
-    highlight_search(lines::Vector{T}, regex::Regex]; kwargs...) where T <: AbstractString -> String
+    highlight_search(
+        lines::Vector{T}, search_matches::Dict{Int, Vector{Tuple{Int, Int}}}; kwargs...
+    ) where T <: AbstractString -> String
+    highlight_search(
+        lines::Vector{T}, regex::Regex; kwargs...
+    ) where T <: AbstractString -> String
 
 Return the text composed of the `lines` with the `search_matches` (see
 [`string_search_per_line`](@ref)) highlighted. If a `regex` is passed in the place of
@@ -100,7 +104,9 @@ function highlight_search(lines::Vector{T}, regex::Regex; kwargs...) where T <: 
 end
 
 """
-    highlight_search(str::AbstractString, search_matches::Vector{Tuple{Int, Int}}; kwargs...) -> String
+    highlight_search(
+        str::AbstractString, search_matches::Vector{Tuple{Int, Int}}; kwargs...
+    ) -> String
     highlight_search(str::AbstractString, regex::Regex; kwargs...) -> String
 
 Return the text in the string `str` with the `search_matches` (see [`string_search`](@ref))
@@ -166,7 +172,7 @@ function highlight_search(
         # Split the string in the point indicated by the match.
         str₀, str₁ = split_string(str, match[1] - 1 - Δ)
 
-        # We need to obtain the current decoration and merge it the with one stored in
+        # We need to obtain the current decoration and merge it with the one stored in
         # `decoration` to keep track how the string should be printed after the highlight.
         str₀_decorations = get_decorations(str₀)
         decoration = update_decoration(decoration, str₀_decorations)
@@ -174,7 +180,7 @@ function highlight_search(
         # Check if we are in the active highlight or not.
         hd = i != active_match ? highlight : active_highlight
 
-        # Write the to the buffer the string before and the highlight decoration.
+        # Write the string before the match and the highlight decoration to the buffer.
         write(h_str, str₀, hd)
 
         # Now, we need to split the remaining string using the information on how many

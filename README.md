@@ -6,8 +6,7 @@
 [![License](https://img.shields.io/github/license/ronisbr/StringManipulation.jl?style=flat-square&logo=readme&logoColor=white&labelColor=475569&color=0284C7)](https://github.com/ronisbr/StringManipulation.jl/blob/main/LICENSE.txt)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.8327572-DB2777?style=flat-square&logo=doi&logoColor=white&labelColor=475569)](https://doi.org/10.5281/zenodo.8327572)
 
-This package has the purpose to provide functions to manipulate strings with ANSI escape
-sequences.
+This package provides functions to manipulate strings with ANSI escape sequences.
 
 ## Alignment
 
@@ -64,8 +63,8 @@ julia> parse_ansi_string(str)
 
 ### Fit String in a Field
 
-The function `fit_string_in_field` crop the string so that it has a number of printable
-characters that fits in a field.
+The function `fit_string_in_field` crops the string so that its printable characters fit in
+a field.
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -74,14 +73,14 @@ julia> fit_string_in_field(str, 9)
 "Test 😅 …\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
 ```
 
-The function `fit_string_in_field` has many options. For more information, please, see the
-built-in help (type `textview`  in REPL).
+The function `fit_string_in_field` has many options. For more information, please see the
+built-in help (type `?fit_string_in_field` in the REPL).
 
 ### Left Cropping
 
 The function `left_crop` can be used to crop a field of specific width to the left of the
-string. In this case, the function return the ANSI escape sequence (non-printable string) in
-the cropped field, and the cropped string.
+string. In this case, the function returns the ANSI escape sequence (non-printable string)
+in the cropped field, and the cropped string.
 
 ```julia
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
@@ -93,7 +92,7 @@ julia> left_crop(str, 9)
 ### Right Cropping
 
 The function `right_crop` can be used to crop a field of specific width to the right of the
-string. In this case, the function return the cropped string, and the ANSI escape sequence
+string. In this case, the function returns the cropped string and the ANSI escape sequence
 (non-printable string) in the cropped field.
 
 ```julia
@@ -104,8 +103,8 @@ julia> right_crop(str, 5)
 ```
 
 If the keyword `keep_escape_seq` is set to `false`, then the ANSI escape sequence in the
-cropped field will not be computed. This can lead to a substantial increase in the
-performance for very long string.
+cropped field will not be computed. This can provide a substantial performance improvement
+for very long strings.
 
 ```julia
 julia> right_crop(str, 5; keep_escape_seq = false)
@@ -114,8 +113,7 @@ julia> right_crop(str, 5; keep_escape_seq = false)
 
 ## Decorations
 
-This package contains some functions to work with ANSI escape sequences that decorate the
-text.
+This package contains functions to work with ANSI escape sequences that decorate text.
 
 ### Get Decorations
 
@@ -131,7 +129,7 @@ julia> get_decorations(str)
 
 ### Remove the Decorations
 
-It is possible to remove all the decorations in a string using the functions
+It is possible to remove all the decorations in a string using the function
 `remove_decorations`:
 
 ```julia
@@ -155,7 +153,7 @@ julia> get_and_remove_decorations(str)
 
 ### Parsing Decorations
 
-The ANSI escape sequences that decorates the text can be parsed using the function
+The ANSI escape sequences that decorate the text can be parsed using the function
 `parse_decoration`. The result is an object of type `Decoration` with the combined
 decoration created by the ANSI escape sequence.
 
@@ -236,8 +234,8 @@ julia> highlight_search(str, r"ing"; active_match = 2) |> println
 
 ![Highlight search](./assets/highlight_search.png "Highlight search")
 
-The function `highlight_search` has many options. For more information, please, see the
-built-in help (type `?highlight_search`  in REPL).
+The function `highlight_search` has many options. For more information, please see the
+built-in help (type `?highlight_search` in the REPL).
 
 ## Printable Text Width
 
@@ -303,8 +301,8 @@ ed lorem. Donec interdum, risus eu sceler
 ```
 
 Notice that it correctly considers all the ANSI escape sequences that decorate the text,
-yielding to a view that matches all the characteristics of the original text (foreground
+yielding a view that matches all the characteristics of the original text (foreground
 color, background color, underline, etc.).
 
-The function `textview` has many options. For more information, please, see the built-in
-help (type `?textview`  in REPL).
+The function `textview` has many options. For more information, please see the built-in help
+(type `?textview` in the REPL).

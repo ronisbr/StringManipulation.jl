@@ -10,8 +10,8 @@ export parse_decoration, remove_decorations, replace_default_background, update_
 """
     drop_inactive_properties(decoration::Decoration) -> Decoration
 
-Drop the inactive properties of `decoration` by changing them to inactive. This operation
-can be useful to avoid unnecessary escape sequences if the decorations are reset.
+Mark the inactive properties of `decoration` as unchanged. This operation can avoid
+unnecessary escape sequences after decorations are reset.
 """
 function drop_inactive_properties(decoration::Decoration)
     # Unpack fields.
@@ -71,7 +71,9 @@ Return a string with the decorations in `str`.
 ## Examples
 
 ```julia
-julia> get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
+julia> get_decorations(
+           "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
+       )
 "\\e[1m\\e[45m\\e[0m"
 ```
 """
@@ -97,7 +99,7 @@ function get_and_remove_decorations(str::AbstractString)
 
     str_i = 1
 
-    # Loop for each match of a ANSI escape sequence.
+    # Loop over each match of an ANSI escape sequence.
     for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
         # Write everything from the previous match up to the last character before the
         # current match.
@@ -108,7 +110,7 @@ function get_and_remove_decorations(str::AbstractString)
 
         write(buf_decorations, m.match)
 
-        # `str_i` now have the index just after the current match.
+        # `str_i` now has the index just after the current match.
         str_i = m.offset + ncodeunits(m.match)
     end
 
@@ -121,7 +123,7 @@ end
 """
     parse_decoration(code::AbstractString) -> Decoration
 
-Parse the decoration in the string `str` and returns an object of type `Decoration` with it.
+Parse the decoration in `code` and return the resulting `Decoration` object.
 """
 function parse_decoration(code::AbstractString)
     state = :text
@@ -166,13 +168,15 @@ function remove_decorations(str::AbstractString)
 end
 
 """
-    replace_default_background(str::AbstractString, new_background::AbstractString) -> String
+    replace_default_background(
+        str::AbstractString, new_background::AbstractString
+    ) -> String
 
 Replace the default background in `str` by the one in `new_background`. The latter must be
 represented using a valid ANSI escape sequence that sets the background.
 
-Internally, this function replaces the ANSI sequences that resets the decoration (`\e[0m`)
-and sets the default background (`\e[49m`) with the new background while keeping all the
+Internally, this function replaces the ANSI sequences that reset the decoration (`\e[0m`)
+and set the default background (`\e[49m`) with the new background while keeping all the
 other supported decorations.
 """
 function replace_default_background(str::AbstractString, new_background::AbstractString)
@@ -191,7 +195,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     # escape sequence.
     current_decoration = Decoration()
 
-    # Loop for each match of a ANSI escape sequence.
+    # Loop over each match of an ANSI escape sequence.
     for m in eachmatch(_REGEX_ANSI_SEQUENCES, str)
         # Write everything from the previous match up to the last character
         # before the current match.
@@ -200,7 +204,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
             write(buf_new_str, SubString(str, str_i, str_f))
         end
 
-        # `str_i` now have the index just after the current match.
+        # `str_i` now has the index just after the current match.
         str_i = m.offset + ncodeunits(m.match)
 
         d = parse_decoration(m.match)
