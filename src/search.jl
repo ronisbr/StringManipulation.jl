@@ -31,7 +31,7 @@ function string_search(str::AbstractString, r::Regex)
         # Advance the accumulated width only from the previous offset to the start of this
         # match, avoiding a full rescan from byte 1 each time.
         accumulated_width += textwidth(undecorated_str[prev_offset:m.offset])
-        prev_offset = m.offset + 1
+        prev_offset = nextind(undecorated_str, m.offset)
 
         push!(search_result, (accumulated_width, textwidth(m.match)))
     end
@@ -40,11 +40,13 @@ function string_search(str::AbstractString, r::Regex)
 end
 
 """
-    string_search_per_line(str::AbstractString, r::Regex) -> Vector{NTuple{3, Int}}
+    string_search_per_line(
+        str::AbstractString, r::Regex
+    ) -> Dict{Int, Vector{Tuple{Int, Int}}}
 
 Search for the pattern in regex `r` in each line of the string `str`, which can also be
-passed as a vector of string `lines`. The result will be a vector of `NTuple{3, Int}` with
-the line, beginning of the match in this line, and its length, where the two last values are
+passed as a vector of strings `lines`. The result maps each line number containing a match
+to a vector of tuples with the beginning and length of each match. Both tuple values are
 related to the width of printable characters.
 """
 function string_search_per_line(str::AbstractString, r::Regex)
