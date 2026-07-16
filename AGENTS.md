@@ -1,28 +1,40 @@
 # Repository Guide
 
-## Package structure
+## Package Structure
 
-- This is a single Julia package requiring Julia 1.10 or newer.
-- `src/StringManipulation.jl` is the module entrypoint and controls source include order. Feature files in `src/` are not independent subpackages.
-- Tests mirror the feature files (each `src/<feature>.jl` has a matching `test/<feature>.jl`), with the single exception of `src/state.jl`, which has no dedicated test file. Test files are included unconditionally from `test/runtests.jl`.
-- `src/precompilation.jl` contains an explicit `PrecompileTools.@compile_workload`; update it when public API changes should be precompiled.
+- Treat this repository as one Julia package compatible with Julia `^1.10`.
+- Use `src/StringManipulation.jl` as the single module entrypoint. Preserve its include order: alignment, ansi, crop, decorations, highlighting, search, state, split, view, width, precompilation.
+- Treat feature files in `src/` as module includes, not independent subpackages.
+- Keep tests in the files unconditionally included by `test/runtests.jl`: alignment, ansi, crop, decorations, highlighting, search, split, view, and width. Do not expect dedicated test files for state or precompilation.
+- Review `src/precompilation.jl` and its explicit `PrecompileTools.@compile_workload` when public API changes should be precompiled.
+- Remember that PrecompileTools is the only runtime dependency; the test target supplies Test and Markdown.
 
 ## Commands
 
-- Instantiate: `julia --project=. -e 'using Pkg; Pkg.instantiate()'`
-- Full test suite: `julia --project=. -e 'using Pkg; Pkg.test()'`
-- Focused test file: `julia --project=. -e 'using StringManipulation, Test, Markdown; include("test/alignment.jl")'` (replace `alignment.jl` with another file included by `test/runtests.jl`). `Markdown` must be loaded because some test files use it (e.g. `test/view.jl`); omit it and those focused runs error. There is no test-name selector.
-- CI builds before testing (via `julia-actions/julia-buildpkg`) and covers Julia 1.10, stable (`'1'`), and nightly across Linux, macOS, and Windows. The package has no `deps/build.jl` — its only dependency is PrecompileTools — so `Pkg.build()` is effectively a no-op and `Pkg.test()` alone reproduces CI locally. Use `julia --project=. -e 'using Pkg; Pkg.build(); Pkg.test()'` only if you want to mirror the CI step order exactly.
-- Format code: `julia -e 'using JuliaFormatter; format(".")'` — run from an environment where JuliaFormatter.jl is installed. It is NOT a project dependency, so do NOT pass `--project=.` (that env cannot see it). `format(".")` returns `true` when nothing needed changing; to check formatting without rewriting in place, run it and then `git diff --exit-code`.
-- No linter, pre-commit, or generated-docs task is configured; do not invent one from README badges or language conventions.
+- Instantiate dependencies with `julia --project=. -e 'using Pkg; Pkg.instantiate()'`.
+- Run the full suite with `julia --project=. -e 'using Pkg; Pkg.test()'`.
+- Run one test file with `julia --project=. -e 'using StringManipulation, Test, Markdown; include("test/alignment.jl")'`; replace `alignment.jl` with another included test file. There is no test-name selector.
+- Allow a generous timeout on the first instantiate or test run because precompilation can take time.
+- Approximate CI order, when needed, with `julia --project=. -e 'using Pkg; Pkg.build(); Pkg.test()'`. There is no `deps/build.jl`, so build is effectively a no-op and `Pkg.test()` covers the meaningful local behavior.
+- Format with `julia -e 'using JuliaFormatter; format(".")'`. Install JuliaFormatter in the active non-project environment and do not pass `--project=.` because it is not a package dependency.
+- Check formatting changes by running the formatter and then `git diff --exit-code`; do not treat the formatter invocation as check-only.
+- Expect standard CI to test Julia 1.10 and stable 1.x, with nightly handled separately. Across the workflows, supported runners are Ubuntu x64, macOS arm64, and Windows x64; matrix exclusions remove Ubuntu arm64, macOS x64, and Windows arm64.
+- Expect every CI job to run buildpkg before runtest; standard CI also publishes coverage through Codecov.
 
-## Code style
+## Code Style
 
-- Code follows Blue Style. The `.JuliaFormatter.toml` at the repo root (`style = "blue"`) is the source of truth — apply it with the formatter command above rather than hand-formatting against remembered rules.
-- CI has no format-check step, so style is not enforced automatically; run the formatter locally before committing.
+- Follow `.JuliaFormatter.toml`, which configures Blue style plus repository-specific settings.
+- Run formatting locally when appropriate; CI does not check formatting.
+- Add test groups using the `@testset "Name" verbose = true begin ... end` pattern from `test/runtests.jl`.
 
-## Behavioral constraints
+## Behavioral Constraints
 
-- ANSI escape handling, Unicode/emoji printable width, and decorated strings are core behavior. Preserve focused coverage for these when changing alignment, crop, split, view, or width logic.
-- Tests depend on both `Test` and `Markdown` through the project test target.
-- New tests follow the `@testset "Name" verbose = true begin ... end` pattern used throughout `test/runtests.jl`; match it when adding coverage.
+- Preserve behavior for ANSI escapes and decorations, Unicode and emoji, printable width, cropping, splitting, alignment, highlighting, and views.
+- Preserve or add focused coverage when changing logic in those areas.
+- Load Test, StringManipulation, and Markdown when reproducing the `test/runtests.jl` environment.
+
+## Not Configured
+
+- Do not invent workflows for a linter, pre-commit hooks, generated documentation, package extensions, or weak dependencies; none are configured.
+- Do not expect `CLAUDE.md`, `deps/build.jl`, a docs project/build, or `test/Project.toml`.
+- Do not assume `Manifest.toml` exactly matches package metadata; its local package version is stale (`0.4.4` versus `0.4.5` in `Project.toml`).
