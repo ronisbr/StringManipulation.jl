@@ -306,3 +306,28 @@ color, background color, underline, etc.).
 
 The function `textview` has many options. For more information, please see the built-in help
 (type `?textview` in the REPL).
+
+### Prepared Text Views
+
+Applications that repeatedly render different viewports of the same text can prepare it once with
+`TextViewLayout`:
+
+```julia
+julia> lines = split(str, '\n');
+
+julia> layout = TextViewLayout(lines);
+
+julia> textview(layout, (1, 3, 10, 50))[1] |> println
+um dolor sit amet, consectetur adipiscing
+ diam ultrices volutpat. Nullam id tortor
+ed lorem. Donec interdum, risus eu sceler
+```
+
+Prepared views cache printable widths and sparse Unicode and ANSI checkpoints. This makes repeated
+horizontal rendering proportional to the viewport and checkpoint slack instead of the complete line
+width. Layout construction performs a one-time scan and retains the canonical lines plus metadata.
+The default checkpoint strides balance memory and seek work; smaller values reduce local scans but
+retain more metadata. Search matches, active matches, and visual backgrounds remain dynamic.
+
+The existing string and vector `textview` methods do not prepare implicitly and remain appropriate
+for one-off rendering.

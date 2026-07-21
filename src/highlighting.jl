@@ -164,7 +164,39 @@ function highlight_search(
     # Store the current decoration of the string.
     decoration = Decoration()
 
-    for i in 1:length(search_matches)
+    first_match = 1
+    if (start_column > 1) || (min_column > 1)
+        first_visible_column = max(start_column, min_column)
+        low = 1
+        high = length(search_matches)
+        while low ≤ high
+            middle = (low + high) >>> 1
+            match = search_matches[middle]
+            if match[1] + match[2] - 1 < first_visible_column
+                low = middle + 1
+            else
+                high = middle - 1
+            end
+        end
+        first_match = low
+    end
+
+    last_match = length(search_matches)
+    if max_column > 0
+        low = first_match
+        high = length(search_matches)
+        while low ≤ high
+            middle = (low + high) >>> 1
+            if search_matches[middle][1] ≤ max_column
+                low = middle + 1
+            else
+                high = middle - 1
+            end
+        end
+        last_match = high
+    end
+
+    for i in first_match:last_match
         match = search_matches[i]
 
         # If the match is before `start_column`, just skip it.

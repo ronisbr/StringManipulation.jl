@@ -60,6 +60,10 @@ function string_search_per_line(
     return _internal__string_search_per_line(lines, r)
 end
 
+function string_search_per_line(layout::TextViewLayout, r::Regex)
+    return _internal__string_search_per_line(layout.lines, r)
+end
+
 function _internal__string_search_per_line(it, r::Regex)
     search_results = Dict{Int, Vector{Tuple{Int, Int}}}()
 

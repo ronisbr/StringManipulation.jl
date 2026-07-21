@@ -22,6 +22,10 @@ end
     include("./highlighting.jl")
 end
 
+@testset "Prepared Layout" verbose = true begin
+    include("./layout.jl")
+end
+
 @testset "Search" verbose = true begin
     include("./search.jl")
 end

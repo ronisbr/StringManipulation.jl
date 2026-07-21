@@ -6,6 +6,16 @@
 
 export textview
 
+abstract type _AbstractTextViewSource end
+
+struct _RawTextViewSource{T <: AbstractString} <: _AbstractTextViewSource
+    lines::Vector{T}
+end
+
+struct _PreparedTextViewSource <: _AbstractTextViewSource
+    layout::TextViewLayout
+end
+
 """
     textview([io::IO,] text::AbstractString, view::NTuple{4, Int}; kwargs...)
     textview(
@@ -13,6 +23,7 @@ export textview
         view::NTuple{4, Int};
         kwargs...
     ) where T <: AbstractString
+    textview([io::IO,] layout::TextViewLayout, view::NTuple{4, Int}; kwargs...)
 
 Create a view of `text` or `lines` considering a `view` configuration. The latter is a tuple
 with four integers that has the following meaning:
@@ -25,6 +36,10 @@ with four integers that has the following meaning:
 If a value equal or lower than 0 is passed to any of those options, its extreme value is
 used.
 
+A [`TextViewLayout`](@ref) can be constructed once and reused to render multiple viewports.
+Prepared layouts keep indexed widths, Unicode boundaries, and ANSI state while search and visual
+overlays remain dynamic.
+
 # Keywords
 
 - `active_highlight::String`: ANSI escape sequence that contains the decoration of the
@@ -33,6 +48,9 @@ used.
 - `active_match::Int`: The match number that is considered active. This match is highlighted
     using `active_highlight` instead of `highlight`.
     (**Default** = 0)
+- `active_match_location::NTuple{2, Int}`: For prepared layouts, the active match as
+    `(line, within_line_index)`. A nonzero location takes precedence over `active_match`.
+    (**Default** = `(0, 0)`)
 - `frozen_columns_at_beginning::Int`: Number of frozen columns that are drawn in the
     beginning.
     (**Default** = 0)
@@ -139,9 +157,33 @@ function textview(
     return String(take!(buf)), num_cropped_lines, max_cropped_chars
 end
 
+function textview(layout::TextViewLayout, view::NTuple{4, Int}; kwargs...)
+    buf = IOBuffer()
+    num_cropped_lines, max_cropped_chars = textview(buf, layout, view; kwargs...)
+    return String(take!(buf)), num_cropped_lines, max_cropped_chars
+end
+
+function textview(
+    buf::IO, lines::Vector{T}, view::NTuple{4, Int}; kwargs...
+) where {T <: AbstractString}
+    return _textview(buf, _RawTextViewSource(lines), view; kwargs...)
+end
+
 function textview(
     buf::IO,
-    lines::Vector{T},
+    layout::TextViewLayout,
+    view::NTuple{4, Int};
+    active_match_location::NTuple{2, Int} = (0, 0),
+    kwargs...,
+)
+    return _textview(
+        buf, _PreparedTextViewSource(layout), view; active_match_location, kwargs...
+    )
+end
+
+function _textview(
+    buf::IO,
+    source::_AbstractTextViewSource,
     view::NTuple{4, Int};
     active_highlight::String = _CSI * "30;43m",
     active_match::Int = 0,
@@ -158,13 +200,14 @@ function textview(
     visual_lines::Union{Nothing, Vector{Int}} = nothing,
     visual_line_backgrounds::Union{String, Vector{String}} = "44",
     title_lines::Int = 0,
-) where {T <: AbstractString}
+    active_match_location::NTuple{2, Int} = (0, 0),
+)
 
     # == Verification of the Input Parameters ==============================================
 
     start_line  = view[1]
     num_lines   = view[2]
-    total_lines = length(lines)
+    total_lines = _source_length(source)
 
     total_lines == 0 && return 0, 0
 
@@ -305,14 +348,16 @@ function textview(
                 num_matches += length(line_search_matches)
             end
 
-            if parse_decorations_before_view
-                write(pre_decorations, get_decorations(lines[l]))
+            if parse_decorations_before_view && (source isa _RawTextViewSource)
+                write(pre_decorations, _source_decorations(source, l))
             end
 
             continue
         end
 
-        line_active_match = active_match - num_matches
+        line_active_match = _line_active_match(
+            active_match_location, l, active_match - num_matches
+        )
 
         if show_ruler
             line_number_str = lpad(l, ruler_spacing)
@@ -332,9 +377,10 @@ function textview(
                 title_frozen_columns_at_beginning = 0
             end
 
-            _draw_line_view!(
+            _draw_source_line_view!(
                 buf,
-                lines[l],
+                source,
+                l,
                 line_search_matches,
                 line_active_match,
                 highlight,
@@ -345,9 +391,10 @@ function textview(
             )
 
         else
-            cropped_chars_in_line = _draw_line_view!(
+            cropped_chars_in_line = _draw_source_line_view!(
                 buf,
-                lines[l],
+                source,
+                l,
                 line_search_matches,
                 line_active_match,
                 highlight,
@@ -379,27 +426,34 @@ function textview(
         # If the user wants, we need to accumulate all the decorations from the beginning of
         # the text up to the first line in the view. Here, we accumulate those related to
         # the frozen lines.
-        if parse_decorations_before_view
-            write(pre_decorations, get_decorations(lines[l]))
+        if parse_decorations_before_view && (source isa _RawTextViewSource)
+            write(pre_decorations, _source_decorations(source, l))
         end
     end
 
     for l in (frozen_lines_at_beginning + 1):(start_line - 1)
         # Sum the number of matches between the frozen line and the displayed line. This
         # computation is important to find which match is active.
-        if !isnothing(search_matches) && haskey(search_matches, l)
+        if (active_match_location == (0, 0)) &&
+            !isnothing(search_matches) &&
+            haskey(search_matches, l)
             num_matches += length(search_matches[l])
         end
 
         # If we need to parse the decorations before the view, obtain the decorations of the
         # current hidden line, and merge with the decorations of the other lines.
-        if parse_decorations_before_view
-            write(pre_decorations, get_decorations(lines[l]))
+        if parse_decorations_before_view && (source isa _RawTextViewSource)
+            write(pre_decorations, _source_decorations(source, l))
         end
     end
 
     if parse_decorations_before_view
-        d = parse_decoration(String(take!(pre_decorations)))
+        d = if source isa _PreparedTextViewSource
+            start_line == 1 ? Decoration() :
+            source.layout.document_ansi_checkpoints[start_line - 1]
+        else
+            parse_decoration(String(take!(pre_decorations)))
+        end
 
         # If the pre_decoration is a reset, we just need to reinitialize it since the reset
         # escape sequence was already written to the buffer.
@@ -412,7 +466,9 @@ function textview(
         # Get the current line number.
         l = start_line + (k - 1)
 
-        line_active_match = active_match - num_matches
+        line_active_match = _line_active_match(
+            active_match_location, l, active_match - num_matches
+        )
 
         if !isnothing(search_matches) && haskey(search_matches, l)
             line_search_matches = search_matches[l]
@@ -440,9 +496,10 @@ function textview(
             visual_line_background = ""
         end
 
-        cropped_chars_in_line = _draw_line_view!(
+        cropped_chars_in_line = _draw_source_line_view!(
             buf,
-            lines[l],
+            source,
+            l,
             line_search_matches,
             line_active_match,
             highlight,
@@ -473,6 +530,363 @@ end
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+_source_length(source::_RawTextViewSource) = length(source.lines)
+_source_length(source::_PreparedTextViewSource) = length(source.layout.lines)
+
+function _source_decorations(source::_RawTextViewSource, line_number::Int)
+    return get_decorations(source.lines[line_number])
+end
+
+function _line_active_match(
+    active_match_location::NTuple{2, Int}, line_number::Int, global_line_active_match::Int
+)
+    if active_match_location != (0, 0)
+        return active_match_location[1] == line_number ? active_match_location[2] : 0
+    end
+    return global_line_active_match
+end
+
+function _draw_source_line_view!(
+    buf::IO, source::_RawTextViewSource, line_number::Int, args...
+)
+    return _draw_line_view!(buf, source.lines[line_number], args...)
+end
+
+function _draw_source_line_view!(
+    buf::IO, source::_PreparedTextViewSource, line_number::Int, args...
+)
+    layout = source.layout
+    if layout.plain_ascii[line_number]
+        return _draw_ascii_line_view!(buf, layout, line_number, args...)
+    end
+    if layout.ansi_fallback[line_number]
+        return _draw_line_view!(buf, layout.lines[line_number], args...)
+    end
+    return _draw_indexed_line_view!(buf, layout, line_number, args...)
+end
+
+function _draw_indexed_line_view!(
+    buf::IO,
+    layout::TextViewLayout,
+    line_number::Int,
+    line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}},
+    line_active_match::Int,
+    highlight::String,
+    active_highlight::String,
+    start_column::Int,
+    num_columns::Int,
+    frozen_columns_at_beginning::Int,
+    visual_line::Bool = false,
+    visual_line_background::String = "",
+)
+    if frozen_columns_at_beginning > 0
+        left, frozen_width = _prepared_line_segment(
+            layout, line_number, 1, frozen_columns_at_beginning; preserve_end_state = false
+        )
+        if visual_line
+            if frozen_width < frozen_columns_at_beginning
+                left *= " "^(frozen_columns_at_beginning - frozen_width)
+            end
+            left = replace_default_background(left, visual_line_background)
+        end
+        if !isnothing(line_search_matches)
+            left = highlight_search(
+                left,
+                line_search_matches;
+                active_highlight,
+                active_match = line_active_match,
+                highlight,
+                min_column = 1,
+                max_column = frozen_columns_at_beginning,
+                start_column = 1,
+            )
+        end
+        write(buf, left, _RESET_DECORATIONS)
+    end
+
+    line_str, visible_width = _prepared_line_segment(
+        layout, line_number, start_column, num_columns
+    )
+    available_width = max(layout.printable_widths[line_number] - start_column + 1, 0)
+
+    if (num_columns ≥ 0) && visual_line && (visible_width < num_columns)
+        line_str *= " "^(num_columns - visible_width)
+    end
+    cropped_chars = num_columns < 0 ? 0 : max(available_width - num_columns, 0)
+
+    if visual_line && (num_columns ≥ 0)
+        line_str = replace_default_background(line_str, visual_line_background)
+    end
+    if !isnothing(line_search_matches)
+        line_str = highlight_search(
+            line_str,
+            line_search_matches;
+            active_highlight,
+            active_match = line_active_match,
+            highlight,
+            start_column,
+            min_column = start_column,
+            max_column = start_column + num_columns - 1,
+        )
+    end
+
+    write(buf, line_str)
+    return cropped_chars
+end
+
+function _prepared_line_segment(
+    layout::TextViewLayout,
+    line_number::Int,
+    start_column::Int,
+    num_columns::Int;
+    preserve_end_state::Bool = true,
+)
+    line = layout.lines[line_number]
+    total_width = layout.printable_widths[line_number]
+    start_size = max(start_column - 1, 0)
+    start_seek = _prepared_seek(layout, line_number, start_size)
+    start_byte = start_seek.byte_index
+    start_padding = start_seek.right_padding
+    available_width = max(total_width - start_size, 0)
+
+    prefix = String(_ansi_summary_before(layout, line_number, start_byte))
+    if num_columns < 0
+        body = start_byte > ncodeunits(line) ? "" : String(SubString(line, start_byte))
+        return string(prefix, " "^start_padding, body), available_width
+    end
+
+    end_seek = if num_columns == 0
+        _PreparedSeekResult(start_byte, start_byte, 0, 0, "")
+    else
+        _prepared_seek(layout, line_number, start_size + num_columns; right_boundary = false)
+    end
+    end_byte = end_seek.byte_index
+    end_padding = end_seek.left_padding
+    body = if start_byte ≥ end_byte
+        ""
+    else
+        String(SubString(line, start_byte, prevind(line, end_byte)))
+    end
+    suffix = if preserve_end_state
+        String(_ansi_summary_after(layout, line_number, end_seek.state_byte_index))
+    else
+        ""
+    end
+    width = min(num_columns, available_width)
+    visible_start_padding = min(start_padding, num_columns)
+    return string(
+        prefix,
+        " "^visible_start_padding,
+        body,
+        " "^end_padding,
+        end_seek.attached_ansi,
+        suffix,
+    ),
+    width
+end
+
+struct _PreparedSeekResult
+    byte_index::Int
+    state_byte_index::Int
+    left_padding::Int
+    right_padding::Int
+    attached_ansi::String
+end
+
+function _prepared_seek(
+    layout::TextViewLayout, line_number::Int, size::Int; right_boundary::Bool = true
+)
+    checkpoints = layout.seek_checkpoints[line_number]
+    checkpoint_column = 0
+    checkpoint_byte = 1
+    low = 1
+    high = length(checkpoints)
+    while low ≤ high
+        middle = (low + high) >>> 1
+        checkpoint = checkpoints[middle]
+        if checkpoint.column ≤ size
+            checkpoint_column = checkpoint.column
+            checkpoint_byte = checkpoint.byte_index
+            low = middle + 1
+        else
+            high = middle - 1
+        end
+    end
+    return _prepared_seek_from(
+        layout, line_number, checkpoint_byte, size - checkpoint_column; right_boundary
+    )
+end
+
+function _prepared_seek_from(
+    layout::TextViewLayout,
+    line_number::Int,
+    byte_index::Int,
+    size::Int;
+    right_boundary::Bool = true,
+)
+    line = layout.lines[line_number]
+    events = layout.ansi_events[line_number]
+    event_number = _first_event_at_or_after(events, byte_index)
+    remaining = size
+    i = byte_index
+
+    while i ≤ ncodeunits(line)
+        if (event_number ≤ length(events)) && (events[event_number].byte_start == i)
+            i = events[event_number].byte_end + 1
+            event_number += 1
+            continue
+        end
+        remaining ≤ 0 && return _PreparedSeekResult(i, i, 0, 0, "")
+        character_byte = i
+        c = line[i]
+        character_width = textwidth(c)
+        remaining -= character_width
+        i = nextind(line, i)
+        if remaining < 0
+            ansi_begin = i
+            while (event_number ≤ length(events)) && (events[event_number].byte_start == i)
+                i = events[event_number].byte_end + 1
+                event_number += 1
+            end
+            if right_boundary
+                return _PreparedSeekResult(
+                    i, i, -remaining, character_width + remaining, ""
+                )
+            end
+            attached_ansi =
+                ansi_begin == i ? "" : String(SubString(line, ansi_begin, prevind(line, i)))
+            return _PreparedSeekResult(
+                character_byte, i, -remaining, character_width + remaining, attached_ansi
+            )
+        end
+    end
+    end_byte = ncodeunits(line) + 1
+    return _PreparedSeekResult(end_byte, end_byte, 0, 0, "")
+end
+
+function _first_event_at_or_after(events::Vector{TextAnsiEvent}, byte_index::Int)
+    low = 1
+    high = length(events)
+    while low ≤ high
+        middle = (low + high) >>> 1
+        if events[middle].byte_start < byte_index
+            low = middle + 1
+        else
+            high = middle - 1
+        end
+    end
+    return low
+end
+
+function _ansi_summary_before(layout::TextViewLayout, line_number::Int, byte_index::Int)
+    events = layout.ansi_events[line_number]
+    event_count = _first_event_at_or_after(events, byte_index) - 1
+    stride = layout.ansi_checkpoint_stride
+    full_blocks = event_count ÷ stride
+    state =
+        full_blocks == 0 ? Decoration() :
+        layout.ansi_prefix_checkpoints[line_number][full_blocks]
+    for event_number in (full_blocks * stride + 1):event_count
+        state = update_decoration(state, events[event_number].code)
+    end
+    return state
+end
+
+function _ansi_summary_after(layout::TextViewLayout, line_number::Int, byte_index::Int)
+    events = layout.ansi_events[line_number]
+    first_event = _first_event_at_or_after(events, byte_index)
+    first_event > length(events) && return Decoration()
+    stride = layout.ansi_checkpoint_stride
+    next_block = cld(first_event, stride) + 1
+    last_local_event = min((next_block - 1) * stride, length(events))
+    state = Decoration()
+    for event_number in first_event:last_local_event
+        state = update_decoration(state, events[event_number].code)
+    end
+    suffix = layout.ansi_suffix_checkpoints[line_number]
+    if next_block ≤ length(suffix)
+        state = _apply_ansi_transition(state, suffix[next_block])
+    end
+    return state
+end
+
+function _draw_ascii_line_view!(
+    buf::IO,
+    layout::TextViewLayout,
+    line_number::Int,
+    line_search_matches::Union{Nothing, Vector{Tuple{Int, Int}}},
+    line_active_match::Int,
+    highlight::String,
+    active_highlight::String,
+    start_column::Int,
+    num_columns::Int,
+    frozen_columns_at_beginning::Int,
+    visual_line::Bool = false,
+    visual_line_background::String = "",
+)
+    line = layout.lines[line_number]
+    width = layout.printable_widths[line_number]
+
+    if frozen_columns_at_beginning > 0
+        frozen_width = min(frozen_columns_at_beginning, width)
+        left = frozen_width == 0 ? "" : String(SubString(line, 1, frozen_width))
+        if visual_line
+            if frozen_width < frozen_columns_at_beginning
+                left *= " "^(frozen_columns_at_beginning - frozen_width)
+            end
+            left = replace_default_background(left, visual_line_background)
+        end
+        if !isnothing(line_search_matches)
+            left = highlight_search(
+                left,
+                line_search_matches;
+                active_highlight,
+                active_match = line_active_match,
+                highlight,
+                min_column = 1,
+                max_column = frozen_columns_at_beginning,
+                start_column = 1,
+            )
+        end
+        write(buf, left, _RESET_DECORATIONS)
+    end
+
+    first_visible = min(start_column, width + 1)
+    available_width = max(width - first_visible + 1, 0)
+    visible_width = num_columns < 0 ? available_width : min(num_columns, available_width)
+    line_str = if visible_width == 0
+        ""
+    else
+        String(SubString(line, first_visible, first_visible + visible_width - 1))
+    end
+
+    if (num_columns ≥ 0) && visual_line && (visible_width < num_columns)
+        line_str *= " "^(num_columns - visible_width)
+    end
+
+    cropped_chars = num_columns < 0 ? 0 : max(available_width - num_columns, 0)
+
+    if visual_line && (num_columns ≥ 0)
+        line_str = replace_default_background(line_str, visual_line_background)
+    end
+
+    if !isnothing(line_search_matches)
+        line_str = highlight_search(
+            line_str,
+            line_search_matches;
+            active_highlight,
+            active_match = line_active_match,
+            highlight,
+            start_column,
+            min_column = start_column,
+            max_column = start_column + num_columns - 1,
+        )
+    end
+
+    write(buf, line_str)
+    return cropped_chars
+end
 
 """
     _draw_line_view!(

@@ -93,6 +93,24 @@ PrecompileTools.@compile_workload begin
 
     textview(str, (0, 6, 10, 19))
 
+    prepared_ascii = TextViewLayout(split(str, '\n'))
+    textview(prepared_ascii, (0, 6, 10, 19))
+    textview(
+        TextViewLayout(["α你😃e\u0301", "\e[31mred\e[0m"]),
+        (1, 2, 2, 4);
+        frozen_columns_at_beginning = 1,
+        search_matches = Dict(1 => [(1, 1)]),
+        active_match_location = (1, 1),
+        visual_lines = [2]
+    )
+    textview(
+        TextViewLayout(
+            ["AB\e[0m\e]8;;url\e\\\e[31mC"];
+            ansi_checkpoint_stride = 1
+        ),
+        (1, 1, 1, 1)
+    )
+
     # == Text Width ========================================================================
 
     printable_textwidth("\e[1m😃\e[0m\e[4m😅\e[0m\e[7m🥳\e[0m")

@@ -1,6 +1,14 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.6
+-------------
+
+- ![Feature][badge-feature] Add `TextViewLayout` for prepared, viewport-bounded text rendering.
+- ![Feature][badge-feature] Add prepared search and active match location support to `textview`.
+- ![Enhancement][badge-enhancement] Index Unicode boundaries and ANSI state for repeated views.
+- ![Bugfix][badge-bugfix] Preserve wide-character and ANSI ownership at viewport boundaries.
+
 Version 0.4.5
 -------------
 
