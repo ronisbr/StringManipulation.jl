@@ -48,12 +48,39 @@ end
 ############################################################################################
 
 """
-    textview(text::AbstractString, view::NTuple{4, Int}; kwargs...) -> Tuple{String, Int, Int}
-    textview(io::IO, text::AbstractString, view::NTuple{4, Int}; kwargs...) -> Tuple{Int, Int}
-    textview(lines::Vector{T}, view::NTuple{4, Int}; kwargs...) where {T <: AbstractString} -> Tuple{String, Int, Int}
-    textview(io::IO, lines::Vector{T}, view::NTuple{4, Int}; kwargs...) where {T <: AbstractString} -> Tuple{Int, Int}
-    textview(layout::TextViewLayout, view::NTuple{4, Int}; kwargs...) -> Tuple{String, Int, Int}
-    textview(io::IO, layout::TextViewLayout, view::NTuple{4, Int}; kwargs...) -> Tuple{Int, Int}
+    textview(
+        text::AbstractString,
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{String, Int, Int}
+    textview(
+        io::IO,
+        text::AbstractString,
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{Int, Int}
+    textview(
+        lines::Vector{T},
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{String, Int, Int} where {T <: AbstractString}
+    textview(
+        io::IO,
+        lines::Vector{T},
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{Int, Int} where {T <: AbstractString}
+    textview(
+        layout::TextViewLayout,
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{String, Int, Int}
+    textview(
+        io::IO,
+        layout::TextViewLayout,
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{Int, Int}
 
 Create a view of `text` or `lines` considering a `view` configuration. The latter is a tuple
 with four integers that has the following meaning:
@@ -76,9 +103,11 @@ visual overlays remain dynamic.
     (**Default**: `\\e[30;43m`)
 - `active_match::Int`: Select the active match and decorate it with `active_highlight`.
     (**Default**: 0)
-- `active_match_location::NTuple{2, Int}`: Select the prepared-layout match as
-    `(line, within_line_index)`. Use a nonzero location to take precedence over
-    `active_match`.
+- `active_match_location::NTuple{2, Int}`: Select a match as
+    `(line, within_line_index)` for raw strings, raw line vectors, or prepared layouts. Both
+    coordinates must be positive and identify a corresponding match supplied through
+    `search_matches` or generated from `search_regex`. Use a nonzero location to take
+    precedence over `active_match`.
     (**Default**: `(0, 0)`)
 - `frozen_columns_at_beginning::Int`: Keep this many leading columns visible.
     (**Default**: 0)
@@ -200,7 +229,12 @@ function textview(
 end
 
 """
-    _textview(buf::IO, source::TextViewSource, view::NTuple{4, Int}; kwargs...) -> Tuple{Int, Int}
+    _textview(
+        buf::IO,
+        source::TextViewSource,
+        view::NTuple{4, Int};
+        kwargs...
+    ) -> Tuple{Int, Int}
 
 Render a viewport from `source` into `buf` and return its cropping measurements.
 
@@ -243,8 +277,13 @@ Render a viewport from `source` into `buf` and return its cropping measurements.
     (**Default**: "44")
 - `title_lines::Int`: Treat this many leading lines as titles.
     (**Default**: 0)
-- `active_match_location::NTuple{2, Int}`: Select a prepared-layout match by line and index.
+- `active_match_location::NTuple{2, Int}`: Select a match by positive line and match indices
+    present in `search_matches`.
     (**Default**: `(0, 0)`)
+
+# Returns
+
+- `Tuple{Int, Int}`: Cropped-line count and maximum cropped printable width.
 """
 function _textview(
     buf::IO,
@@ -273,6 +312,31 @@ function _textview(
     start_line  = view[1]
     num_lines   = view[2]
     total_lines = _source_length(source)
+
+    if active_match_location != (0, 0)
+        match_line, match_index = active_match_location
+        (match_line > 0) && (match_index > 0) || throw(
+            ArgumentError("Both coordinates in `active_match_location` must be positive."),
+        )
+        match_line ≤ total_lines || throw(
+            ArgumentError(
+                "The line in `active_match_location` does not exist in the source."
+            ),
+        )
+        isnothing(search_matches) && throw(
+            ArgumentError(
+                "`search_matches` must be supplied with `active_match_location`."
+            ),
+        )
+        haskey(search_matches, match_line) || throw(
+            ArgumentError(
+                "`search_matches` does not contain the line in `active_match_location`."
+            ),
+        )
+        match_index ≤ length(search_matches[match_line]) || throw(
+            ArgumentError("The match index in `active_match_location` does not exist.")
+        )
+    end
 
     total_lines == 0 && return 0, 0
 
@@ -323,7 +387,7 @@ function _textview(
         if visual_line_backgrounds isa AbstractVector
             (length(visual_lines) != length(visual_line_backgrounds)) && throw(
                 ArgumentError(
-                    "The length of `visual_line` must be equal to the length of " *
+                    "The length of `visual_lines` must equal the length of " *
                     "`visual_line_backgrounds`.",
                 ),
             )
@@ -351,8 +415,17 @@ function _textview(
         num_lines = clamp(num_lines + hidden_title_lines, 0, total_lines - start_line + 1)
     end
 
-    # Count how many matches we passed in the current line that is being processed.
-    num_matches = 0
+    # Prepared layouts can count sparse matches by dictionary entry instead of probing every
+    # hidden line. Hidden title lines are accounted for up front.
+    indexed_match_counting =
+        (source isa PreparedTextViewSource) &&
+        (active_match_location == (0, 0)) &&
+        !isnothing(search_matches)
+    num_matches = if indexed_match_counting && (hidden_title_lines > 0)
+        _count_search_matches(search_matches, 1, hidden_title_lines)
+    else
+        0
+    end
 
     # Variable to store the maximum number of cropped lines at the end.
     num_cropped_lines_at_end = 0
@@ -410,7 +483,7 @@ function _textview(
         end
 
         if hide_title_lines && (l ≤ title_lines)
-            if !isnothing(line_search_matches)
+            if !indexed_match_counting && !isnothing(line_search_matches)
                 num_matches += length(line_search_matches)
             end
 
@@ -497,26 +570,31 @@ function _textview(
         end
     end
 
-    for l in (frozen_lines_at_beginning + 1):(start_line - 1)
-        # Sum the number of matches between the frozen line and the displayed line. This
-        # computation is important to find which match is active.
-        if (active_match_location == (0, 0)) &&
-            !isnothing(search_matches) &&
-            haskey(search_matches, l)
-            num_matches += length(search_matches[l])
-        end
+    first_hidden_line = frozen_lines_at_beginning + 1
+    last_hidden_line = start_line - 1
+    if indexed_match_counting
+        num_matches += _count_search_matches(
+            search_matches, first_hidden_line, last_hidden_line
+        )
+    elseif source isa RawTextViewSource
+        for l in first_hidden_line:last_hidden_line
+            # Raw rendering retains its existing line-by-line match and decoration scan.
+            if (active_match_location == (0, 0)) &&
+                !isnothing(search_matches) &&
+                haskey(search_matches, l)
+                num_matches += length(search_matches[l])
+            end
 
-        # If we need to parse the decorations before the view, obtain the decorations of the
-        # current hidden line, and merge with the decorations of the other lines.
-        if parse_decorations_before_view && (source isa RawTextViewSource)
-            write(pre_decorations, _source_decorations(source, l))
+            if parse_decorations_before_view
+                write(pre_decorations, _source_decorations(source, l))
+            end
         end
     end
 
     if parse_decorations_before_view
         d = if source isa PreparedTextViewSource
             start_line == 1 ? Decoration() :
-            source.layout.document_ansi_checkpoints[start_line - 1]
+            source.layout._document_ansi_checkpoints[start_line - 1]
         else
             parse_decoration(String(take!(pre_decorations)))
         end
@@ -616,8 +694,12 @@ Return the number of prepared lines in `source`.
 # Arguments
 
 - `source::PreparedTextViewSource`: Prepared source to measure.
+
+# Returns
+
+- `Int`: Number of prepared lines.
 """
-_source_length(source::PreparedTextViewSource) = length(source.layout.lines)
+_source_length(source::PreparedTextViewSource) = length(source.layout._lines)
 
 """
     _source_decorations(source::RawTextViewSource, line_number::Int) -> String
@@ -659,6 +741,47 @@ function _line_active_match(
 end
 
 """
+    _count_search_matches(
+        search_matches::Dict{Int, Vector{Tuple{Int, Int}}},
+        first_line::Int,
+        last_line::Int
+    ) -> Int
+
+Count matches in an inclusive line range using the smaller of the line range and dictionary
+entry domains.
+
+# Arguments
+
+- `search_matches::Dict{Int, Vector{Tuple{Int, Int}}}`: Matches grouped by line.
+- `first_line::Int`: First line in the inclusive range.
+- `last_line::Int`: Last line in the inclusive range.
+
+# Returns
+
+- `Int`: Number of matches in the line range.
+"""
+function _count_search_matches(
+    search_matches::Dict{Int, Vector{Tuple{Int, Int}}}, first_line::Int, last_line::Int
+)
+    first_line > last_line && return 0
+    range_length = last_line - first_line + 1
+    count = 0
+
+    if length(search_matches) < range_length
+        for (line, matches) in search_matches
+            first_line ≤ line ≤ last_line && (count += length(matches))
+        end
+    else
+        for line in first_line:last_line
+            matches = get(search_matches, line, nothing)
+            !isnothing(matches) && (count += length(matches))
+        end
+    end
+
+    return count
+end
+
+"""
     _draw_source_line_view!(
         buf::IO,
         source::RawTextViewSource,
@@ -686,7 +809,7 @@ end
         buf::IO,
         source::PreparedTextViewSource,
         line_number::Int,
-        args...
+        args::Vararg
     ) -> Int
 
 Draw one prepared source line using its fastest compatible renderer.
@@ -697,17 +820,21 @@ Draw one prepared source line using its fastest compatible renderer.
 - `source::PreparedTextViewSource`: Prepared source containing the line.
 - `line_number::Int`: One-based line number.
 - `args...`: Remaining line-rendering arguments.
+
+# Returns
+
+- `Int`: Number of printable characters cropped from the right.
 """
 function _draw_source_line_view!(
     buf::IO, source::PreparedTextViewSource, line_number::Int, args...
 )
     layout = source.layout
-    if layout.plain_ascii[line_number]
+    if layout._plain_ascii[line_number]
         return _draw_ascii_line_view!(buf, layout, line_number, args...)
     end
 
-    if layout.ansi_fallback[line_number]
-        return _draw_line_view!(buf, layout.lines[line_number], args...)
+    if layout._ansi_fallback[line_number]
+        return _draw_line_view!(buf, layout._lines[line_number], args...)
     end
 
     return _draw_indexed_line_view!(buf, layout, line_number, args...)
@@ -745,6 +872,10 @@ Draw one indexed prepared line and return its cropped printable width.
 - `frozen_columns_at_beginning::Int`: Number of frozen columns.
 - `visual_line::Bool`: Whether to apply a visual background.
 - `visual_line_background::String`: Visual background decoration.
+
+# Returns
+
+- `Int`: Number of printable characters cropped from the right.
 """
 function _draw_indexed_line_view!(
     buf::IO,
@@ -793,7 +924,7 @@ function _draw_indexed_line_view!(
         layout, line_number, start_column, num_columns
     )
 
-    available_width = max(layout.printable_widths[line_number] - start_column + 1, 0)
+    available_width = max(layout._printable_widths[line_number] - start_column + 1, 0)
 
     if (num_columns ≥ 0) && visual_line && (visible_width < num_columns)
         line_str *= " "^(num_columns - visible_width)
@@ -829,7 +960,7 @@ end
         line_number::Int,
         start_column::Int,
         num_columns::Int;
-        preserve_end_state::Bool = true
+        kwargs...
     ) -> Tuple{String, Int}
 
 Extract a printable-width segment while preserving its ANSI state.
@@ -845,6 +976,10 @@ Extract a printable-width segment while preserving its ANSI state.
 
 - `preserve_end_state::Bool`: Append the state after the viewport when `true`.
     (**Default**: `true`)
+
+# Returns
+
+- `Tuple{String, Int}`: Rendered segment and its visible printable width.
 """
 function _prepared_line_segment(
     layout::TextViewLayout,
@@ -853,15 +988,16 @@ function _prepared_line_segment(
     num_columns::Int;
     preserve_end_state::Bool = true,
 )
-    line = layout.lines[line_number]
-    total_width = layout.printable_widths[line_number]
+    line = layout._lines[line_number]
+    total_width = layout._printable_widths[line_number]
     start_size = max(start_column - 1, 0)
     start_seek = _prepared_seek(layout, line_number, start_size)
     start_byte = start_seek.byte_index
     start_padding = start_seek.right_padding
     available_width = max(total_width - start_size, 0)
 
-    prefix = String(_ansi_summary_before(layout, line_number, start_byte))
+    prefix_transition = _ansi_summary_before(layout, line_number, start_byte)
+    prefix = _ansi_transition_string(prefix_transition)
     if num_columns < 0
         body = start_byte > ncodeunits(line) ? "" : String(SubString(line, start_byte))
 
@@ -872,7 +1008,10 @@ function _prepared_line_segment(
         PreparedSeekResult(start_byte, start_byte, 0, 0, "")
     else
         _prepared_seek(
-            layout, line_number, start_size + num_columns; right_boundary = false
+            layout,
+            line_number,
+            start_size + num_columns;
+            right_boundary = false,
         )
     end
 
@@ -884,7 +1023,9 @@ function _prepared_line_segment(
         String(SubString(line, start_byte, prevind(line, end_byte)))
     end
     suffix = if preserve_end_state
-        String(_ansi_summary_after(layout, line_number, end_seek.state_byte_index))
+        _ansi_transition_string(
+            _ansi_summary_after(layout, line_number, end_seek.state_byte_index)
+        )
     else
         ""
     end
@@ -901,7 +1042,7 @@ function _prepared_line_segment(
             end_seek.attached_ansi,
             suffix,
         ),
-        width
+        width,
     )
 end
 
@@ -931,7 +1072,7 @@ end
         layout::TextViewLayout,
         line_number::Int,
         size::Int;
-        right_boundary::Bool = true
+        kwargs...
     ) -> PreparedSeekResult
 
 Seek `size` printable columns into a prepared line from a sparse checkpoint.
@@ -946,11 +1087,19 @@ Seek `size` printable columns into a prepared line from a sparse checkpoint.
 
 - `right_boundary::Bool`: Assign a split wide character to the right side when `true`.
     (**Default**: `true`)
+
+# Returns
+
+- `PreparedSeekResult`: Indexed viewport boundary and required padding.
 """
 function _prepared_seek(
-    layout::TextViewLayout, line_number::Int, size::Int; right_boundary::Bool = true
+    layout::TextViewLayout,
+    line_number::Int,
+    size::Int;
+    right_boundary::Bool = true,
 )
-    checkpoints = layout.seek_checkpoints[line_number]
+    metadata = layout._metadata[line_number]::TextLineMetadata
+    checkpoints = metadata.seek_checkpoints
     checkpoint_column = 0
     checkpoint_byte = 1
     low = 1
@@ -960,7 +1109,9 @@ function _prepared_seek(
     while low ≤ high
         middle = (low + high) >>> 1
         checkpoint = checkpoints[middle]
-        if checkpoint.column ≤ size
+        # A right-edge seek must start before checkpoints attached to the exact boundary so
+        # that zero-width events there can be summarized rather than copied into the body.
+        if (checkpoint.column < size) || (right_boundary && checkpoint.column == size)
             checkpoint_column = checkpoint.column
             checkpoint_byte = checkpoint.byte_index
             low = middle + 1
@@ -980,7 +1131,7 @@ end
         line_number::Int,
         byte_index::Int,
         size::Int;
-        right_boundary::Bool = true
+        kwargs...
     ) -> PreparedSeekResult
 
 Seek a printable width from a known byte checkpoint.
@@ -996,6 +1147,10 @@ Seek a printable width from a known byte checkpoint.
 
 - `right_boundary::Bool`: Assign a split wide character to the right side when `true`.
     (**Default**: `true`)
+
+# Returns
+
+- `PreparedSeekResult`: Indexed viewport boundary and required padding.
 """
 function _prepared_seek_from(
     layout::TextViewLayout,
@@ -1004,16 +1159,25 @@ function _prepared_seek_from(
     size::Int;
     right_boundary::Bool = true,
 )
-    line = layout.lines[line_number]
-    events = layout.ansi_events[line_number]
+    line = layout._lines[line_number]
+    metadata = layout._metadata[line_number]::TextLineMetadata
+    events = metadata.ansi_events
     event_number = _first_event_at_or_after(events, byte_index)
     remaining = size
     i = byte_index
 
     # Scan printable widths, skipping zero-width ANSI events at each byte boundary.
     while i ≤ ncodeunits(line)
+        # At a right viewport boundary, leave attached zero-width events out of the body.
+        # `_ansi_summary_after` emits their terminal-equivalent final state in bounded
+        # space.
+        if !right_boundary && (remaining ≤ 0)
+            return PreparedSeekResult(i, i, 0, 0, "")
+        end
+
         if (event_number ≤ length(events)) && (events[event_number].byte_start == i)
-            i = events[event_number].byte_end + 1
+            event = events[event_number]
+            i = Int(event.byte_start) + Int(event.byte_length)
             event_number += 1
             continue
         end
@@ -1031,22 +1195,17 @@ function _prepared_seek_from(
 
             # Keep ANSI events attached immediately after the split character boundary.
             while (event_number ≤ length(events)) && (events[event_number].byte_start == i)
-                i = events[event_number].byte_end + 1
+                event = events[event_number]
+                i = Int(event.byte_start) + Int(event.byte_length)
                 event_number += 1
             end
 
             if right_boundary
-
-                return PreparedSeekResult(
-                    i, i, -remaining, character_width + remaining, ""
-                )
+                return PreparedSeekResult(i, i, -remaining, character_width + remaining, "")
             end
 
-            attached_ansi =
-                ansi_begin == i ? "" : String(SubString(line, ansi_begin, prevind(line, i)))
-
             return PreparedSeekResult(
-                character_byte, i, -remaining, character_width + remaining, attached_ansi
+                character_byte, ansi_begin, -remaining, character_width + remaining, ""
             )
         end
     end
@@ -1068,6 +1227,10 @@ Find the first ANSI event whose start is not before `byte_index`.
 
 - `events::Vector{TextAnsiEvent}`: Byte-ordered ANSI events.
 - `byte_index::Int`: Byte boundary to locate.
+
+# Returns
+
+- `Int`: One-based event-vector index at or after `byte_index`.
 """
 function _first_event_at_or_after(events::Vector{TextAnsiEvent}, byte_index::Int)
     low = 1
@@ -1090,7 +1253,7 @@ end
         layout::TextViewLayout,
         line_number::Int,
         byte_index::Int
-    ) -> Decoration
+    ) -> AnsiStateTransition
 
 Reconstruct the ANSI state immediately before a viewport boundary.
 
@@ -1099,22 +1262,30 @@ Reconstruct the ANSI state immediately before a viewport boundary.
 - `layout::TextViewLayout`: Prepared layout containing the line.
 - `line_number::Int`: One-based line number.
 - `byte_index::Int`: Viewport start byte index.
+
+# Returns
+
+- `AnsiStateTransition`: ANSI state immediately before the boundary.
 """
 function _ansi_summary_before(layout::TextViewLayout, line_number::Int, byte_index::Int)
-    events = layout.ansi_events[line_number]
+    line = layout._lines[line_number]
+    metadata = layout._metadata[line_number]::TextLineMetadata
+    events = metadata.ansi_events
     event_count = _first_event_at_or_after(events, byte_index) - 1
-    stride = layout.ansi_checkpoint_stride
+    stride = layout._ansi_checkpoint_stride
     full_blocks = event_count ÷ stride
 
-    # Restore the nearest prefix state, then replay only its trailing local events.
-    state =
-        full_blocks == 0 ? Decoration() :
-        layout.ansi_prefix_checkpoints[line_number][full_blocks]
+    # Restore the nearest prefix transition, then compose only its trailing local events.
+    transition =
+        full_blocks == 0 ? _empty_ansi_transition() :
+        metadata.ansi_prefix_checkpoints[full_blocks]
     for event_number in (full_blocks * stride + 1):event_count
-        state = update_decoration(state, events[event_number].code)
+        transition = _compose_ansi_transitions(
+            transition, _event_transition(line, metadata, events[event_number])
+        )
     end
 
-    return state
+    return transition
 end
 
 """
@@ -1122,7 +1293,7 @@ end
         layout::TextViewLayout,
         line_number::Int,
         byte_index::Int
-    ) -> Decoration
+    ) -> AnsiStateTransition
 
 Reconstruct the ANSI state produced after a viewport boundary.
 
@@ -1131,28 +1302,41 @@ Reconstruct the ANSI state produced after a viewport boundary.
 - `layout::TextViewLayout`: Prepared layout containing the line.
 - `line_number::Int`: One-based line number.
 - `byte_index::Int`: Viewport end byte index.
+
+# Returns
+
+- `AnsiStateTransition`: ANSI state produced after the boundary.
 """
 function _ansi_summary_after(layout::TextViewLayout, line_number::Int, byte_index::Int)
-    events = layout.ansi_events[line_number]
+    line = layout._lines[line_number]
+    metadata = layout._metadata[line_number]::TextLineMetadata
+    events = metadata.ansi_events
     first_event = _first_event_at_or_after(events, byte_index)
-    first_event > length(events) && return Decoration()
-    stride = layout.ansi_checkpoint_stride
+    first_event > length(events) && return _empty_ansi_transition()
+    stride = layout._ansi_checkpoint_stride
+    current_block = cld(first_event, stride)
+    first_event_in_block = (current_block - 1) * stride + 1
+    suffix = metadata.ansi_suffix_checkpoints
+
+    # A boundary aligned with an ANSI block can use its complete cached suffix directly.
+    first_event == first_event_in_block && return suffix[current_block]
+
     next_block = cld(first_event, stride) + 1
     last_local_event = min((next_block - 1) * stride, length(events))
-    state = Decoration()
+    transition = _empty_ansi_transition()
 
     # Replay through the next block boundary, then apply its cached suffix transition.
     for event_number in first_event:last_local_event
-        state = update_decoration(state, events[event_number].code)
+        transition = _compose_ansi_transitions(
+            transition, _event_transition(line, metadata, events[event_number])
+        )
     end
-
-    suffix = layout.ansi_suffix_checkpoints[line_number]
 
     if next_block ≤ length(suffix)
-        state = _apply_ansi_transition(state, suffix[next_block])
+        transition = _compose_ansi_transitions(transition, suffix[next_block])
     end
 
-    return state
+    return transition
 end
 
 """
@@ -1187,6 +1371,10 @@ Draw one plain ASCII prepared line and return its cropped width.
 - `frozen_columns_at_beginning::Int`: Number of frozen columns.
 - `visual_line::Bool`: Whether to apply a visual background.
 - `visual_line_background::String`: Visual background decoration.
+
+# Returns
+
+- `Int`: Number of printable characters cropped from the right.
 """
 function _draw_ascii_line_view!(
     buf::IO,
@@ -1202,8 +1390,8 @@ function _draw_ascii_line_view!(
     visual_line::Bool = false,
     visual_line_background::String = "",
 )
-    line = layout.lines[line_number]
-    width = layout.printable_widths[line_number]
+    line = layout._lines[line_number]
+    width = layout._printable_widths[line_number]
 
     if frozen_columns_at_beginning > 0
         frozen_width = min(frozen_columns_at_beginning, width)

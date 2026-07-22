@@ -44,11 +44,28 @@ end
         str::AbstractString,
         r::Regex
     ) -> Dict{Int, Vector{Tuple{Int, Int}}}
+    string_search_per_line(
+        lines::AbstractVector{T},
+        r::Regex
+    ) -> Dict{Int, Vector{Tuple{Int, Int}}} where {T <: AbstractString}
+    string_search_per_line(
+        layout::TextViewLayout,
+        r::Regex
+    ) -> Dict{Int, Vector{Tuple{Int, Int}}}
 
-Search for the pattern in regex `r` in each line of the string `str`, which can also be
-passed as a vector of strings `lines`. The result maps each line number containing a match
-to a vector of tuples with the beginning and length of each match. Both tuple values are
-related to the width of printable characters.
+Search each source line for regex `r`. Map matching line numbers to tuples containing the
+printable-column beginning and printable width of each match.
+
+# Arguments
+
+- `str::AbstractString`: Newline-delimited text to search.
+- `lines::AbstractVector{T}`: String lines to search.
+- `layout::TextViewLayout`: Prepared layout to search.
+- `r::Regex`: Regular expression to match.
+
+# Returns
+
+- `Dict{Int, Vector{Tuple{Int, Int}}}`: Matches grouped by one-based line number.
 """
 function string_search_per_line(str::AbstractString, r::Regex)
     return _internal__string_search_per_line(eachsplit(str, '\n'), r)
@@ -61,7 +78,7 @@ function string_search_per_line(
 end
 
 function string_search_per_line(layout::TextViewLayout, r::Regex)
-    return _internal__string_search_per_line(layout.lines, r)
+    return _internal__string_search_per_line(layout._lines, r)
 end
 
 function _internal__string_search_per_line(it, r::Regex)
