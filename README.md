@@ -323,11 +323,24 @@ um dolor sit amet, consectetur adipiscing
 ed lorem. Donec interdum, risus eu sceler
 ```
 
-Prepared views cache printable widths and sparse Unicode and ANSI checkpoints. This makes repeated
-horizontal rendering proportional to the viewport and checkpoint slack instead of the complete line
-width. Layout construction performs a one-time scan and retains the canonical lines plus metadata.
-The default checkpoint strides balance memory and seek work; smaller values reduce local scans but
-retain more metadata. Search matches, active matches, and visual backgrounds remain dynamic.
+Prepared views are owned, immutable snapshots: construction copies the input into canonical lines,
+so later changes to a caller's input do not change the layout. Their private metadata includes cached
+printable widths plus sparse Unicode checkpoints and ANSI event/checkpoint storage. This makes
+repeated horizontal rendering proportional to the viewport and checkpoint slack instead of the
+complete line width. Layout construction performs one-time linear preprocessing with a bounded
+number of linear passes and retains the canonical lines plus that metadata. The default checkpoint
+strides balance memory and seek work; smaller values reduce local scans but retain more metadata.
+Search matches, active matches, and visual backgrounds remain dynamic.
+
+`TextViewLayout` also provides a read-only `AbstractVector{String}` interface. Its lines can be
+indexed or iterated without exposing mutable backing storage. Use `collect(layout)` to obtain an
+explicit mutable copy when an application needs to modify the line vector.
+
+Preparation pays off when its one-time construction cost is amortized across enough renders. A
+useful workload-specific break-even estimate is construction time divided by the time saved per
+prepared render; no finite break-even exists when a prepared render is not faster. ANSI metadata may
+canonicalize redundant events at a viewport's right boundary while preserving the visible terminal
+state.
 
 The existing string and vector `textview` methods do not prepare implicitly and remain appropriate
 for one-off rendering.
