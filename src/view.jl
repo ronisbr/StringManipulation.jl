@@ -1007,12 +1007,7 @@ function _prepared_line_segment(
     end_seek = if num_columns == 0
         PreparedSeekResult(start_byte, start_byte, 0, 0, "")
     else
-        _prepared_seek(
-            layout,
-            line_number,
-            start_size + num_columns;
-            right_boundary = false,
-        )
+        _prepared_seek(layout, line_number, start_size + num_columns; right_boundary = false)
     end
 
     end_byte = end_seek.byte_index
@@ -1093,10 +1088,7 @@ Seek `size` printable columns into a prepared line from a sparse checkpoint.
 - `PreparedSeekResult`: Indexed viewport boundary and required padding.
 """
 function _prepared_seek(
-    layout::TextViewLayout,
-    line_number::Int,
-    size::Int;
-    right_boundary::Bool = true,
+    layout::TextViewLayout, line_number::Int, size::Int; right_boundary::Bool = true
 )
     metadata = layout._metadata[line_number]::TextLineMetadata
     checkpoints = metadata.seek_checkpoints

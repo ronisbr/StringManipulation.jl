@@ -137,10 +137,7 @@ end
 """
     struct TextViewLayout <: AbstractVector{String}
     TextViewLayout(text::AbstractString; kwargs...) -> TextViewLayout
-    TextViewLayout(
-        input_lines::AbstractVector{<:AbstractString};
-        kwargs...
-    ) -> TextViewLayout
+    TextViewLayout(input_lines::AbstractVector{<:AbstractString}; kwargs...) -> TextViewLayout
 
 Represent text prepared for repeated viewport rendering with [`textview`](@ref).
 
@@ -211,9 +208,7 @@ struct TextViewLayout <: AbstractVector{String}
     - `TextViewLayout`: Prepared owned snapshot of `text`.
     """
     function TextViewLayout(
-        text::AbstractString;
-        checkpoint_stride::Int = 256,
-        ansi_checkpoint_stride::Int = 32,
+        text::AbstractString; checkpoint_stride::Int = 256, ansi_checkpoint_stride::Int = 32
     )
         return TextViewLayout(split(text, '\n'); checkpoint_stride, ansi_checkpoint_stride)
     end
@@ -334,6 +329,7 @@ function _prepare_text_view_layout(
     ansi_checkpoint_stride::Int = 32,
 )
     checkpoint_stride > 0 || throw(ArgumentError("`checkpoint_stride` must be positive."))
+
     ansi_checkpoint_stride > 0 ||
         throw(ArgumentError("`ansi_checkpoint_stride` must be positive."))
 

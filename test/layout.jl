@@ -218,15 +218,13 @@ end
     @test lastindex(layout) == 3
     @test (@inferred layout[1]) == "first"
     @test layout[2:3] == ["α你", "\e[31mred\e[0m"]
-    first_iteration = @inferred Union{
-        Nothing,
-        Tuple{String, Tuple{Base.OneTo{Int}, Int}},
-    } iterate(layout)
+    first_iteration = @inferred Union{Nothing, Tuple{String, Tuple{Base.OneTo{Int}, Int}}} iterate(
+        layout
+    )
     @test first_iteration[1] == "first"
-    second_iteration = @inferred Union{
-        Nothing,
-        Tuple{String, Tuple{Base.OneTo{Int}, Int}},
-    } iterate(layout, first_iteration[2])
+    second_iteration = @inferred Union{Nothing, Tuple{String, Tuple{Base.OneTo{Int}, Int}}} iterate(
+        layout, first_iteration[2]
+    )
     @test second_iteration[1] == "α你"
     @test collect(layout) == input_lines
 
@@ -302,20 +300,15 @@ end
         raw = textview([line], view)
         prepared = textview(TextViewLayout([line]; ansi_checkpoint_stride = stride), view)
         @test _ansi_character_trace(prepared[1]) == _ansi_character_trace(raw[1])
-        @test _terminal_decoration_state(prepared[1]) ==
-            _terminal_decoration_state(raw[1])
+        @test _terminal_decoration_state(prepared[1]) == _terminal_decoration_state(raw[1])
         @test prepared[2:3] == raw[2:3]
         view[4] < 0 && (@test prepared == raw)
     end
 
-    linked_trace = _ansi_character_trace(
-        textview([linked_then_unlinked], (1, 1, 1, -1))[1]
-    )
+    linked_trace = _ansi_character_trace(textview([linked_then_unlinked], (1, 1, 1, -1))[1])
     @test first(linked_trace).second.hyperlink_url == "https://example.com"
     @test last(linked_trace).second.hyperlink_url == ""
-    red_trace = _ansi_character_trace(
-        textview([red_then_default], (1, 1, 1, -1))[1]
-    )
+    red_trace = _ansi_character_trace(textview([red_then_default], (1, 1, 1, -1))[1])
     @test first(red_trace).second.foreground == "31"
     @test last(red_trace).second.reset
 end

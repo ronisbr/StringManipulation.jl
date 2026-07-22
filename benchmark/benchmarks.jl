@@ -141,12 +141,9 @@ function render_trial(
     # Compile this exact rendering path before BenchmarkTools records warmed evaluations.
     reset_buffer!(buffer)
     render!(buffer, source, view; options...)
-    benchmark = @benchmarkable render!(
-        $buffer,
-        $source,
-        $view;
-        $options...,
-    ) setup = (reset_buffer!($buffer))
+    benchmark = @benchmarkable render!($buffer, $source, $view; $options...) setup = (reset_buffer!(
+        $buffer
+    ))
     return run(
         benchmark; samples = BENCHMARK_SAMPLES, seconds = BENCHMARK_SECONDS, evals = 1
     )
