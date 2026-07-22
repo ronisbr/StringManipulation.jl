@@ -4,10 +4,14 @@ StringManipulation.jl Changelog
 Version 0.4.6
 -------------
 
-- ![Feature][badge-feature] Add `TextViewLayout` for prepared, viewport-bounded text rendering.
-- ![Feature][badge-feature] Add prepared search and active match location support to `textview`.
-- ![Enhancement][badge-enhancement] Index Unicode boundaries and ANSI state for repeated views.
-- ![Bugfix][badge-bugfix] Preserve wide-character and ANSI ownership at viewport boundaries.
+- ![Feature][badge-feature] Add `TextViewLayout` as an owned, read-only text snapshot for
+  repeated viewport rendering and searching.
+- ![Feature][badge-feature] Add `active_match_location` to select a `textview` search match
+  by its line and within-line index.
+- ![Enhancement][badge-enhancement] Accelerate prepared views with cached widths, sparse
+  Unicode and ANSI checkpoints, compact ANSI metadata, and sparse match counting.
+- ![Bugfix][badge-bugfix] Preserve wide and zero-width Unicode characters, ANSI resets, and
+  hyperlinks at prepared viewport boundaries.
 
 Version 0.4.5
 -------------
