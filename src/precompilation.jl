@@ -14,7 +14,9 @@ PrecompileTools.@compile_workload begin
 
     # == ANSI Parsing ======================================================================
 
-    parse_ansi_string("Test \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m End")
+    parse_ansi_string(
+        "Test \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m End"
+    )
 
     # == Crop ==============================================================================
 
@@ -101,14 +103,11 @@ PrecompileTools.@compile_workload begin
         frozen_columns_at_beginning = 1,
         search_matches = Dict(1 => [(1, 1)]),
         active_match_location = (1, 1),
-        visual_lines = [2]
+        visual_lines = [2],
     )
     textview(
-        TextViewLayout(
-            ["AB\e[0m\e]8;;url\e\\\e[31mC"];
-            ansi_checkpoint_stride = 1
-        ),
-        (1, 1, 1, 1)
+        TextViewLayout(["AB\e[0m\e]8;;url\e\\\e[31mC"]; ansi_checkpoint_stride = 1),
+        (1, 1, 1, 1),
     )
 
     # == Text Width ========================================================================

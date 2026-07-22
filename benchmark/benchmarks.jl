@@ -44,31 +44,103 @@ many_short_layout = TextViewLayout(many_short_lines)
 buffer = IOBuffer()
 
 report("layout / ASCII width 100k", @benchmark TextViewLayout($wide_lines))
-report("prepared first render", @benchmark render!($buffer, $wide_layout, (1, 24, 1, 100)) setup=(reset_buffer!($buffer)) evals=1 samples=1)
-prepared_column_1 = report("prepared repeated / column 1", @benchmark render!($buffer, $wide_layout, (1, 24, 1, 100)) setup=(reset_buffer!($buffer)))
-prepared_midpoint = report("prepared repeated / midpoint", @benchmark render!($buffer, $wide_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!($buffer)))
-raw_midpoint = report("raw / midpoint", @benchmark render!($buffer, $wide_lines, (1, 24, 50_000, 100)) setup=(reset_buffer!($buffer)) samples=20)
-prepared_short = report("prepared / width 100", @benchmark render!($buffer, $short_layout, (1, 24, 1, 100)) setup=(reset_buffer!($buffer)))
-report("prepared Unicode / midpoint", @benchmark render!($buffer, $unicode_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!($buffer)))
-report("prepared ANSI / midpoint", @benchmark render!($buffer, $ansi_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!($buffer)))
-report("prepared search", @benchmark render!($buffer, $search_layout, (1, 24, 20_000, 100); search_matches=$matches, active_match_location=(1, 1000)) setup=(reset_buffer!($buffer)))
+report(
+    "prepared first render",
+    @benchmark render!($buffer, $wide_layout, (1, 24, 1, 100)) setup=(reset_buffer!(
+        $buffer
+    )) evals=1 samples=1
+)
+prepared_column_1 = report(
+    "prepared repeated / column 1",
+    @benchmark render!($buffer, $wide_layout, (1, 24, 1, 100)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+prepared_midpoint = report(
+    "prepared repeated / midpoint",
+    @benchmark render!($buffer, $wide_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+raw_midpoint = report(
+    "raw / midpoint",
+    @benchmark render!($buffer, $wide_lines, (1, 24, 50_000, 100)) setup=(reset_buffer!(
+        $buffer
+    )) samples=20
+)
+prepared_short = report(
+    "prepared / width 100",
+    @benchmark render!($buffer, $short_layout, (1, 24, 1, 100)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+report(
+    "prepared Unicode / midpoint",
+    @benchmark render!($buffer, $unicode_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+report(
+    "prepared ANSI / midpoint",
+    @benchmark render!($buffer, $ansi_layout, (1, 24, 50_000, 100)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+report(
+    "prepared search",
+    @benchmark render!(
+        $buffer,
+        $search_layout,
+        (1, 24, 20_000, 100);
+        search_matches = $matches,
+        active_match_location = (1, 1000),
+    ) setup=(reset_buffer!($buffer))
+)
 report("layout / 100k leading ANSI", @benchmark TextViewLayout($dense_leading_lines))
-dense_small = report("dense ANSI / 1k leading", @benchmark render!($buffer, $dense_small_layout, (1, 1, 2, 1)) setup=(reset_buffer!($buffer)))
-dense_leading = report("dense ANSI / 100k leading", @benchmark render!($buffer, $dense_leading_layout, (1, 1, 2, 1)) setup=(reset_buffer!($buffer)))
-dense_raw = report("raw dense ANSI / 100k", @benchmark render!($buffer, $dense_leading_lines, (1, 1, 2, 1)) setup=(reset_buffer!($buffer)) samples=20)
-report("dense ANSI / after text", @benchmark render!($buffer, $dense_after_text_layout, (1, 1, 2, 1)) setup=(reset_buffer!($buffer)))
-report("dense ANSI / no text", @benchmark render!($buffer, $dense_only_layout, (1, 1, 2, 1)) setup=(reset_buffer!($buffer)))
+dense_small = report(
+    "dense ANSI / 1k leading",
+    @benchmark render!($buffer, $dense_small_layout, (1, 1, 2, 1)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+dense_leading = report(
+    "dense ANSI / 100k leading",
+    @benchmark render!($buffer, $dense_leading_layout, (1, 1, 2, 1)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+dense_raw = report(
+    "raw dense ANSI / 100k",
+    @benchmark render!($buffer, $dense_leading_lines, (1, 1, 2, 1)) setup=(reset_buffer!(
+        $buffer
+    )) samples=20
+)
+report(
+    "dense ANSI / after text",
+    @benchmark render!($buffer, $dense_after_text_layout, (1, 1, 2, 1)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
+report(
+    "dense ANSI / no text",
+    @benchmark render!($buffer, $dense_only_layout, (1, 1, 2, 1)) setup=(reset_buffer!(
+        $buffer
+    ))
+)
 
 println("raw/prepared midpoint ratio: ", raw_midpoint.time / prepared_midpoint.time)
 println("wide/short prepared ratio: ", prepared_midpoint.time / prepared_short.time)
 println("dense 100k/1k prepared ratio: ", dense_leading.time / dense_small.time)
 println("dense raw/prepared ratio: ", dense_raw.time / dense_leading.time)
-println("ASCII metadata: ", (
-    seek_checkpoints = sum(length, wide_layout.seek_checkpoints),
-    ansi_events = sum(length, wide_layout.ansi_events)
-))
+println(
+    "ASCII metadata: ",
+    (
+        seek_checkpoints = sum(length, wide_layout.seek_checkpoints),
+        ansi_events = sum(length, wide_layout.ansi_events),
+    ),
+)
 many_short_size = Base.summarysize(many_short_layout)
-println("100k short-line layout: ", (
-    bytes = many_short_size,
-    bytes_per_line = many_short_size / length(many_short_lines)
-))
+println(
+    "100k short-line layout: ",
+    (bytes = many_short_size, bytes_per_line = many_short_size / length(many_short_lines)),
+)

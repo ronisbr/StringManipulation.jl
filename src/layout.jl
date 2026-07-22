@@ -73,15 +73,9 @@ Prepare the lines in `text` for repeated [`textview`](@ref) calls. `checkpoint_s
 local Unicode seek scans, whereas `ansi_checkpoint_stride` bounds recognized ANSI event scans.
 """
 function TextViewLayout(
-    text::AbstractString;
-    checkpoint_stride::Int = 256,
-    ansi_checkpoint_stride::Int = 32
+    text::AbstractString; checkpoint_stride::Int = 256, ansi_checkpoint_stride::Int = 32
 )
-    return TextViewLayout(
-        split(text, '\n');
-        checkpoint_stride,
-        ansi_checkpoint_stride
-    )
+    return TextViewLayout(split(text, '\n'); checkpoint_stride, ansi_checkpoint_stride)
 end
 
 """
@@ -98,7 +92,7 @@ viewport seek scans.
 function TextViewLayout(
     input_lines::AbstractVector{<:AbstractString};
     checkpoint_stride::Int = 256,
-    ansi_checkpoint_stride::Int = 32
+    ansi_checkpoint_stride::Int = 32,
 )
     checkpoint_stride > 0 || throw(ArgumentError("`checkpoint_stride` must be positive."))
     ansi_checkpoint_stride > 0 ||
@@ -136,7 +130,10 @@ function TextViewLayout(
             byte_end = byte_start + ncodeunits(m.match) - 1
             recognized_bytes[byte_start:byte_end] .= true
             code = String(m.match)
-            if !(startswith(code, "\e]8;;") || (startswith(code, "\e[") && endswith(code, 'm')))
+            if !(
+                startswith(code, "\e]8;;") ||
+                (startswith(code, "\e[") && endswith(code, 'm'))
+            )
                 has_unrecognized_escape = true
             end
             event_codes[byte_start] = (byte_end, code)
@@ -163,11 +160,11 @@ function TextViewLayout(
                 push!(events, TextAnsiEvent(column, i, event_end, code))
                 i = event_end + 1
                 if length(events) % ansi_checkpoint_stride == 0
-                    checkpoint_byte = has_zero_width_since_boundary ?
-                        column_boundary_byte : i
+                    checkpoint_byte =
+                        has_zero_width_since_boundary ? column_boundary_byte : i
                     push!(
                         seek_checkpoints[line_number],
-                        TextSeekCheckpoint(column, checkpoint_byte)
+                        TextSeekCheckpoint(column, checkpoint_byte),
                     )
                 end
                 continue
@@ -177,7 +174,7 @@ function TextViewLayout(
             if (column ≥ next_checkpoint) || (scalar_count ≥ next_scalar_checkpoint)
                 push!(
                     seek_checkpoints[line_number],
-                    TextSeekCheckpoint(column, column_boundary_byte)
+                    TextSeekCheckpoint(column, column_boundary_byte),
                 )
                 next_checkpoint = column + checkpoint_stride
                 next_scalar_checkpoint = scalar_count + checkpoint_stride
@@ -214,13 +211,11 @@ function TextViewLayout(
             block_transition = _empty_ansi_transition()
             for event_number in first_event:last_event
                 block_transition = _compose_ansi_transitions(
-                    block_transition,
-                    _ansi_transition(events[event_number].code)
+                    block_transition, _ansi_transition(events[event_number].code)
                 )
             end
             suffix_transition = _compose_ansi_transitions(
-                block_transition,
-                suffix_transition
+                block_transition, suffix_transition
             )
             suffix[block] = suffix_transition
         end
@@ -242,16 +237,29 @@ function TextViewLayout(
         ansi_suffix_checkpoints,
         document_ansi_checkpoints,
         checkpoint_stride,
-        ansi_checkpoint_stride
+        ansi_checkpoint_stride,
     )
 end
 
 function _empty_ansi_transition()
     return AnsiStateTransition(
-        false, false, false,
-        false, "", false, "",
-        false, unchanged, false, unchanged, false, unchanged, false, unchanged,
-        false, ""
+        false,
+        false,
+        false,
+        false,
+        "",
+        false,
+        "",
+        false,
+        unchanged,
+        false,
+        unchanged,
+        false,
+        unchanged,
+        false,
+        unchanged,
+        false,
+        "",
     )
 end
 
@@ -276,7 +284,7 @@ function _ansi_transition(code::String)
         is_sgr && (decoration.underline != unchanged),
         decoration.underline,
         decoration.hyperlink_url_changed,
-        decoration.hyperlink_url
+        decoration.hyperlink_url,
     )
 end
 
@@ -305,8 +313,8 @@ function _apply_ansi_transition(decoration::Decoration, transition::AnsiStateTra
     transition.underline_changed && (underline = transition.underline)
 
     reset = transition.has_sgr ? transition.final_reset : decoration.reset
-    hyperlink_url = transition.hyperlink_changed ?
-        transition.hyperlink_url : decoration.hyperlink_url
+    hyperlink_url =
+        transition.hyperlink_changed ? transition.hyperlink_url : decoration.hyperlink_url
     hyperlink_changed = transition.hyperlink_changed || decoration.hyperlink_url_changed
 
     return Decoration(
@@ -318,7 +326,7 @@ function _apply_ansi_transition(decoration::Decoration, transition::AnsiStateTra
         underline,
         reset,
         hyperlink_url,
-        hyperlink_changed
+        hyperlink_changed,
     )
 end
 
@@ -341,6 +349,6 @@ function _compose_ansi_transitions(first::AnsiStateTransition, second::AnsiState
         second.underline_changed || (!second_clears && first.underline_changed),
         second.underline_changed ? second.underline : first.underline,
         second.hyperlink_changed || first.hyperlink_changed,
-        second.hyperlink_changed ? second.hyperlink_url : first.hyperlink_url
+        second.hyperlink_changed ? second.hyperlink_url : first.hyperlink_url,
     )
 end
