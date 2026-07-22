@@ -518,12 +518,46 @@
 end
 
 @testset "Text view [ERRORS]" begin
-    @test_throws ArgumentError textview(
-        "Test",
-        (-1, -1, -1, -1);
-        visual_lines = [1, 2],
-        visual_line_backgrounds = ["44", "45", "46"],
+    error = try
+        textview(
+            "Test",
+            (-1, -1, -1, -1);
+            visual_lines = [1, 2],
+            visual_line_backgrounds = ["44", "45", "46"],
+        )
+        nothing
+    catch exception
+        exception
+    end
+    @test error isa ArgumentError
+    @test error.msg ==
+        "The length of `visual_lines` must equal the length of `visual_line_backgrounds`."
+
+    lines = ["one one", "two"]
+    layout = TextViewLayout(lines)
+    matches = Dict(1 => [(1, 3)])
+    invalid_locations = (
+        ((0, 1), matches),
+        ((1, 0), matches),
+        ((-1, 1), matches),
+        ((1, -1), matches),
+        ((3, 1), matches),
+        ((2, 1), matches),
+        ((1, 2), matches),
+        ((1, 1), nothing),
     )
+    for source in (lines, layout), (location, search_matches) in invalid_locations
+        @test_throws ArgumentError textview(
+            source, (1, -1, 1, -1); active_match_location = location, search_matches
+        )
+    end
+
+    for source in (lines, layout)
+        valid = textview(
+            source, (1, -1, 1, -1); active_match_location = (1, 1), search_matches = matches
+        )
+        @test occursin("\e[30;43mone\e[0m", valid[1])
+    end
 end
 
 @testset "Issue - Wrong Decoration with Visual Mode" begin

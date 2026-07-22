@@ -4,6 +4,44 @@
 #
 ############################################################################################
 
+"""
+    _ansi_character_trace(str::String) -> Vector{Pair{Char, Decoration}}
+
+Convert `str` into visible characters paired with their effective decorations.
+
+# Arguments
+
+- `str::String`: Decorated string to trace.
+
+# Returns
+
+- `Vector{Pair{Char, Decoration}}`: Visible-character decoration trace.
+"""
+function _ansi_character_trace(str::String)
+    trace = Pair{Char, Decoration}[]
+    for (token, decoration) in parse_ansi_string(str), character in token
+        push!(trace, character => decoration)
+    end
+    return trace
+end
+
+"""
+    _terminal_decoration_state(str::String) -> Decoration
+
+Return the final terminal decoration state produced by `str`.
+
+# Arguments
+
+- `str::String`: Decorated string to summarize.
+
+# Returns
+
+- `Decoration`: Final decoration state.
+"""
+function _terminal_decoration_state(str::String)
+    return parse_decoration(get_decorations(str))
+end
+
 @testset "Prepared text layout" begin
     lines = [
         "",
@@ -18,10 +56,30 @@
     ]
     layout = TextViewLayout(lines; checkpoint_stride = 2, ansi_checkpoint_stride = 2)
 
-    @test layout.lines == lines
     @test string_search_per_line(layout, r"a|red") ==
         string_search_per_line(lines, r"a|red")
-    @test TextViewLayout("a\n").lines == ["a", ""]
+    @test textview(TextViewLayout("a\n"), (1, -1, 1, -1)) ==
+        textview(["a", ""], (1, -1, 1, -1))
+
+    owned_lines = ["before", "snapshot"]
+    owned_layout = TextViewLayout(owned_lines)
+    expected_snapshot = textview(owned_layout, (1, -1, 1, -1))
+    owned_lines[1] = "after"
+    push!(owned_lines, "new")
+    @test textview(owned_layout, (1, -1, 1, -1)) == expected_snapshot
+    @test !applicable(
+        TextViewLayout,
+        owned_layout._lines,
+        owned_layout._printable_widths,
+        owned_layout._plain_ascii,
+        owned_layout._ansi_fallback,
+        owned_layout._metadata,
+        owned_layout._document_ansi_checkpoints,
+        owned_layout._checkpoint_stride,
+        owned_layout._ansi_checkpoint_stride,
+    )
+    @test length(methods(TextViewLayout)) == 2
+    @test !isdefined(StringManipulation, :TextViewLayoutConstructionToken)
 
     views = (
         (1, -1, 1, -1),
@@ -108,35 +166,228 @@
         parse_decorations_before_view = true,
     )
 
+    sparse_lines = [i in (1, 2, 500, 900) ? "match $i" : "line $i" for i in 1:1000]
+    sparse_layout = TextViewLayout(sparse_lines)
+    sparse_matches = string_search_per_line(sparse_lines, r"match")
+    sparse_options = (
+        (; active_match = 4),
+        (; active_match = 4, frozen_lines_at_beginning = 3),
+        (;
+            active_match = 4,
+            frozen_lines_at_beginning = 3,
+            title_lines = 2,
+            hide_title_lines = true,
+        ),
+    )
+    for kwargs in sparse_options
+        @test textview(
+            sparse_layout, (900, 1, 1, -1); search_matches = sparse_matches, kwargs...
+        ) == textview(
+            sparse_lines, (900, 1, 1, -1); search_matches = sparse_matches, kwargs...
+        )
+    end
+
     malformed = ["before\e[31unterminated after"]
     malformed_layout = TextViewLayout(malformed)
-    @test malformed_layout.ansi_fallback == BitVector([true])
     @test textview(malformed_layout, (1, 1, 2, 8)) == textview(malformed, (1, 1, 2, 8))
+end
+
+@testset "Prepared constructor validation" begin
+    for stride in (0, -1)
+        @test_throws ArgumentError TextViewLayout(["text"]; checkpoint_stride = stride)
+        @test_throws ArgumentError TextViewLayout(["text"]; ansi_checkpoint_stride = stride)
+    end
+
+    @test textview(TextViewLayout(""), (1, -1, 1, -1)) == ("", 0, 0)
+    @test textview(TextViewLayout(String[]), (1, -1, 1, -1)) == ("", 0, 0)
+end
+
+@testset "Prepared read-only vector interface" begin
+    input_lines = ["first", "α你", "\e[31mred\e[0m"]
+    layout = TextViewLayout(input_lines)
+
+    @test TextViewLayout <: AbstractVector{String}
+    @test eltype(TextViewLayout) === String
+    @test eltype(layout) === String
+    @test Base.IndexStyle(TextViewLayout) === IndexLinear()
+    @test size(layout) == (3,)
+    @test length(layout) == 3
+    @test axes(layout) == (Base.OneTo(3),)
+    @test eachindex(layout) == Base.OneTo(3)
+    @test firstindex(layout) == 1
+    @test lastindex(layout) == 3
+    @test (@inferred layout[1]) == "first"
+    @test layout[2:3] == ["α你", "\e[31mred\e[0m"]
+    first_iteration = @inferred Union{
+        Nothing,
+        Tuple{String, Tuple{Base.OneTo{Int}, Int}},
+    } iterate(layout)
+    @test first_iteration[1] == "first"
+    second_iteration = @inferred Union{
+        Nothing,
+        Tuple{String, Tuple{Base.OneTo{Int}, Int}},
+    } iterate(layout, first_iteration[2])
+    @test second_iteration[1] == "α你"
+    @test collect(layout) == input_lines
+
+    mutable_copy = collect(layout)
+    mutable_copy[1] = "changed"
+    push!(mutable_copy, "new")
+    @test layout[1] == "first"
+    @test length(layout) == 3
+
+    input_lines[1] = "source changed"
+    push!(input_lines, "source added")
+    @test collect(layout) == ["first", "α你", "\e[31mred\e[0m"]
+    @test !hasproperty(layout, :lines)
+    @test_throws BoundsError layout[0]
+    @test_throws BoundsError layout[4]
+    @test_throws Base.CanonicalIndexError setindex!(layout, "changed", 1)
+    @test_throws MethodError push!(layout, "new")
+    @test which(setindex!, (TextViewLayout, String, Int)).module === Base
+    @test which(push!, (TextViewLayout, String)).module === Base
+
+    empty_layout = TextViewLayout(String[])
+    @test size(empty_layout) == (0,)
+    @test length(empty_layout) == 0
+    @test axes(empty_layout) == (Base.OneTo(0),)
+    @test eachindex(empty_layout) == Base.OneTo(0)
+    @test iterate(empty_layout) === nothing
+    @test collect(empty_layout) == String[]
+    @test_throws BoundsError empty_layout[1]
+    @test collect(TextViewLayout("")) == [""]
+
+    @test which(textview, (TextViewLayout, NTuple{4, Int})).sig.parameters[2] ===
+        TextViewLayout
+    @test which(string_search_per_line, (TextViewLayout, Regex)).sig.parameters[2] ===
+        TextViewLayout
+    @test textview(layout, (1, -1, 1, -1)) == textview(collect(layout), (1, -1, 1, -1))
+    @test string_search_per_line(layout, r"red") ==
+        string_search_per_line(collect(layout), r"red")
+end
+
+@testset "Prepared differential corpus" begin
+    open_url = "\e]8;;https://example.com\e\\"
+    close_url = "\e]8;;\e\\"
+    corpus = (
+        "你a\u0301\e[31mB\e[0m",
+        "X\e[31m\e[0m\e[1mY",
+        "你$(open_url)e\u0301$(close_url)Z",
+        "a\u0301\e[38;2;1;2;3m你\e[0m$(open_url)b$(close_url)",
+    )
+    boundary_views = ((1, 1, 1, 0), (1, 1, 1, 1), (1, 1, 2, 1), (1, 1, 3, 2), (1, 1, 5, 1))
+
+    for line in corpus, stride in (1, 2, 3, 32)
+        layout = TextViewLayout(
+            [line]; checkpoint_stride = stride, ansi_checkpoint_stride = stride
+        )
+        @test textview(layout, (1, 1, 1, -1)) == textview([line], (1, 1, 1, -1))
+
+        for view in boundary_views
+            prepared = textview(layout, view)
+            raw = textview([line], view)
+            @test _ansi_character_trace(prepared[1]) == _ansi_character_trace(raw[1])
+            @test _terminal_decoration_state(prepared[1]) ==
+                _terminal_decoration_state(raw[1])
+            @test prepared[2:3] == raw[2:3]
+        end
+    end
+
+    linked_then_unlinked = "$(open_url)A$(close_url)B"
+    red_then_default = "\e[31mA\e[0mB"
+    state_cases = (linked_then_unlinked, red_then_default)
+    state_views = ((1, 1, 1, -1), (1, 1, 1, 1), (1, 1, 2, 1))
+
+    for line in state_cases, stride in (1, 2, 3, 32), view in state_views
+        raw = textview([line], view)
+        prepared = textview(TextViewLayout([line]; ansi_checkpoint_stride = stride), view)
+        @test _ansi_character_trace(prepared[1]) == _ansi_character_trace(raw[1])
+        @test _terminal_decoration_state(prepared[1]) ==
+            _terminal_decoration_state(raw[1])
+        @test prepared[2:3] == raw[2:3]
+        view[4] < 0 && (@test prepared == raw)
+    end
+
+    linked_trace = _ansi_character_trace(
+        textview([linked_then_unlinked], (1, 1, 1, -1))[1]
+    )
+    @test first(linked_trace).second.hyperlink_url == "https://example.com"
+    @test last(linked_trace).second.hyperlink_url == ""
+    red_trace = _ansi_character_trace(
+        textview([red_then_default], (1, 1, 1, -1))[1]
+    )
+    @test first(red_trace).second.foreground == "31"
+    @test last(red_trace).second.reset
+end
+
+@testset "Prepared inference" begin
+    lines = ["title", "α你e\u0301", "\e[31mred\e[0m", "plain red"]
+    layout = @inferred TextViewLayout(
+        lines; checkpoint_stride = 2, ansi_checkpoint_stride = 1
+    )
+    matches = @inferred string_search_per_line(layout, r"red")
+    @test matches == Dict(3 => [(1, 3)], 4 => [(7, 3)])
+
+    basic_buffer = IOBuffer()
+    basic_result = @inferred textview(basic_buffer, layout, (2, 2, 1, 4))
+    @test basic_result isa Tuple{Int, Int}
+
+    overlay_buffer = IOBuffer()
+    overlay_result = @inferred textview(
+        overlay_buffer,
+        layout,
+        (3, 2, 2, 5);
+        frozen_columns_at_beginning = 1,
+        frozen_lines_at_beginning = 1,
+        maximum_number_of_columns = 10,
+        maximum_number_of_lines = 3,
+        search_matches = matches,
+        show_ruler = true,
+        title_lines = 1,
+        visual_line_backgrounds = ["44"],
+        visual_lines = [4],
+    )
+    @test overlay_result isa Tuple{Int, Int}
 end
 
 @testset "Prepared metadata bounds" begin
     short_ascii = TextViewLayout(fill("x"^100, 24))
     wide_ascii = TextViewLayout(fill("x"^100_000, 24))
-    @test sum(length, short_ascii.seek_checkpoints) == 0
-    @test sum(length, wide_ascii.seek_checkpoints) == 0
-    @test sum(length, wide_ascii.ansi_events) == 0
-    @test count(wide_ascii.plain_ascii) == 24
+    @test all(isnothing, short_ascii._metadata)
+    @test all(isnothing, wide_ascii._metadata)
+    @test count(wide_ascii._plain_ascii) == 24
 
     unicode_line = repeat("α\u0301你", 1000)
     unicode_layout = TextViewLayout([unicode_line]; checkpoint_stride = 64)
-    @test length(unicode_layout.seek_checkpoints[1]) ≤ cld(length(unicode_line), 64) + 1
+    unicode_metadata = unicode_layout._metadata[1]
+    @test length(unicode_metadata.seek_checkpoints) ≤ cld(length(unicode_line), 64) + 1
 
     ansi_line = join(("\e[$(30 + i % 8)mX" for i in 1:100)) * "\e[0m"
     ansi_layout = TextViewLayout([ansi_line]; ansi_checkpoint_stride = 16)
-    @test length(ansi_layout.ansi_events[1]) == 101
-    @test length(ansi_layout.ansi_prefix_checkpoints[1]) == 101 ÷ 16
-    @test length(ansi_layout.ansi_suffix_checkpoints[1]) == cld(101, 16)
-    @test textview(ansi_layout, (1, 1, 40, 10)) == textview([ansi_line], (1, 1, 40, 10))
+    ansi_metadata = ansi_layout._metadata[1]
+    @test length(ansi_metadata.ansi_events) == 101
+    @test length(ansi_metadata.ansi_prefix_checkpoints) == 101 ÷ 16
+    @test length(ansi_metadata.ansi_suffix_checkpoints) == cld(101, 16)
+    prepared_ansi = textview(ansi_layout, (1, 1, 40, 10))
+    raw_ansi = textview([ansi_line], (1, 1, 40, 10))
+    @test remove_decorations(prepared_ansi[1]) == remove_decorations(raw_ansi[1])
+    @test parse_decoration(get_decorations(prepared_ansi[1])) ==
+        parse_decoration(get_decorations(raw_ansi[1]))
+    @test prepared_ansi[2:3] == raw_ansi[2:3]
 end
 
 @testset "Prepared ANSI boundaries and transitions" begin
+    terminal_equivalent = function (prepared::String, raw::String)
+        return remove_decorations(prepared) == remove_decorations(raw) &&
+               parse_decoration(get_decorations(prepared)) ==
+               parse_decoration(get_decorations(raw))
+    end
+
     wide_line = "你\e[31mX\e[0m"
-    @test textview(TextViewLayout([wide_line]), (1, 1, 1, 1)) == (" \e[31m\e[0m", 0, 2)
+    wide_prepared = textview(TextViewLayout([wide_line]), (1, 1, 1, 1))
+    wide_raw = textview([wide_line], (1, 1, 1, 1))
+    @test terminal_equivalent(wide_prepared[1], wide_raw[1])
+    @test wide_prepared[2:3] == wide_raw[2:3]
     @test textview(TextViewLayout([wide_line]), (1, 1, 2, 1)) == ("\e[31m \e[0m", 0, 1)
     wide_matches = string_search_per_line([wide_line], r"X")
     wide_options = (
@@ -157,7 +408,8 @@ end
                 view;
                 kwargs...,
             )
-            @test prepared == raw
+            @test terminal_equivalent(prepared[1], raw[1])
+            @test prepared[2:3] == raw[2:3]
         end
     end
 
@@ -174,16 +426,14 @@ end
         "\e[1m\e[3m\e[4m\e[7m\e[22m\e[23m\e[24m\e[27m",
     )
     oracle_lines = ("AB\e[0m$(open_url)C", "AB\e[0m$(open_url)\e[31mC")
-    @test textview(TextViewLayout([oracle_lines[1]]), (1, 1, 1, 1)) ==
-        ("A$(open_url)\e[0m", 0, 2)
-    @test textview(TextViewLayout([oracle_lines[2]]), (1, 1, 1, 1)) ==
-        ("A$(open_url)\e[31m", 0, 2)
     for line in
         (oracle_lines..., ("AB" * sequence * "C" for sequence in transition_sequences)...)
         raw = textview([line], (1, 1, 1, 1))
         for stride in (1, 2, 32)
             layout = TextViewLayout([line]; ansi_checkpoint_stride = stride)
-            @test textview(layout, (1, 1, 1, 1)) == raw
+            prepared = textview(layout, (1, 1, 1, 1))
+            @test terminal_equivalent(prepared[1], raw[1])
+            @test prepared[2:3] == raw[2:3]
         end
     end
 
@@ -192,6 +442,51 @@ end
         @test textview(
             TextViewLayout([zero_width_ansi]; ansi_checkpoint_stride = stride), (1, 1, 2, 1)
         ) == textview([zero_width_ansi], (1, 1, 2, 1))
+    end
+
+    boundary_line = "X" * repeat("\e[31m", 100_000) * "Y"
+    boundary_view = textview(TextViewLayout([boundary_line]), (1, 1, 1, 1))
+    @test boundary_view == ("X\e[31m", 0, 1)
+    @test ncodeunits(boundary_view[1]) < 32
+
+    reset_line = "\e[31mX\e[0m\e[1mY"
+    reset_and_links = (
+        "\e[0m\e[1m$(open_url)",
+        "$(open_url)\e[0m\e[1m",
+        "\e[0m$(open_url)$(close_url)\e[1m",
+        "$(open_url)\e[0m\e[1m$(close_url)",
+    )
+    for stride in (1, 2, 32)
+        reset_output = textview(
+            TextViewLayout([reset_line]; ansi_checkpoint_stride = stride), (1, 1, 1, 1)
+        )[1]
+        reset_state = parse_decoration(get_decorations(reset_output))
+        @test remove_decorations(reset_output) == "X"
+        @test reset_output == "\e[31mX\e[0m\e[1m"
+        @test reset_state.bold == StringManipulation.active
+        @test isempty(reset_state.foreground)
+
+        for sequence in reset_and_links
+            line = "X" * sequence * "Y"
+            prepared = textview(
+                TextViewLayout([line]; ansi_checkpoint_stride = stride), (1, 1, 1, 1)
+            )[1]
+            raw = textview([line], (1, 1, 1, 1))[1]
+            @test remove_decorations(prepared) == remove_decorations(raw)
+            @test parse_decoration(get_decorations(prepared)) ==
+                parse_decoration(get_decorations(raw))
+        end
+    end
+
+    wide_dense_cases = (
+        (repeat("\e[31m", 100_000), " \e[31m"),
+        (repeat(open_url, 100_000), " " * open_url),
+        (repeat("\e[0m\e[1m", 50_000), " \e[0m\e[1m"),
+    )
+    for (events, expected) in wide_dense_cases
+        output = textview(TextViewLayout(["你" * events * "X"]), (1, 1, 1, 1))[1]
+        @test output == expected
+        @test ncodeunits(output) < 64
     end
 end
 
@@ -206,8 +501,9 @@ end
     )
     for (line, view) in cases
         layout = TextViewLayout([line]; ansi_checkpoint_stride = stride)
-        @test length(layout.ansi_events[1]) == event_count
-        @test length(layout.seek_checkpoints[1]) ≥ event_count ÷ stride
+        metadata = layout._metadata[1]
+        @test length(metadata.ansi_events) == event_count
+        @test length(metadata.seek_checkpoints) ≥ event_count ÷ stride
         @test textview(layout, view) == textview([line], view)
 
         buffer = IOBuffer()
@@ -217,4 +513,44 @@ end
         allocated = @allocated textview(buffer, layout, view)
         @test allocated < 64_000
     end
+
+    compact_layout = TextViewLayout([dense_events * "X"]; ansi_checkpoint_stride = stride)
+    compact_metadata = compact_layout._metadata[1]
+    @test isbitstype(eltype(compact_metadata.ansi_events))
+    @test sizeof(eltype(compact_metadata.ansi_events)) ≤ 32
+    @test length(compact_metadata.ansi_transitions) == 1
+    @test Base.summarysize(compact_layout) ≤ 6_120_000
+end
+
+@testset "High-cardinality ANSI metadata" begin
+    event_count = 10_000
+    unique_osc = "X" * join("\e]8;;url$(i)\e\\" for i in 1:event_count) * "Y"
+    osc_layout = TextViewLayout([unique_osc])
+    osc_metadata = osc_layout._metadata[1]
+    @test length(osc_metadata.ansi_events) == event_count
+    @test length(osc_metadata.ansi_transitions) == event_count
+    @test isempty(osc_metadata.ansi_fallback_values)
+    @test sizeof(eltype(osc_metadata.ansi_transitions)) ≤ 32
+    @test Base.summarysize(osc_metadata.ansi_transitions) ≤ 48event_count + 1024
+    osc_output = textview(osc_layout, (1, 1, 1, 1))[1]
+    @test parse_decoration(get_decorations(osc_output)).hyperlink_url == "url10000"
+
+    unique_colors =
+        "X" *
+        join(
+            "\e[38;2;$(i % 256);$((i ÷ 256) % 256);$(i ÷ 65536)m" for
+            i in 0:(event_count - 1)
+        ) *
+        "Y"
+    color_layout = TextViewLayout([unique_colors])
+    color_metadata = color_layout._metadata[1]
+    @test length(color_metadata.ansi_events) == event_count
+    @test length(color_metadata.ansi_transitions) == event_count
+    @test isempty(color_metadata.ansi_fallback_values)
+    @test Base.summarysize(color_metadata.ansi_transitions) ≤ 48event_count + 1024
+    prepared = textview(color_layout, (1, 1, 1, 1))[1]
+    raw = textview([unique_colors], (1, 1, 1, 1))[1]
+    @test remove_decorations(prepared) == remove_decorations(raw)
+    @test parse_decoration(get_decorations(prepared)) ==
+        parse_decoration(get_decorations(raw))
 end
