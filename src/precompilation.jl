@@ -15,7 +15,7 @@ PrecompileTools.@compile_workload begin
     # == ANSI Parsing ======================================================================
 
     parse_ansi_string(
-        "Test \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m End"
+        "Test \e[38;5;231;48;5;243mTest 😅 " * "\e[38;5;201;48;5;243mTest\e[0m End"
     )
 
     # == Crop ==============================================================================
@@ -37,7 +37,8 @@ PrecompileTools.@compile_workload begin
         "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
     )
     replace_default_background(
-        "\e[35mThis is a \e[45;1mtest string to \e[0mverify if \e[45mthe background \e[49;1mwas replaced correctly.",
+        "\e[35mThis is a \e[45;1mtest string to \e[0mverify if " *
+        "\e[45mthe background \e[49;1mwas replaced correctly.",
         "43",
     )
     update_decoration(Decoration(), "\\e[1;45m")
@@ -97,6 +98,32 @@ PrecompileTools.@compile_workload begin
 
     prepared_ascii = TextViewLayout(split(str, '\n'))
     textview(prepared_ascii, (0, 6, 10, 19))
+    TextViewLayout(str; checkpoint_stride = 64, ansi_checkpoint_stride = 4)
+    prepared_unicode = TextViewLayout(
+        ["title", "α你😃e\u0301", "\e[31mred\e[0m", "plain"];
+        checkpoint_stride = 2,
+        ansi_checkpoint_stride = 1,
+    )
+    length(prepared_unicode)
+    prepared_unicode[1]
+    for line in prepared_unicode
+        isempty(line)
+    end
+    prepared_matches = string_search_per_line(prepared_unicode, r"red|plain")
+    prepared_buffer = IOBuffer()
+    textview(
+        prepared_buffer,
+        prepared_unicode,
+        (3, 2, 2, 4);
+        frozen_columns_at_beginning = 1,
+        frozen_lines_at_beginning = 1,
+        maximum_number_of_columns = 8,
+        maximum_number_of_lines = 3,
+        search_matches = prepared_matches,
+        show_ruler = true,
+        title_lines = 1,
+        visual_lines = [3],
+    )
     textview(
         TextViewLayout(["α你😃e\u0301", "\e[31mred\e[0m"]),
         (1, 2, 2, 4);
