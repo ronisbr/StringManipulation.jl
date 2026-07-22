@@ -295,9 +295,9 @@ julia> str = """
          """;
 
 julia> textview(str, (1, 3, 10, 50))[1] |> println
-um dolor sit amet, consectetur adipiscing
- diam ultrices volutpat. Nullam id tortor
-ed lorem. Donec interdum, risus eu sceler
+um dolor sit amet, consectetur adipiscing elit. Pe
+ diam ultrices volutpat. Nullam id tortor ut dolor
+ed lorem. Donec interdum, risus eu scelerisque pos
 ```
 
 Notice that it correctly considers all the ANSI escape sequences that decorate the text,
@@ -318,9 +318,9 @@ julia> lines = split(str, '\n');
 julia> layout = TextViewLayout(lines);
 
 julia> textview(layout, (1, 3, 10, 50))[1] |> println
-um dolor sit amet, consectetur adipiscing
- diam ultrices volutpat. Nullam id tortor
-ed lorem. Donec interdum, risus eu sceler
+um dolor sit amet, consectetur adipiscing elit. Pe
+ diam ultrices volutpat. Nullam id tortor ut dolor
+ed lorem. Donec interdum, risus eu scelerisque pos
 ```
 
 Prepared views are owned, immutable snapshots: construction copies the input into canonical lines,
