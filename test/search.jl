@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Tests related with string searching.
 #
-#   Tests related with string searching.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 @testset "String Search" begin
     str = """
@@ -20,7 +17,7 @@
     @test string_search("one two one three one", r"one") == [(1, 3), (9, 3), (19, 3)]
 end
 
-@testset "String Search with Unicode" begin
+@testset "String Search With Unicode" begin
     @test string_search("ééé", r"é") == [(1, 1), (2, 1), (3, 1)]
     @test string_search("😅😅😅", r"😅") == [(2, 2), (4, 2), (6, 2)]
 

@@ -42,7 +42,7 @@ function _terminal_decoration_state(str::String)
     return parse_decoration(get_decorations(str))
 end
 
-@testset "Prepared text layout" begin
+@testset "Prepared Text Layout" begin
     lines = [
         "",
         "plain ASCII text",
@@ -66,6 +66,7 @@ end
     expected_snapshot = textview(owned_layout, (1, -1, 1, -1))
     owned_lines[1] = "after"
     push!(owned_lines, "new")
+
     @test textview(owned_layout, (1, -1, 1, -1)) == expected_snapshot
     @test !applicable(
         TextViewLayout,
@@ -89,6 +90,7 @@ end
         (3, 5, 4, 5),
         (8, 20, 20, 4),
     )
+
     options = (
         (;),
         (; frozen_columns_at_beginning = 2),
@@ -120,6 +122,7 @@ end
     global_active = textview(
         layout, (1, -1, 1, -1); search_matches = matches, active_match = 1
     )
+
     located_active = textview(
         layout,
         (1, -1, 1, -1);
@@ -127,9 +130,11 @@ end
         active_match = 1,
         active_match_location = (6, 1),
     )
+
     expected_location = textview(
         lines, (1, -1, 1, -1); search_matches = matches, active_match = 4
     )
+
     @test located_active == expected_location
     @test located_active != global_active
 
@@ -144,7 +149,9 @@ end
         "\e[0m\e[38;2;1;2;3m\e]8;;https://example.com\e\\hidden",
         "visible\e]8;;\e\\",
     ]
+
     hidden_ansi_layout = TextViewLayout(hidden_ansi_lines; ansi_checkpoint_stride = 1)
+
     @test textview(
         hidden_ansi_layout, (3, 1, 1, 7); parse_decorations_before_view = true
     ) == textview(hidden_ansi_lines, (3, 1, 1, 7); parse_decorations_before_view = true)
@@ -152,6 +159,7 @@ end
     deep_lines = [i == 900 ? "\e[34mneedle" : "line $i" for i in 1:1000]
     deep_layout = TextViewLayout(deep_lines)
     deep_matches = string_search_per_line(deep_layout, r"needle")
+
     @test textview(
         deep_layout,
         (900, 1, 1, 6);
@@ -179,6 +187,7 @@ end
             hide_title_lines = true,
         ),
     )
+
     for kwargs in sparse_options
         @test textview(
             sparse_layout, (900, 1, 1, -1); search_matches = sparse_matches, kwargs...
@@ -192,7 +201,7 @@ end
     @test textview(malformed_layout, (1, 1, 2, 8)) == textview(malformed, (1, 1, 2, 8))
 end
 
-@testset "Prepared constructor validation" begin
+@testset "Prepared Constructor Validation" begin
     for stride in (0, -1)
         @test_throws ArgumentError TextViewLayout(["text"]; checkpoint_stride = stride)
         @test_throws ArgumentError TextViewLayout(["text"]; ansi_checkpoint_stride = stride)
@@ -202,7 +211,7 @@ end
     @test textview(TextViewLayout(String[]), (1, -1, 1, -1)) == ("", 0, 0)
 end
 
-@testset "Prepared read-only vector interface" begin
+@testset "Prepared Read-Only Vector Interface" begin
     input_lines = ["first", "α你", "\e[31mred\e[0m"]
     layout = TextViewLayout(input_lines)
 
@@ -264,7 +273,7 @@ end
         string_search_per_line(collect(layout), r"red")
 end
 
-@testset "Prepared differential corpus" begin
+@testset "Prepared Differential Corpus" begin
     open_url = "\e]8;;https://example.com\e\\"
     close_url = "\e]8;;\e\\"
     corpus = (
@@ -313,7 +322,7 @@ end
     @test last(red_trace).second.reset
 end
 
-@testset "Prepared inference" begin
+@testset "Prepared Inference" begin
     lines = ["title", "α你e\u0301", "\e[31mred\e[0m", "plain red"]
     layout = @inferred TextViewLayout(
         lines; checkpoint_stride = 2, ansi_checkpoint_stride = 1
@@ -343,7 +352,7 @@ end
     @test overlay_result isa Tuple{Int, Int}
 end
 
-@testset "Prepared metadata bounds" begin
+@testset "Prepared Metadata Bounds" begin
     short_ascii = TextViewLayout(fill("x"^100, 24))
     wide_ascii = TextViewLayout(fill("x"^100_000, 24))
     @test all(isnothing, short_ascii._metadata)
@@ -369,7 +378,7 @@ end
     @test prepared_ansi[2:3] == raw_ansi[2:3]
 end
 
-@testset "Prepared ANSI boundaries and transitions" begin
+@testset "Prepared ANSI Boundaries and Transitions" begin
     terminal_equivalent = function (prepared::String, raw::String)
         return remove_decorations(prepared) == remove_decorations(raw) &&
                parse_decoration(get_decorations(prepared)) ==
@@ -483,7 +492,7 @@ end
     end
 end
 
-@testset "Dense ANSI seek checkpoints" begin
+@testset "Dense ANSI Seek Checkpoints" begin
     event_count = 100_000
     stride = 32
     dense_events = repeat("\e[31m", event_count)
@@ -515,7 +524,7 @@ end
     @test Base.summarysize(compact_layout) ≤ 6_120_000
 end
 
-@testset "High-cardinality ANSI metadata" begin
+@testset "High-Cardinality ANSI Metadata" begin
     event_count = 10_000
     unique_osc = "X" * join("\e]8;;url$(i)\e\\" for i in 1:event_count) * "Y"
     osc_layout = TextViewLayout([unique_osc])

@@ -4,7 +4,7 @@
 #
 ############################################################################################
 
-@testset "Text view" begin
+@testset "Text View" begin
     # We will use a hard-coded string instead of the output from the markdown rendering
     # function because breaking changes in the output would make this test fail. For more
     # information, see:
@@ -517,7 +517,7 @@
     @test hidden_title_vstr == "\e[1mfrozen\e[0m\n\e[31m\e[1mshown"
 end
 
-@testset "Text view [ERRORS]" begin
+@testset "Text View [Errors]" begin
     error = try
         textview(
             "Test",
@@ -560,7 +560,7 @@ end
     end
 end
 
-@testset "Issue - Wrong Decoration with Visual Mode" begin
+@testset "Issue - Wrong Decoration With Visual Mode" begin
     expected = "\e[44m\e[1mThis is a \e[0m"
     a = "\e[1mThis is a test string that will be cropped.\e[0m"
     vstr, ~, ~ = textview(a, (-1, -1, 0, 10); visual_lines = [1])

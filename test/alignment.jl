@@ -1,13 +1,10 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Tests related to the string alignment.
 #
-#   Tests related to the string alignment.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
-@testset "Alignment to The Right" begin
+@testset "Alignment to the Right" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
 
     expected = "                    Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
@@ -25,7 +22,7 @@
     @test str == aligned_str
 end
 
-@testset "Alignment to The Center" begin
+@testset "Alignment to the Center" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     expected = "          Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     aligned_str = align_string(str, 40, :c)
@@ -43,7 +40,7 @@ end
     @test str == aligned_str
 end
 
-@testset "Alignment to The Left" begin
+@testset "Alignment to the Left" begin
     str = "Test 😃 \e[38;5;231;48;5;243mTest \e[0m😅 Test"
     aligned_str = align_string(str, 40, :l)
 
@@ -71,7 +68,7 @@ end
     @test aligned_str == expected_str
 end
 
-@testset "Per-line Alignment Preservation" begin
+@testset "Per-Line Alignment Preservation" begin
     @test align_string_per_line("", 4, :l) == ""
     @test align_string_per_line("", 4, :l; fill = true) == "    "
     @test align_string_per_line("\n", 4, :r) == "    \n    "

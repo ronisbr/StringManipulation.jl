@@ -361,6 +361,7 @@ function _prepare_text_view_layout(
             AnsiStateTransition[],
             AnsiStateTransition[],
         )
+
         metadata[line_number] = line_metadata
         events = line_metadata.ansi_events
         transition_indices = Dict{AnsiStateTransition, Int32}()
@@ -375,6 +376,7 @@ function _prepare_text_view_layout(
             byte_end = byte_start + ncodeunits(m.match) - 1
             recognized_bytes[byte_start:byte_end] .= true
             code = String(m.match)
+
             if !(
                 startswith(code, "\e]8;;") ||
                 (startswith(code, "\e[") && endswith(code, 'm'))
@@ -411,12 +413,15 @@ function _prepare_text_view_layout(
                 compact_transition = _compact_ansi_transition(
                     transition, code, i, line_metadata.ansi_fallback_values
                 )
+
                 transition_index = get(transition_indices, transition, Int32(0))
+
                 if iszero(transition_index)
                     push!(line_metadata.ansi_transitions, compact_transition)
                     transition_index = Int32(length(line_metadata.ansi_transitions))
                     transition_indices[transition] = transition_index
                 end
+
                 event_length = event_end - i + 1
                 event_length ≤ typemax(UInt32) ||
                     throw(ArgumentError("ANSI event is too large."))
@@ -426,7 +431,9 @@ function _prepare_text_view_layout(
                         column, UInt64(i), UInt32(event_length), transition_index
                     ),
                 )
+
                 i = event_end + 1
+
                 if length(events) % ansi_checkpoint_stride == 0
                     checkpoint_byte =
                         has_zero_width_since_boundary ? column_boundary_byte : i
@@ -439,6 +446,7 @@ function _prepare_text_view_layout(
             end
 
             c = line[i]
+
             if (column ≥ next_checkpoint) || (scalar_count ≥ next_scalar_checkpoint)
                 push!(
                     line_metadata.seek_checkpoints,
@@ -447,10 +455,12 @@ function _prepare_text_view_layout(
                 next_checkpoint = column + checkpoint_stride
                 next_scalar_checkpoint = scalar_count + checkpoint_stride
             end
+
             character_width = textwidth(c)
             column += character_width
             scalar_count += 1
             i = nextind(line, i)
+
             if character_width > 0
                 column_boundary_byte = i
                 has_zero_width_since_boundary = false
@@ -458,6 +468,7 @@ function _prepare_text_view_layout(
                 has_zero_width_since_boundary = true
             end
         end
+
         printable_widths[line_number] = column
 
         # Cache the complete ANSI state after each full event block.
@@ -520,17 +531,17 @@ end
 #                                    Private Functions                                     #
 ############################################################################################
 
-const _ANSI_CLEAR_SGR = UInt16(1) << 0
-const _ANSI_HAS_SGR = UInt16(1) << 1
-const _ANSI_FINAL_RESET = UInt16(1) << 2
+const _ANSI_CLEAR_SGR          = UInt16(1) << 0
+const _ANSI_HAS_SGR            = UInt16(1) << 1
+const _ANSI_FINAL_RESET        = UInt16(1) << 2
 const _ANSI_FOREGROUND_CHANGED = UInt16(1) << 3
 const _ANSI_BACKGROUND_CHANGED = UInt16(1) << 4
-const _ANSI_BOLD_CHANGED = UInt16(1) << 5
-const _ANSI_ITALIC_CHANGED = UInt16(1) << 6
-const _ANSI_REVERSED_CHANGED = UInt16(1) << 7
-const _ANSI_UNDERLINE_CHANGED = UInt16(1) << 8
-const _ANSI_HYPERLINK_CHANGED = UInt16(1) << 9
-const _ANSI_FALLBACK_REF = typemax(UInt32)
+const _ANSI_BOLD_CHANGED       = UInt16(1) << 5
+const _ANSI_ITALIC_CHANGED     = UInt16(1) << 6
+const _ANSI_REVERSED_CHANGED   = UInt16(1) << 7
+const _ANSI_UNDERLINE_CHANGED  = UInt16(1) << 8
+const _ANSI_HYPERLINK_CHANGED  = UInt16(1) << 9
+const _ANSI_FALLBACK_REF       = typemax(UInt32)
 
 """
     _event_transition(

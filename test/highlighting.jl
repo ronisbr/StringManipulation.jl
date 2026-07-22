@@ -1,11 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Description #############################################################################
 #
-# Description
-# ==========================================================================================
+# Tests related with highlights.
 #
-#   Tests related with highlights.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+############################################################################################
 
 @testset "Highlight Searches in Strings" begin
     str      = "Test high\e[1mlight\e[0m in a string with no underlines."
@@ -28,7 +25,7 @@
     @test hstr == str
 end
 
-@testset "Highlight Searches in Texts with Multiple Lines" begin
+@testset "Highlight Searches in Texts With Multiple Lines" begin
     str = """
         Test high\e[1mlight\e[0m in a string with no underlines.
         Test high\e[4mlight in a string with underlines\e[0m.
