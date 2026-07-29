@@ -309,8 +309,14 @@ function update_decoration(decoration::Decoration, code::String)
                 continue
             end
 
-            str = String(take!(buf))
-            decoration = _parse_ansi_decoration_code(decoration, str)
+            # Only SGR sequences, *i.e.* those terminated by `m`, change the decoration.
+            # Every other CSI sequence must be discarded. Otherwise, we would parse the
+            # parameters of, for example, a cursor movement (`\e[1A`) or an erase
+            # (`\e[0K`) as if they were decoration codes.
+            sgr_code = String(take!(buf))
+            (c != 'm') && continue
+
+            decoration = _parse_ansi_decoration_code(decoration, sgr_code)
 
         elseif state == :text
             buf.ptr  = 1
