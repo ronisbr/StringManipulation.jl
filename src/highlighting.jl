@@ -152,7 +152,7 @@ function highlight_search(
 )
     num_matches = length(search_matches)
 
-    (num_matches == 0) && return str
+    (num_matches == 0) && return String(str)
 
     reset_decoration = convert(String, _RESET_DECORATION)
     h_str = IOBuffer(; sizehint = floor(Int, sizeof(str)))

@@ -169,7 +169,7 @@ function fit_string_in_field(
         printable_string_width = str_width,
     )
 
-    (crop ≤ field_margin) && return str
+    (crop ≤ field_margin) && return String(str)
 
     cont_str = add_continuation_char ? string(continuation_char) : ""
     spc_str  = add_space_in_continuation_char ? " " : ""

@@ -102,8 +102,20 @@ end
     @test aligned_substring == "   a\n   β"
     @test aligned_substring isa String
 
-    @test align_string_per_line(substring, 0, :r) === substring
-    @test align_string_per_line(substring, -1, :r; fill = true) === substring
+    # The early-return paths must also return a `String`, as documented, instead of
+    # propagating the input type.
+    @test align_string_per_line(substring, 0, :r) == substring
+    @test align_string_per_line(substring, 0, :r) isa String
+    @test align_string_per_line(substring, -1, :r; fill = true) == substring
+    @test align_string_per_line(substring, -1, :r; fill = true) isa String
+
+    @test align_string(substring, 0, :r) isa String
+    @test fit_string_in_field(substring, 50) isa String
+    @test highlight_search(substring, Tuple{Int, Int}[]) isa String
+
+    @test Base.return_types(align_string, (SubString{String}, Int, Symbol)) == [String]
+    @test Base.return_types(align_string_per_line, (SubString{String}, Int, Symbol)) ==
+        [String]
 end
 
 @testset "Corner Cases" begin

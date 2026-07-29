@@ -67,7 +67,7 @@ function align_string(
         str, field_width, alignment; fill, printable_string_width
     )
 
-    isnothing(padding) && return str
+    isnothing(padding) && return String(str)
 
     lpad, rpad = padding
     return " "^lpad * str * " "^rpad
@@ -132,7 +132,7 @@ julia> align_string_per_line(\"\"\"
 function align_string_per_line(
     str::AbstractString, field_width::Int, alignment::Symbol; fill::Bool = false
 )
-    (field_width ≤ 0) && return str
+    (field_width ≤ 0) && return String(str)
 
     # Align each line without materializing the collection of lines.
     buf = IOBuffer(; sizehint = sizeof(str))
