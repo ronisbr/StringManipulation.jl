@@ -140,6 +140,20 @@ function fit_string_in_field(
         printable_string_width
     end
 
+    # If the continuation character does not fit in the field, we must crop the string
+    # without it. Otherwise, the returned string would be wider than the field. Notice that
+    # this also covers the case of a field with no width, in which nothing but the ANSI
+    # escape sequences can be written.
+    if add_continuation_char
+        continuation_width =
+            textwidth(continuation_char) + (add_space_in_continuation_char ? 1 : 0)
+
+        if field_width < continuation_width
+            add_continuation_char          = false
+            add_space_in_continuation_char = false
+        end
+    end
+
     crop = crop_width_to_fit_string_in_field(
         str,
         field_width - field_margin;

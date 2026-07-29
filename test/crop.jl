@@ -201,11 +201,26 @@ end
     cropped_str = fit_string_in_field(str, 25)
     @test cropped_str == str
 
-    expected = "…\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
+    # A field with no width cannot hold the continuation character. Only the ANSI escape
+    # sequences, which have no printable width, can be kept.
+    expected = "\e[38;5;231;48;5;243m\e[38;5;201;48;5;243m\e[0m"
     cropped_str = fit_string_in_field(str, 0)
     @test cropped_str == expected
 
-    expected = "…"
+    expected = ""
     cropped_str = fit_string_in_field(str, 0; keep_escape_seq = false)
     @test cropped_str == expected
+
+    # The result must never be wider than the field.
+    for field_width in -3:5
+        for kwargs in (
+            (;),
+            (; crop_side = :left),
+            (; add_space_in_continuation_char = true),
+            (; continuation_char = '…', add_space_in_continuation_char = true),
+        )
+            result = fit_string_in_field("Test 😅 string", field_width; kwargs...)
+            @test printable_textwidth(result) ≤ max(field_width, 0)
+        end
+    end
 end
