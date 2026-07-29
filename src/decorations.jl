@@ -405,20 +405,23 @@ end
 
 String(d::Decoration) = convert(String, d)
 
-# Convert  `Decoration` to string.
+# Convert `Decoration` to string.
 function convert(::Type{String}, d::Decoration)
-    # Check if we must change the hyperlink.
+    # Fast path for the most common case. It must come first so that nothing below is
+    # computed for a decoration that is rendered as an empty string. Notice that comparing
+    # with `===` is enough because all the empty strings are the same object.
+    d === _DEFAULT_DECORATION && return ""
+
+    # Check if we must change the hyperlink. Notice that a reset **does not** clean it.
     str_hyperlink = if d.hyperlink_url_changed
         "\x1B]8;;$(d.hyperlink_url)\x1B\\"
     else
         ""
     end
 
-    d === _DEFAULT_DECORATION && return ""
-
-    # Check if we have a reset. Notice that a reset **does not** clean the hyperlink. We
-    # must emit it before the other properties instead of returning here because the same
-    # ANSI sequence can set a decoration after resetting everything, like in `\e[0;31m`.
+    # The reset must be written before the other properties instead of returning here
+    # because the same ANSI sequence can set a decoration after resetting everything, like
+    # in `\e[0;31m`.
     str_reset = d.reset ? _RESET_DECORATIONS : ""
 
     # TODO: Check if we can avoid adding so many `_CSI`.
@@ -426,8 +429,18 @@ function convert(::Type{String}, d::Decoration)
     str_background = !isempty(d.background) ? "$(_CSI)$(d.background)m" : ""
     str_bold       = d.bold != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
     str_italic     = d.italic != unchanged ? "$(_CSI)$(d.italic == active ? "3" : "23")m" : ""
-    str_underline  = d.underline != unchanged ? "$(_CSI)$(d.underline == active ? "4" : "24")m" : ""
-    str_reversed   = d.reversed != unchanged ? "$(_CSI)$(d.reversed == active ? "7" : "27")m" : ""
+
+    str_underline = if d.underline != unchanged
+        "$(_CSI)$(d.underline == active ? "4" : "24")m"
+    else
+        ""
+    end
+
+    str_reversed = if d.reversed != unchanged
+        "$(_CSI)$(d.reversed == active ? "7" : "27")m"
+    else
+        ""
+    end
 
     return string(
         str_hyperlink,
