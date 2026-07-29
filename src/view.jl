@@ -945,7 +945,7 @@ function _draw_indexed_line_view!(
             highlight,
             start_column,
             min_column = start_column,
-            max_column = start_column + num_columns - 1,
+            max_column = num_columns < 0 ? 0 : start_column + num_columns - 1,
         )
     end
 
@@ -1440,7 +1440,7 @@ function _draw_ascii_line_view!(
             highlight,
             start_column,
             min_column = start_column,
-            max_column = start_column + num_columns - 1,
+            max_column = num_columns < 0 ? 0 : start_column + num_columns - 1,
         )
     end
 
@@ -1587,7 +1587,7 @@ function _draw_line_view!(
             highlight,
             start_column = start_column,
             min_column = start_column,
-            max_column = start_column + num_columns - 1,
+            max_column = num_columns < 0 ? 0 : start_column + num_columns - 1,
         )
     end
 

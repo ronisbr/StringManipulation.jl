@@ -566,3 +566,24 @@ end
     vstr, ~, ~ = textview(a, (-1, -1, 0, 10); visual_lines = [1])
     @test vstr == expected
 end
+
+@testset "Search Highlighting With Unbounded Width" begin
+    # A negative `num_columns` means "use all the available columns". It must not be used
+    # in plain arithmetic to compute the maximum column, otherwise every match is discarded
+    # whenever `start_column` is greater than 1.
+    lines = ["aaa bbb match ccc"]
+    expected = "bbb \e[7mmatch\e[0m ccc"
+
+    search_matches = string_search_per_line(lines, r"match")
+    @test textview(lines, (1, -1, 5, -1); search_matches)[1] == expected
+
+    layout = TextViewLayout(lines)
+    search_matches = string_search_per_line(layout, r"match")
+    @test textview(layout, (1, -1, 5, -1); search_matches)[1] == expected
+
+    # The same must hold for the layout with ANSI escape sequences, which uses the indexed
+    # rendering path.
+    layout = TextViewLayout(["aaa \e[1mbbb\e[0m match ccc"])
+    search_matches = string_search_per_line(layout, r"match")
+    @test occursin("\e[7mmatch", textview(layout, (1, -1, 5, -1); search_matches)[1])
+end
