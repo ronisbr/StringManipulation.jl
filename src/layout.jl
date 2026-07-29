@@ -348,6 +348,7 @@ function _prepare_text_view_layout(
     event_stops  = Int[]
     event_codes  = SubString{String}[]
     transition_indices = Dict{AnsiStateTransition, Int32}()
+    transition_cache = AnsiStateTransition[]
 
     for line_number in eachindex(lines)
         line = lines[line_number]
@@ -506,13 +507,26 @@ function _prepare_text_view_layout(
 
         printable_widths[line_number] = column
 
+        # Every event below is visited three times, once to build the prefix checkpoints,
+        # once to build the suffix ones, and once to advance the document state. Since the
+        # transitions are deduplicated, we materialize each distinct one only once here
+        # instead of rebuilding it, and its three string values, at every visit.
+        empty!(transition_cache)
+
+        for transition_index in eachindex(line_metadata.ansi_transitions)
+            push!(
+                transition_cache,
+                _compact_transition_value(line, line_metadata, transition_index),
+            )
+        end
+
         # Cache the complete ANSI state after each full event block.
         prefix = line_metadata.ansi_prefix_checkpoints
         prefix_transition = _empty_ansi_transition()
 
         for (event_number, event) in enumerate(events)
             prefix_transition = _compose_ansi_transitions(
-                prefix_transition, _event_transition(line, line_metadata, event)
+                prefix_transition, transition_cache[Int(event.transition_index)]
             )
             if event_number % ansi_checkpoint_stride == 0
                 push!(prefix, prefix_transition)
@@ -533,7 +547,7 @@ function _prepare_text_view_layout(
             for event_number in first_event:last_event
                 block_transition = _compose_ansi_transitions(
                     block_transition,
-                    _event_transition(line, line_metadata, events[event_number]),
+                    transition_cache[Int(events[event_number].transition_index)],
                 )
             end
 
@@ -545,7 +559,7 @@ function _prepare_text_view_layout(
 
         for event in events
             document_state = _apply_ansi_transition(
-                document_state, _event_transition(line, line_metadata, event)
+                document_state, transition_cache[Int(event.transition_index)]
             )
         end
 
@@ -598,7 +612,29 @@ Return the interned transition referenced by `event`.
 - `AnsiStateTransition`: Materialized transition for `event`.
 """
 function _event_transition(line::String, metadata::TextLineMetadata, event::TextAnsiEvent)
-    transition = metadata.ansi_transitions[Int(event.transition_index)]
+    return _compact_transition_value(line, metadata, event.transition_index)
+end
+
+"""
+    _compact_transition_value(line::String, metadata::TextLineMetadata, transition_index::Integer) -> AnsiStateTransition
+
+Materialize the deduplicated transition of `metadata` stored at `transition_index`, reading
+its values from the owned source `line`.
+
+# Arguments
+
+- `line::String`: Owned source line containing the source-backed values.
+- `metadata::TextLineMetadata`: Indexed metadata of the line.
+- `transition_index::Integer`: Index of the transition to materialize.
+
+# Returns
+
+- `AnsiStateTransition`: Materialized transition.
+"""
+function _compact_transition_value(
+    line::String, metadata::TextLineMetadata, transition_index::Integer
+)
+    transition = metadata.ansi_transitions[Int(transition_index)]
     flags = transition.flags
     states = transition.decoration_states
 
