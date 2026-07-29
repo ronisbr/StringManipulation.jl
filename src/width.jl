@@ -68,3 +68,14 @@ rejected without being decoded.
 function _is_printable_ascii(str::AbstractString)
     return all(b -> 0x20 ≤ b ≤ 0x7E, codeunits(str))
 end
+
+"""
+    _has_escape_byte(str::AbstractString) -> Bool
+
+Return `true` if `str` contains an escape byte (`0x1b`), meaning that it can contain an ANSI
+escape sequence.
+
+Notice that `0x1b` cannot be part of a multi-byte UTF-8 sequence, so scanning the code units
+never yields a false positive.
+"""
+_has_escape_byte(str::AbstractString) = 0x1b ∈ codeunits(str)

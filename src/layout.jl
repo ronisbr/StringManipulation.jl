@@ -342,6 +342,13 @@ function _prepare_text_view_layout(
     document_ansi_checkpoints = Vector{Decoration}(undef, num_lines)
     document_state = Decoration()
 
+    # Buffers reused by every line so that we do not allocate them once per line. They hold
+    # the ANSI events found by the regex, which are produced in increasing byte order.
+    event_starts = Int[]
+    event_stops  = Int[]
+    event_codes  = SubString{String}[]
+    transition_indices = Dict{AnsiStateTransition, Int32}()
+
     for line_number in eachindex(lines)
         line = lines[line_number]
         is_plain_ascii = _is_printable_ascii(line)
@@ -364,35 +371,50 @@ function _prepare_text_view_layout(
 
         metadata[line_number] = line_metadata
         events = line_metadata.ansi_events
-        transition_indices = Dict{AnsiStateTransition, Int32}()
 
-        # Recognize supported ANSI sequences before scanning Unicode printable widths.
-        recognized_bytes = falses(ncodeunits(line))
-        event_codes = Dict{Int, Tuple{Int, String}}()
+        empty!(event_starts)
+        empty!(event_stops)
+        empty!(event_codes)
+        empty!(transition_indices)
+
         has_unrecognized_escape = false
 
-        for m in eachmatch(_REGEX_ANSI_SEQUENCES, line)
-            byte_start = m.offset
-            byte_end = byte_start + ncodeunits(m.match) - 1
-            for k in byte_start:byte_end
-                recognized_bytes[k] = true
+        # Recognize supported ANSI sequences before scanning Unicode printable widths. A
+        # line without an escape byte cannot contain any sequence, so we skip the regex
+        # scan and the auxiliary structures altogether. This is the common case for text
+        # that is not ASCII only because it has accented or wide characters.
+        if _has_escape_byte(line)
+            recognized_bytes = falses(ncodeunits(line))
+
+            for m in eachmatch(_REGEX_ANSI_SEQUENCES, line)
+                byte_start = m.offset
+                byte_end = byte_start + ncodeunits(m.match) - 1
+
+                for k in byte_start:byte_end
+                    recognized_bytes[k] = true
+                end
+
+                # Notice that we keep the match itself instead of copying it to a `String`.
+                # It is a substring of the line, which is owned by the layout.
+                code = m.match
+
+                if !(
+                    startswith(code, "\e]8;;") ||
+                    (startswith(code, "\e[") && endswith(code, 'm'))
+                )
+                    has_unrecognized_escape = true
+                end
+
+                push!(event_starts, byte_start)
+                push!(event_stops, byte_end)
+                push!(event_codes, code)
             end
-            code = String(m.match)
 
-            if !(
-                startswith(code, "\e]8;;") ||
-                (startswith(code, "\e[") && endswith(code, 'm'))
-            )
-                has_unrecognized_escape = true
-            end
-
-            event_codes[byte_start] = (byte_end, code)
-        end
-
-        for i in eachindex(codeunits(line))
-            if (codeunit(line, i) == 0x1b) && !recognized_bytes[i]
-                has_unrecognized_escape = true
-                break
+            for i in eachindex(codeunits(line))
+                if (codeunit(line, i) == 0x1b) && !recognized_bytes[i]
+                    has_unrecognized_escape = true
+                    break
+                end
             end
         end
 
@@ -407,19 +429,30 @@ function _prepare_text_view_layout(
         next_scalar_checkpoint = checkpoint_stride
         i = firstindex(line)
 
-        while i ≤ ncodeunits(line)
-            if haskey(event_codes, i)
-                # Attach zero-width events to their current printable column.
-                event_end, code = event_codes[i]
-                transition = _ansi_transition(code)
-                compact_transition = _compact_ansi_transition(
-                    transition, code, i, line_metadata.ansi_fallback_values
-                )
+        # The events were collected in increasing byte order. Hence, we can walk them with
+        # a cursor instead of hashing the index of every byte of the line.
+        next_event = 1
 
+        while i ≤ ncodeunits(line)
+            if (next_event ≤ length(event_starts)) && (event_starts[next_event] == i)
+                # Attach zero-width events to their current printable column.
+                event_end = event_stops[next_event]
+                code      = event_codes[next_event]
+                next_event += 1
+
+                transition = _ansi_transition(code)
                 transition_index = get(transition_indices, transition, Int32(0))
 
+                # The compact transition must only be built when the transition was not
+                # seen yet. Besides being wasted work, building it can push entries into
+                # `ansi_fallback_values` that would never be referenced.
                 if iszero(transition_index)
-                    push!(line_metadata.ansi_transitions, compact_transition)
+                    push!(
+                        line_metadata.ansi_transitions,
+                        _compact_ansi_transition(
+                            transition, code, i, line_metadata.ansi_fallback_values
+                        ),
+                    )
                     transition_index = Int32(length(line_metadata.ansi_transitions))
                     transition_indices[transition] = transition_index
                 end
@@ -593,7 +626,7 @@ end
 """
     _compact_ansi_transition(
         transition::AnsiStateTransition,
-        code::String,
+        code::AbstractString,
         byte_start::Int,
         fallback_values::Vector{String}
     ) -> CompactAnsiTransition
@@ -603,7 +636,7 @@ Pack a parsed transition using source offsets for variable string values.
 # Arguments
 
 - `transition::AnsiStateTransition`: Parsed transition to pack.
-- `code::String`: Source ANSI code represented by the transition.
+- `code::AbstractString`: Source ANSI code represented by the transition.
 - `byte_start::Int`: First byte index of `code` in its source line.
 - `fallback_values::Vector{String}`: Storage for values that cannot reference source bytes.
 
@@ -613,7 +646,7 @@ Pack a parsed transition using source offsets for variable string values.
 """
 function _compact_ansi_transition(
     transition::AnsiStateTransition,
-    code::String,
+    code::AbstractString,
     byte_start::Int,
     fallback_values::Vector{String},
 )
@@ -646,7 +679,7 @@ end
 
 """
     _ansi_source_ref(
-        code::String,
+        code::AbstractString,
         value::String,
         byte_start::Int,
         fallback_values::Vector{String}
@@ -657,7 +690,7 @@ the parsed value does not occur verbatim in the source event.
 
 # Arguments
 
-- `code::String`: Source ANSI code containing `value` when it can be referenced.
+- `code::AbstractString`: Source ANSI code containing `value` when it can be referenced.
 - `value::String`: Parsed value to reference or retain as a fallback.
 - `byte_start::Int`: First byte index of `code` in its source line.
 - `fallback_values::Vector{String}`: Storage for values without a source reference.
@@ -667,7 +700,7 @@ the parsed value does not occur verbatim in the source event.
 - `UInt64`: Packed source range or fallback index.
 """
 function _ansi_source_ref(
-    code::String, value::String, byte_start::Int, fallback_values::Vector{String}
+    code::AbstractString, value::String, byte_start::Int, fallback_values::Vector{String}
 )
     isempty(value) && return UInt64(0)
     range = findfirst(value, code)
@@ -782,19 +815,19 @@ function _ansi_transition_string(transition::AnsiStateTransition)
 end
 
 """
-    _ansi_transition(code::String) -> AnsiStateTransition
+    _ansi_transition(code::AbstractString) -> AnsiStateTransition
 
 Summarize the decoration changes produced by ANSI sequence `code`.
 
 # Arguments
 
-- `code::String`: ANSI sequence to summarize.
+- `code::AbstractString`: ANSI sequence to summarize.
 
 # Returns
 
 - `AnsiStateTransition`: Parsed state changes produced by `code`.
 """
-function _ansi_transition(code::String)
+function _ansi_transition(code::AbstractString)
     decoration = parse_decoration(code)
     is_sgr = startswith(code, "\e[") && endswith(code, 'm')
     clear_sgr = is_sgr && decoration.reset
