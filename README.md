@@ -120,7 +120,6 @@ This package contains functions to work with ANSI escape sequences that decorate
 All the decorations in a string can be retrieved using `get_decorations`:
 
 ```julia
-
 julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest\e[0m";
 
 julia> get_decorations(str)
@@ -282,7 +281,6 @@ julia> split_string(str, 8)
 The function `textview` can be used to create a view of a text.
 
 ```julia
-
 julia> str = """
          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque tempor
          risus vel diam ultrices volutpat. Nullam id tortor ut dolor rutrum cursus
@@ -309,8 +307,8 @@ The function `textview` has many options. For more information, please see the b
 
 ### Prepared Text Views
 
-Applications that repeatedly render different viewports of the same text can prepare it once with
-`TextViewLayout`:
+Applications that repeatedly render different viewports of the same text can prepare it once
+with `TextViewLayout`:
 
 ```julia
 julia> lines = split(str, '\n');
@@ -323,24 +321,25 @@ um dolor sit amet, consectetur adipiscing elit. Pe
 ed lorem. Donec interdum, risus eu scelerisque pos
 ```
 
-Prepared views are owned, immutable snapshots: construction copies the input into canonical lines,
-so later changes to a caller's input do not change the layout. Their private metadata includes cached
-printable widths plus sparse Unicode checkpoints and ANSI event/checkpoint storage. This makes
-repeated horizontal rendering proportional to the viewport and checkpoint slack instead of the
-complete line width. Layout construction performs one-time linear preprocessing with a bounded
-number of linear passes and retains the canonical lines plus that metadata. The default checkpoint
-strides balance memory and seek work; smaller values reduce local scans but retain more metadata.
-Search matches, active matches, and visual backgrounds remain dynamic.
+Prepared views are owned, immutable snapshots: construction copies the input into canonical
+lines, so later changes to a caller's input do not change the layout. Their private metadata
+includes cached printable widths plus sparse Unicode checkpoints and ANSI event/checkpoint
+storage. This makes repeated horizontal rendering proportional to the viewport and
+checkpoint slack instead of the complete line width. Layout construction performs one-time
+linear preprocessing with a bounded number of linear passes and retains the canonical lines
+plus that metadata. The default checkpoint strides balance memory and seek work; smaller
+values reduce local scans but retain more metadata. Search matches, active matches, and
+visual backgrounds remain dynamic.
 
-`TextViewLayout` also provides a read-only `AbstractVector{String}` interface. Its lines can be
-indexed or iterated without exposing mutable backing storage. Use `collect(layout)` to obtain an
-explicit mutable copy when an application needs to modify the line vector.
+`TextViewLayout` also provides a read-only `AbstractVector{String}` interface. Its lines can
+be indexed or iterated without exposing mutable backing storage. Use `collect(layout)` to
+obtain an explicit mutable copy when an application needs to modify the line vector.
 
-Preparation pays off when its one-time construction cost is amortized across enough renders. A
-useful workload-specific break-even estimate is construction time divided by the time saved per
-prepared render; no finite break-even exists when a prepared render is not faster. ANSI metadata may
-canonicalize redundant events at a viewport's right boundary while preserving the visible terminal
-state.
+Preparation pays off when its one-time construction cost is amortized across enough renders.
+A useful workload-specific break-even estimate is construction time divided by the time
+saved per prepared render; no finite break-even exists when a prepared render is not faster.
+ANSI metadata may canonicalize redundant events at a viewport's right boundary while
+preserving the visible terminal state.
 
-The existing string and vector `textview` methods do not prepare implicitly and remain appropriate
-for one-off rendering.
+The existing string and vector `textview` methods do not prepare implicitly and remain
+appropriate for one-off rendering.
