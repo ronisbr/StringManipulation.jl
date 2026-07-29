@@ -188,24 +188,29 @@ function fit_string_in_field(
         # == Crop from The Left ================================================================
 
     else
-        ansi, cropped_str = left_crop(str, crop)
-        result = keep_escape_seq ? ansi : ""
+        ansi, cropped_str = left_crop(str, crop; keep_escape_seq)
 
-        add_space_in_continuation_char && return "$result$cont_str $cropped_str"
+        add_space_in_continuation_char && return "$ansi$cont_str $cropped_str"
 
-        return "$result$cont_str$cropped_str"
+        return "$ansi$cont_str$cropped_str"
     end
 end
 
 """
-    left_crop(str::AbstractString, crop_width::Int) -> String, String
+    left_crop(str::AbstractString, crop_width::Int; kwargs...) -> String, String
 
-Return a string obtained by cropping the left characters of `str` so that its printable
+Return two strings obtained by cropping the left characters of `str` so that its printable
 width is reduced by `crop_width` display units.
+
+# Keywords
+
+- `keep_escape_seq::Bool`: If `false`, the ANSI escape sequences in the cropped part will
+    not be computed. In this case, the first argument returned is always empty.
+    (**Default** = `true`)
 
 # Returns
 
-- `String`: ANSI escape sequence (non-printable string) in the cropped part.
+- `String`: ANSI escape sequences (non-printable string) in the cropped part.
 - `String`: Cropped string.
 
 # Extended Help
@@ -217,9 +222,9 @@ julia> left_crop("\\e[1mPlease, crop this string.", 8)
 ("\\e[1m", "crop this string.")
 ```
 """
-function left_crop(str::AbstractString, crop_width::Int)
+function left_crop(str::AbstractString, crop_width::Int; keep_escape_seq::Bool = true)
     buf_ansi = IOBuffer()
-    buf_str  = IOBuffer(; sizehint = floor(Int, sizeof(str) - crop_width))
+    buf_str  = IOBuffer(; sizehint = max(0, sizeof(str) - crop_width))
     state    = :text
 
     for c in str
@@ -232,7 +237,7 @@ function left_crop(str::AbstractString, crop_width::Int)
 
         # If we are not in a text section, just write the character to the ANSI buffer.
         if state != :text
-            write(buf_ansi, c)
+            keep_escape_seq && write(buf_ansi, c)
             continue
         end
 
