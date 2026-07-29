@@ -22,7 +22,7 @@ The following states are possible:
 - `:escape_hyperlink_2`: Second state of an ANSI hyperlink escape sequence (`;`).
 - `:escape_hyperlink_3`: Third state of an ANSI hyperlink escape sequence (`;`).
 - `:escape_hyperlink_url`: URL in an ANSI hyperlink escape sequence.
-- `:escape_hyperlink_close`: Closing of an ANSI hyperlink escape sequence (`\\x1b`).
+- `:escape_hyperlink_end`: Closing of an ANSI hyperlink escape sequence (`\\x1b`).
 - `:escape_state_end`: End of an ANSI escape sequence.
 """
 function _next_string_state(c::Char, state::Symbol = :text)

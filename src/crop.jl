@@ -185,7 +185,7 @@ function fit_string_in_field(
 
         return "$cropped_str$cont_str$ansi"
 
-        # == Crop from The Left ================================================================
+    # == Crop From the Left ================================================================
 
     else
         ansi, cropped_str = left_crop(str, crop; keep_escape_seq)
@@ -244,7 +244,7 @@ function left_crop(str::AbstractString, crop_width::Int; keep_escape_seq::Bool =
         crop_width -= textwidth(c)
 
         # If `crop_width` is negative, it means that we have a character that occupies
-        # more than 1 character. In this case, we fill the string with space.
+        # more than one column. In this case, we fill the string with spaces.
         if crop_width < 0
             write(buf_str, " "^(-crop_width))
             crop_width = 0
@@ -257,15 +257,15 @@ end
 """
     right_crop(str::AbstractString, crop_width::Int; kwargs...) -> String, String
 
-Return a string obtained by cropping characters from the right of `str` so that its printable
-width is reduced by `crop_width` display units.
+Return two strings obtained by cropping characters from the right of `str` so that its
+printable width is reduced by `crop_width` display units.
 
 # Returns
 
 - `String`: Cropped string.
 - `String`: ANSI escape sequence (non-printable string) in the cropped part.
 
-# Keyword
+# Keywords
 
 - `keep_escape_seq::Bool`: If `false`, the ANSI escape sequence in the cropped field will
     not be computed. In this case, the second argument returned is always empty.
@@ -326,8 +326,8 @@ function right_crop(
         remaining_chars -= Δ
 
         # If `remaining_chars` is negative, it means that we have a character that
-        # occupies more than 1 character. In this case, we fill the string with
-        # space.
+        # occupies more than one column. In this case, we fill the string with
+        # spaces.
         if remaining_chars < 0
             write(buf_str, " "^(-remaining_chars))
             remaining_chars = 0

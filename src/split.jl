@@ -13,14 +13,15 @@ Split the string `str` after a number of characters that have a specific printab
 This function returns two strings: before and after the split point.
 
 The algorithm ensures that the printable width of the first returned string will always be
-equal `size`, unless `size` is negative or larger than the printable size of `str`. In the
+equal to `size`, unless `size` is negative or larger than the printable size of `str`. In the
 first case, the first string is empty, whereas, in the second case, the first string is
 equal to `str`.
 
 !!! note
 
-    If the character in the split point needs more than 1 character to be printed (like some
-    UTF-8 characters), everything will be filled with spaces.
+    If the character at the split point needs more than one column to be printed (like some
+    UTF-8 characters), it is replaced by spaces on both sides so that the printable width of
+    each returned string is preserved.
 """
 function split_string(str::AbstractString, size::Int)
     # Buffers with the string before and after the split point. Notice that we hint them

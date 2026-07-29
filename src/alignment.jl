@@ -19,18 +19,19 @@ be:
 
 - `:l`: Align the string to the left;
 - `:c`: Align the string in the center;
-- `:r`: Align the string in the right.
+- `:r`: Align the string to the right.
 
 !!! note
 
-    If the printable width of `str` is higher than `field_width`, nothing will be changed.
+    If the printable width of `str` is higher than or equal to `field_width`, nothing will be
+    changed.
 
 !!! note
 
     This function treats `\\n` as normal characters. To align every line, use
     the function [`align_string_per_line`](@ref).
 
-# Keyword
+# Keywords
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_width` if the initial string's printable
@@ -106,13 +107,14 @@ which can be:
 
 - `:l`: Align the string to the left;
 - `:c`: Align the string in the center;
-- `:r`: Align the string in the right.
+- `:r`: Align the string to the right.
 
 !!! note
 
-    If the printable width of `str` is higher than `field_width`, nothing will be changed.
+    If the printable width of `str` is higher than or equal to `field_width`, nothing will be
+    changed.
 
-# Keyword
+# Keywords
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_width` if the initial string's printable
@@ -193,7 +195,7 @@ Return the left and right padding required to align the string `str` in a field 
 
 - `:l`: Align the string to the left;
 - `:c`: Align the string in the center;
-- `:r`: Align the string in the right.
+- `:r`: Align the string to the right.
 
 This function can return `nothing` in the following conditions:
 
@@ -205,7 +207,7 @@ This function can return `nothing` in the following conditions:
 
     This function treats `\\n` as normal characters.
 
-# Keyword
+# Keywords
 
 - `fill::Bool`: If `true`, the string will be filled with spaces to the right so that the
     resulting string has printable width `field_width` if the initial string's printable
