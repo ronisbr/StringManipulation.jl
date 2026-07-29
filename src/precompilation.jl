@@ -28,20 +28,20 @@ PrecompileTools.@compile_workload begin
     # == Decorations =======================================================================
 
     drop_inactive_properties(Decoration())
-    get_decorations("This is a \\e[1mbold string\\e[45mwith a different background\\e[0m.")
+    get_decorations("This is a \e[1mbold string\e[45mwith a different background\e[0m.")
     get_and_remove_decorations(
-        "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
+        "This is a \e[1mbold string\e[45mwith a different background\e[0m."
     )
-    parse_decoration("\\e[1;45m")
+    parse_decoration("\e[1;45m")
     remove_decorations(
-        "This is a \\e[1mbold string\\e[45mwith a different background\\e[0m."
+        "This is a \e[1mbold string\e[45mwith a different background\e[0m."
     )
     replace_default_background(
         "\e[35mThis is a \e[45;1mtest string to \e[0mverify if " *
         "\e[45mthe background \e[49;1mwas replaced correctly.",
         "43",
     )
-    update_decoration(Decoration(), "\\e[1;45m")
+    update_decoration(Decoration(), "\e[1;45m")
     convert(String, Decoration(; bold = StringManipulation.active))
 
     # == Highlight =========================================================================
