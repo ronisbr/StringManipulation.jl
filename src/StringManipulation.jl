@@ -8,8 +8,11 @@ import Base: convert, String, @kwdef
 
 const _CSI = "\x1b["
 
-# This regex matches all ANSI escape sequences that define decorations.
-const _REGEX_ANSI_SEQUENCES = r"\x1B(?:]8;;[^\x1B]*\x1B\\|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+# This regex matches all ANSI escape sequences that define decorations. Notice that an
+# OSC 8 hyperlink can be terminated by either ST (`\e\\`) or BEL (`\a`), and that its URL
+# cannot contain control characters. The latter restriction lets us bail out of a sequence
+# that was never terminated instead of consuming the remaining text.
+const _REGEX_ANSI_SEQUENCES = r"\x1B(?:]8;;[^\x00-\x1F\x7F]*(?:\x1B\\|\a)|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
 
 # Escape sequence that reset all decorations.
 const _RESET_DECORATIONS = _CSI * "0m"

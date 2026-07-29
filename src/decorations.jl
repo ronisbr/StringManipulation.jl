@@ -260,10 +260,30 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
 end
 
 """
-    update_decoration(decoration::Decoration, str::String) -> Decoration
+    _apply_hyperlink(decoration::Decoration, hyperlink_url::String) -> Decoration
+
+Return `decoration` with its hyperlink replaced by `hyperlink_url`, marking the hyperlink
+as changed. All the other properties are kept.
+"""
+function _apply_hyperlink(decoration::Decoration, hyperlink_url::String)
+    return Decoration(
+        decoration.foreground,
+        decoration.background,
+        decoration.bold,
+        decoration.italic,
+        decoration.reversed,
+        decoration.underline,
+        decoration.reset,
+        hyperlink_url,
+        true,
+    )
+end
+
+"""
+    update_decoration(decoration::Decoration, code::String) -> Decoration
     update_decoration(decoration::Decoration, new::Decoration) -> Decoration
 
-Update the current `decoration` given the decorations in the string `str` or in `new`.
+Update the current `decoration` given the decorations in the string `code` or in `new`.
 """
 function update_decoration(decoration::Decoration, code::String)
     state = :text
@@ -271,6 +291,7 @@ function update_decoration(decoration::Decoration, code::String)
     hyperlink = false
 
     for c in code
+        previous_state = state
         state = _next_string_state(c, state)
 
         if state == :escape_state_begin
@@ -288,24 +309,21 @@ function update_decoration(decoration::Decoration, code::String)
             write(buf, c)
 
         elseif state == :escape_hyperlink_end
-            # The buffer will contain only the new URL.
-            hl_url = String(take!(buf))
-
-            decoration = Decoration(
-                decoration.foreground,
-                decoration.background,
-                decoration.bold,
-                decoration.italic,
-                decoration.reversed,
-                decoration.underline,
-                decoration.reset,
-                hl_url,
-                true,
-            )
+            # The hyperlink was terminated by ST (`\x1b\\`). The buffer contains only the
+            # new URL.
+            decoration = _apply_hyperlink(decoration, String(take!(buf)))
 
         elseif state == :escape_state_end
             if hyperlink
                 hyperlink = false
+
+                # A hyperlink terminated by BEL (`\a`) reaches this state directly from
+                # the URL state, so the URL is still in the buffer and must be applied
+                # here. If it was terminated by ST, it was already applied above.
+                if previous_state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
+                    decoration = _apply_hyperlink(decoration, String(take!(buf)))
+                end
+
                 continue
             end
 

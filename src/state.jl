@@ -59,7 +59,15 @@ function _next_string_state(c::Char, state::Symbol = :text)
         (c == ';') && return :escape_hyperlink_3
 
     elseif state ∈ (:escape_hyperlink_3, :escape_hyperlink_url)
+        # An OSC 8 hyperlink can be terminated by either ST (`\x1b\\`) or BEL (`\a`).
         (c == '\x1B') && return :escape_hyperlink_end
+        (c == '\a') && return :escape_state_end
+
+        # A URL cannot contain control characters. Hence, if we find one, the sequence was
+        # never terminated and we must return to the text state instead of consuming the
+        # remaining characters.
+        (c < ' ') && return :text
+
         return :escape_hyperlink_url
 
     elseif state == :escape_hyperlink_end
