@@ -78,43 +78,94 @@ end
 ############################################################################################
 
 """
-    _parse_ansi_decoration_code(decoration::Decoration, code::String) -> Decoration
+    _next_sgr_parameter(code::AbstractString, i::Int, require_value::Bool = false) -> Int, Int, Bool
 
-Parse the ANSI decoration `code` and return the updated decoration given the initial
-`decoration`.
+Read the SGR parameter of `code` that begins at the byte index `i`.
+
+# Arguments
+
+- `code::AbstractString`: Parameters of an SGR sequence.
+- `i::Int`: Byte index where the parameter begins.
+- `require_value::Bool`: If `true`, an omitted parameter is reported as not found instead of
+    taking its default value. This is required by the arguments of the extended color
+    modes, which are not defined by ECMA-48 and have no default.
+    (**Default** = `false`)
+
+# Returns
+
+- `Int`: Value of the parameter, or 0 if it was omitted.
+- `Int`: Byte index where the next parameter begins. It is past the end of `code` if this
+    was the last parameter.
+- `Bool`: `true` if a parameter was read. It is `false` if `i` is past the end of `code` or
+    if the parameter is not a valid number, in which case the caller must skip it.
 """
-function _parse_ansi_decoration_code(decoration::Decoration, code::String)
-    tokens = split(code, ';')
-    num_tokens = length(tokens)
+function _next_sgr_parameter(code::AbstractString, i::Int, require_value::Bool = false)
+    last_index = ncodeunits(code)
 
+    (i > last_index + 1) && return 0, i, false
+
+    value      = 0
+    num_digits = 0
+    valid      = true
+
+    j = i
+    while j ≤ last_index
+        b = codeunit(code, j)
+        (b == UInt8(';')) && break
+
+        if UInt8('0') ≤ b ≤ UInt8('9')
+            value = 10 * value + (b - UInt8('0'))
+            num_digits += 1
+        else
+            valid = false
+        end
+
+        j += 1
+    end
+
+    # If the delimiter was not found, this was the last parameter and the next one begins
+    # past the end of the string, ending the loop in the caller.
+    next_index = j > last_index ? last_index + 2 : j + 1
+
+    # ECMA-48 states that an omitted parameter takes its default value, which is 0 for SGR.
+    # Hence, `\e[m` is equivalent to `\e[0m`, and so is any empty parameter. A parameter
+    # with more digits than we can hold is reported as invalid.
+    valid &= num_digits ≤ 9
+    require_value && (valid &= num_digits > 0)
+
+    return value, next_index, valid
+end
+
+"""
+    _parse_ansi_decoration_code(decoration::Decoration, code::AbstractString) -> Decoration
+
+Parse the ANSI decoration `code`, which contains only the parameters of an SGR sequence, and
+return the updated decoration given the initial `decoration`.
+"""
+function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractString)
     # Unpack fields.
     foreground = decoration.foreground
     background = decoration.background
     bold       = decoration.bold
     italic     = decoration.italic
     underline  = decoration.underline
-    reset      = decoration.reset
     reversed   = decoration.reversed
 
     # `reset` must not be copied to other decorations. Hence, we need to reset it here.
     reset = false
 
-    i = 1
-    while i ≤ num_tokens
-        token = tokens[i]
+    # We walk the parameters instead of splitting the code because the latter allocates a
+    # vector for every escape sequence, which is the hottest path of this package.
+    pos        = firstindex(code)
+    last_index = ncodeunits(code)
 
-        # ECMA-48 states that an omitted parameter takes its default value, which is 0 for
-        # SGR. Hence, `\e[m` is equivalent to `\e[0m`, and so is any empty token.
-        code_i = isempty(token) ? 0 : tryparse(Int, token; base = 10)
-
-        if isnothing(code_i)
-            i += 1
-            continue
-        end
+    while pos ≤ last_index + 1
+        code_i, pos, found = _next_sgr_parameter(code, pos)
+        found || continue
 
         if code_i == 0
             # If we have a reset, neglect all the configurations we have parsed so far,
-            # except the hyperlinks. Notice that we must not return here because the same
+            # except the hyperlinks. Notice that we must not stop here because the same
             # sequence can contain other codes after the reset, like in `\e[0;31m`.
             foreground = ""
             background = ""
@@ -148,114 +199,42 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         elseif code_i == 27
             reversed = inactive
 
-        elseif 30 <= code_i <= 37
+        elseif (30 ≤ code_i ≤ 37) || (code_i == 39) || (90 ≤ code_i ≤ 97)
             foreground = string(code_i)
 
-            # 256-color / true-color (24-bit) support for foreground.
-        elseif code_i == 38
-            # Check if we have 256-color or true-color (24-bit) definition.
-            if i + 1 ≤ num_tokens
-                color_type = tryparse(Int, tokens[i + 1]; base = 10)
-
-                # 256-color mode.
-                if color_type == 5
-                    # In this case, we must have another token for the color.
-                    if i + 2 ≤ num_tokens
-                        color_code = tryparse(Int, tokens[i + 2]; base = 10)
-                        if !isnothing(color_code)
-                            foreground = "38;5;" * string(color_code)
-                        end
-                    end
-                    i = min(i + 2, num_tokens)
-
-                    # True-color (24-bit) mode.
-                elseif color_type == 2
-                    # In this case, we must have another three tokens for the RGB color.
-                    if i + 4 ≤ num_tokens
-                        color_r = tryparse(Int, tokens[i + 2]; base = 10)
-                        color_g = tryparse(Int, tokens[i + 3]; base = 10)
-                        color_b = tryparse(Int, tokens[i + 4]; base = 10)
-
-                        if !any(isnothing, (color_r, color_g, color_b))
-                            foreground =
-                                "38;2;" *
-                                string(color_r) *
-                                ";" *
-                                string(color_g) *
-                                ";" *
-                                string(color_b)
-                        end
-                    end
-                    i = min(i + 4, num_tokens)
-
-                else
-                    # Consume malformed or unsupported extended-color modes.
-                    i += 1
-                end
-            end
-
-        elseif code_i == 39
-            foreground = "39"
-
-        elseif 40 <= code_i <= 47
+        elseif (40 ≤ code_i ≤ 47) || (code_i == 49) || (100 ≤ code_i ≤ 107)
             background = string(code_i)
 
-            # 256-color / truecolor support for background.
-        elseif code_i == 48
-            # Check if we have 256-color or truecolor definition.
-            if i + 1 ≤ num_tokens
-                color_type = tryparse(Int, tokens[i + 1]; base = 10)
+            # 256-color and true-color (24-bit) support. Both the foreground (38) and the
+            # background (48) use the same syntax, which takes additional parameters.
+        elseif (code_i == 38) || (code_i == 48)
+            is_foreground = code_i == 38
 
-                # 256-color mode.
-                if color_type == 5
-                    # In this case, we must have another token for the color.
-                    if i + 2 ≤ num_tokens
-                        color_code = tryparse(Int, tokens[i + 2]; base = 10)
-                        if !isnothing(color_code)
-                            background = "48;5;" * string(color_code)
-                        end
-                    end
-                    i = min(i + 2, num_tokens)
+            color_type, pos, found_type = _next_sgr_parameter(code, pos, true)
 
-                    # Truecolor mode.
-                elseif color_type == 2
-                    # In this case, we must have another three tokens for the RGB color.
-                    if i + 4 ≤ num_tokens
-                        color_r = tryparse(Int, tokens[i + 2]; base = 10)
-                        color_g = tryparse(Int, tokens[i + 3]; base = 10)
-                        color_b = tryparse(Int, tokens[i + 4]; base = 10)
+            if found_type && (color_type == 5)
+                # 256-color mode. In this case, we must have another parameter with the
+                # color.
+                color_code, pos, found_color = _next_sgr_parameter(code, pos, true)
 
-                        if !any(isnothing, (color_r, color_g, color_b))
-                            background =
-                                "48;2;" *
-                                string(color_r) *
-                                ";" *
-                                string(color_g) *
-                                ";" *
-                                string(color_b)
-                        end
-                    end
-                    i = min(i + 4, num_tokens)
+                if found_color
+                    color = string(code_i, ";5;", color_code)
+                    is_foreground ? (foreground = color) : (background = color)
+                end
 
-                else
-                    # Consume malformed or unsupported extended-color modes.
-                    i += 1
+            elseif found_type && (color_type == 2)
+                # True-color (24-bit) mode. In this case, we must have another three
+                # parameters with the RGB color.
+                color_r, pos, found_r = _next_sgr_parameter(code, pos, true)
+                color_g, pos, found_g = _next_sgr_parameter(code, pos, true)
+                color_b, pos, found_b = _next_sgr_parameter(code, pos, true)
+
+                if found_r && found_g && found_b
+                    color = string(code_i, ";2;", color_r, ";", color_g, ";", color_b)
+                    is_foreground ? (foreground = color) : (background = color)
                 end
             end
-
-        elseif code_i == 49
-            background = "49"
-
-            # Bright foreground colors defined by Aixterm.
-        elseif 90 <= code_i <= 97
-            foreground = string(code_i)
-
-            # Bright background colors defined by Aixterm.
-        elseif 100 <= code_i <= 107
-            background = string(code_i)
         end
-
-        i += 1
     end
 
     return Decoration(

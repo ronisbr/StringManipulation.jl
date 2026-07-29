@@ -86,3 +86,23 @@ end
     @test decoration.foreground == "38;5;231"
     @test decoration.background == "48;2;216;210;203"
 end
+
+@testset "SGR Parameter Scanning" begin
+    parse_code(code) = StringManipulation._parse_ansi_decoration_code(Decoration(), code)
+
+    # A parameter is only valid if it is composed of digits. Anything else must be skipped
+    # without hiding the parameters that follow it.
+    @test parse_code("48;5;-1").background == ""
+    @test parse_code("1 ;3").italic == StringManipulation.active
+    @test parse_code("38;5; 1;7").reversed == StringManipulation.active
+
+    # Leading zeros must be handled like any other number.
+    @test parse_code("007").reversed == StringManipulation.active
+    @test parse_code("038;5;231").foreground == "38;5;231"
+
+    # The most common codes must be parsed without allocating.
+    d = Decoration()
+    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "0")) == 0
+    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "1")) == 0
+    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "22;24")) == 0
+end
