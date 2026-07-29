@@ -1,6 +1,45 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.4.7
+-------------
+
+- ![Enhancement][badge-enhancement] Highlight the search matches of a line in a single pass,
+  making `highlight_search` linear instead of quadratic in the number of matches.
+- ![Enhancement][badge-enhancement] Compute `printable_textwidth` without building an
+  undecorated copy of the string.
+- ![Enhancement][badge-enhancement] Parse the SGR parameters without splitting them, which
+  removes the allocations of the most common escape sequences.
+- ![Enhancement][badge-enhancement] Reduce the allocations of `parse_ansi_string`,
+  `split_string`, `align_string_per_line`, and the `TextViewLayout` construction.
+- ![Enhancement][badge-enhancement] Add the keyword `keep_escape_seq` to `left_crop`, which
+  `right_crop` already supported.
+- ![Enhancement][badge-enhancement] Return a `String` from every code path of
+  `align_string`, `align_string_per_line`, `fit_string_in_field`, and `highlight_search`,
+  and remove two type instabilities in `textview`.
+- ![Bugfix][badge-bugfix] Keep the codes that follow a reset in the same SGR sequence, so
+  that `\e[0;31m` is no longer parsed as a bare `\e[0m`.
+- ![Bugfix][badge-bugfix] Ignore the CSI sequences that are not SGR, so that a cursor
+  movement or an erase no longer changes the decorations.
+- ![Bugfix][badge-bugfix] Treat an omitted SGR parameter as the code 0, so that `\e[m`
+  resets the decorations.
+- ![Bugfix][badge-bugfix] Support the OSC 8 hyperlinks terminated by BEL, and stop an
+  unterminated hyperlink from consuming the remaining text.
+- ![Bugfix][badge-bugfix] Report the correct column in `string_search` when a match begins
+  with a wide character, and stop throwing a `BoundsError` when the regex can match an empty
+  string at the end.
+- ![Bugfix][badge-bugfix] Preserve the reverse video and the hyperlink in
+  `replace_default_background`.
+- ![Bugfix][badge-bugfix] Clamp `end_line` in `highlight_search` instead of throwing a
+  `BoundsError`.
+- ![Bugfix][badge-bugfix] Never return a string wider than the field in
+  `fit_string_in_field`, and reject an invalid `crop_side`.
+- ![Bugfix][badge-bugfix] Fix the search highlighting and the title cropping in `textview`
+  when the view width is unbounded.
+- ![Bugfix][badge-bugfix] Exercise the ANSI parsing in the precompilation workload, which
+  used a literal backslash instead of the escape character.
+- ![Info][badge-info] Improve the documentation, the code style, and the repository guide.
+
 Version 0.4.6
 -------------
 
