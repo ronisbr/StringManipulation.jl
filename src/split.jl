@@ -43,14 +43,19 @@ function split_string(str::AbstractString, size::Int)
 
             if state == :text
                 cw = textwidth(c)
+
+                # Printable width still available in the string before the split point.
+                available_width = size
+
                 size -= cw
 
-                # If `size` is negative, then it means that we have a character that
-                # occupies more than 1 character. In this case, we fill the string with
-                # space.
+                # If `size` is negative, the character straddles the split point because it
+                # occupies more than one column. Since a character cannot be broken, we
+                # replace it by spaces on both sides so that the printable width of each
+                # part is preserved.
                 if size < 0
-                    print(buf₀, " "^(-size))
-                    print(buf₁, " "^(cw + size))
+                    print(buf₀, " "^available_width)
+                    print(buf₁, " "^(cw - available_width))
                     size = 0
                     continue
                 end
