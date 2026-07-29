@@ -282,11 +282,11 @@ width is reduced by `crop_width` display units.
 # Examples
 
 ```julia-repl
-julia> right_crop("\e[1mPlease, crop this \e[0mstring.", 8)
-("\e[1mPlease, crop this", "\e[0m")
+julia> right_crop("\\e[1mPlease, crop this \\e[0mstring.", 8)
+("\\e[1mPlease, crop this", "\\e[0m")
 
-julia> right_crop("\e[1mPlease, crop this \e[0mstring.", 8; keep_escape_seq = false)
-("\e[1mPlease, crop this", "")
+julia> right_crop("\\e[1mPlease, crop this \\e[0mstring.", 8; keep_escape_seq = false)
+("\\e[1mPlease, crop this", "")
 ```
 """
 function right_crop(

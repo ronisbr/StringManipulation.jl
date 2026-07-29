@@ -173,8 +173,8 @@ end
 Replace the default background in `str` by the one in `new_background`. The latter must be
 represented using a valid ANSI escape sequence that sets the background.
 
-Internally, this function replaces the ANSI sequences that reset the decoration (`\e[0m`)
-and set the default background (`\e[49m`) with the new background while keeping all the
+Internally, this function replaces the ANSI sequences that reset the decoration (`\\e[0m`)
+and set the default background (`\\e[49m`) with the new background while keeping all the
 other supported decorations.
 """
 function replace_default_background(str::AbstractString, new_background::AbstractString)
