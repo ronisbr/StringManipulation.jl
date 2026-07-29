@@ -587,3 +587,31 @@ end
     search_matches = string_search_per_line(layout, r"match")
     @test occursin("\e[7mmatch", textview(layout, (1, -1, 5, -1); search_matches)[1])
 end
+
+@testset "Title With Unbounded Width and Frozen Columns" begin
+    lines = ["TITLE-LINE-VERY-LONG", "aaaaaaaaaaaaaaaaaaaa", "bbbb"]
+
+    # The title spans the entire width of the view. When the width is unbounded, the title
+    # must not be cropped by the number of frozen columns.
+    result = textview(
+        lines,
+        (2, -1, 1, -1);
+        frozen_lines_at_beginning = 1,
+        title_lines = 1,
+        frozen_columns_at_beginning = 5,
+    )[1]
+
+    @test startswith(result, "TITLE-LINE-VERY-LONG")
+
+    # When the width is bounded, the title still spans the frozen columns plus the
+    # remaining ones.
+    result = textview(
+        lines,
+        (2, -1, 1, 10);
+        frozen_lines_at_beginning = 1,
+        title_lines = 1,
+        frozen_columns_at_beginning = 5,
+    )[1]
+
+    @test startswith(result, "TITLE-LINE-VERY")
+end

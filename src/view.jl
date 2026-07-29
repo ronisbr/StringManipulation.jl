@@ -508,12 +508,17 @@ function _textview(
         cropped_chars_in_line = 0
 
         if l ≤ title_lines
-            title_num_columns = 0
-            title_frozen_columns_at_beginning = num_columns + frozen_columns_at_beginning
-
-            if title_frozen_columns_at_beginning < 0
+            # A title line is never split into frozen and scrolled parts. Hence, we render
+            # it as a single frozen block that spans the entire width of the view. Notice
+            # that a negative `num_columns` means that the width is unbounded, in which
+            # case the title must be unbounded as well.
+            if num_columns < 0
                 title_num_columns = -1
                 title_frozen_columns_at_beginning = 0
+            else
+                title_num_columns = 0
+                title_frozen_columns_at_beginning =
+                    num_columns + frozen_columns_at_beginning
             end
 
             _draw_source_line_view!(
