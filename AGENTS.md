@@ -3,9 +3,9 @@
 ## Package Structure
 
 - Treat this repository as one Julia package compatible with Julia `^1.10`.
-- Use `src/StringManipulation.jl` as the single module entrypoint. Preserve its include order: alignment, ansi, crop, decorations, highlighting, search, state, split, view, width, precompilation.
+- Use `src/StringManipulation.jl` as the single module entrypoint. Preserve its include order: alignment, ansi, crop, decorations, highlighting, state, split, layout, search, view, width, precompilation.
 - Treat feature files in `src/` as module includes, not independent subpackages.
-- Keep tests in the files unconditionally included by `test/runtests.jl`: alignment, ansi, crop, decorations, highlighting, search, split, view, and width. Do not expect dedicated test files for state or precompilation.
+- Keep tests in the files unconditionally included by `test/runtests.jl`: alignment, ansi, crop, decorations, highlighting, layout, search, split, view, and width. Do not expect dedicated test files for state or precompilation.
 - Review `src/precompilation.jl` and its explicit `PrecompileTools.@compile_workload` when public API changes should be precompiled.
 - Remember that PrecompileTools is the only runtime dependency; the test target supplies Test and Markdown.
 
@@ -37,4 +37,4 @@
 
 - Do not invent workflows for a linter, pre-commit hooks, generated documentation, package extensions, or weak dependencies; none are configured.
 - Do not expect `CLAUDE.md`, `deps/build.jl`, a docs project/build, or `test/Project.toml`.
-- Do not assume `Manifest.toml` exactly matches package metadata; its local package version is stale (`0.4.4` versus `0.4.5` in `Project.toml`).
+- Do not expect a tracked `Manifest.toml`; it is not committed, so it is generated locally by `Pkg.instantiate()` and can be out of sync with `Project.toml`.
