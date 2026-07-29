@@ -90,7 +90,12 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
 
     i = 1
     while i ≤ num_tokens
-        code_i = tryparse(Int, tokens[i]; base = 10)
+        token = tokens[i]
+
+        # ECMA-48 states that an omitted parameter takes its default value, which is 0 for
+        # SGR. Hence, `\e[m` is equivalent to `\e[0m`, and so is any empty token.
+        code_i = isempty(token) ? 0 : tryparse(Int, token; base = 10)
+
         if isnothing(code_i)
             i += 1
             continue
