@@ -46,3 +46,29 @@
     @test lines_width[7] == 27
     @test lines_width[8] == 25
 end
+
+@testset "Printable Text Width Without Allocations" begin
+    # The width must be computed without materializing the undecorated string.
+    @test @allocated(printable_textwidth("plain ascii line")) == 0
+    @test @allocated(printable_textwidth("\e[1mbold\e[0m and \e[31mred\e[0m")) == 0
+    @test @allocated(printable_textwidth("日本語 and émojis 😅")) == 0
+
+    # The result must match the definition based on `remove_decorations`.
+    for str in (
+        "",
+        "plain",
+        "\e[1mbold\e[0m",
+        "日本語",
+        "😅😅",
+        "\e]8;;https://example.com\e\\link\e]8;;\e\\",
+        "\e]8;;https://example.com\alink\e]8;;\a",
+        "\e[38;5;231;48;5;243mcolored\e[0m",
+        "a\tb\nc",
+    )
+        @test printable_textwidth(str) == textwidth(remove_decorations(str))
+    end
+
+    @test printable_textwidth_per_line("ab\n\e[1mcde\e[0m\n日本") == [2, 3, 4]
+    @test printable_textwidth_per_line("") == [0]
+    @test printable_textwidth_per_line("a\n") == [1, 0]
+end

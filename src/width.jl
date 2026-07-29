@@ -17,7 +17,21 @@ all ANSI escape sequences related to decorations.
     Characters like `\\n` and `\\t` are treated as normal characters.
 """
 function printable_textwidth(str::AbstractString)
-    return str |> remove_decorations |> textwidth
+    # Fast path: a string composed only of printable ASCII characters cannot contain an
+    # escape sequence, and each of its characters occupies exactly one column.
+    _is_printable_ascii(str) && return ncodeunits(str)
+
+    width = 0
+    state = :text
+
+    # We must not materialize the undecorated string only to measure it. Hence, we walk the
+    # string once and accumulate the width of the characters outside an escape sequence.
+    for c in str
+        state = _next_string_state(c, state)
+        (state == :text) && (width += textwidth(c))
+    end
+
+    return width
 end
 
 """
@@ -27,5 +41,30 @@ Return a vector with the printable textwidth of each line in `str`. The lines ar
 considering the character `\n`.
 """
 function printable_textwidth_per_line(str::AbstractString)
-    return [printable_textwidth(line) for line in eachsplit(str, '\n')]
+    # `eachsplit` has no length, meaning a comprehension would grow the vector. Since the
+    # number of lines is known from the number of newlines, we can allocate it once.
+    widths = Vector{Int}(undef, count('\n', str) + 1)
+
+    for (i, line) in enumerate(eachsplit(str, '\n'))
+        widths[i] = printable_textwidth(line)
+    end
+
+    return widths
+end
+
+############################################################################################
+#                                    Private Functions                                     #
+############################################################################################
+
+"""
+    _is_printable_ascii(str::AbstractString) -> Bool
+
+Return `true` if `str` contains only printable ASCII characters.
+
+Notice that we check the code units instead of the characters because any byte of a
+multi-byte UTF-8 sequence is greater than `0x7E`, meaning that such a string is correctly
+rejected without being decoded.
+"""
+function _is_printable_ascii(str::AbstractString)
+    return all(b -> 0x20 ≤ b ≤ 0x7E, codeunits(str))
 end
