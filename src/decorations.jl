@@ -134,8 +134,7 @@ function parse_decoration(code::AbstractString)
         state = _next_string_state(c, state)
 
         if state == :escape_state_begin
-            buf.ptr  = 1
-            buf.size = 0
+            truncate(buf, 0)
             write(buf, c)
 
         elseif state == :escape_state_end
@@ -144,8 +143,7 @@ function parse_decoration(code::AbstractString)
             decoration = update_decoration(decoration, str)
 
         elseif state == :text
-            buf.ptr  = 1
-            buf.size = 0
+            truncate(buf, 0)
 
         else
             write(buf, c)
@@ -312,14 +310,12 @@ function update_decoration(decoration::Decoration, code::String)
         state = _next_string_state(c, state)
 
         if state == :escape_state_begin
-            buf.ptr  = 1
-            buf.size = 0
+            truncate(buf, 0)
 
         elseif state == :escape_hyperlink_3
             # If we reached this state, the next one is the URL. Hence, we clean the buffer
             # and inform that we are processing a hyperlink.
-            buf.ptr = 1
-            buf.size = 0
+            truncate(buf, 0)
             hyperlink = true
 
         elseif state == :escape_hyperlink_url
@@ -354,8 +350,7 @@ function update_decoration(decoration::Decoration, code::String)
             decoration = _parse_ansi_decoration_code(decoration, sgr_code)
 
         elseif state == :text
-            buf.ptr  = 1
-            buf.size = 0
+            truncate(buf, 0)
 
         elseif state != :escape_state_opening
             write(buf, c)
