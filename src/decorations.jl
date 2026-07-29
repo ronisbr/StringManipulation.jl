@@ -94,8 +94,8 @@ Get and remove the decorations in `str`. The first returned string contains the 
 whereas the second contains the plain text.
 """
 function get_and_remove_decorations(str::AbstractString)
-    buf_decorations = IOBuffer(; sizehint = floor(Int, sizeof(str)))
-    buf_plain_str   = IOBuffer(; sizehint = floor(Int, sizeof(str)))
+    buf_decorations = IOBuffer(; sizehint = sizeof(str))
+    buf_plain_str   = IOBuffer(; sizehint = sizeof(str))
 
     str_i = 1
 
@@ -127,7 +127,7 @@ Parse the decoration in `code` and return the resulting `Decoration` object.
 """
 function parse_decoration(code::AbstractString)
     state = :text
-    buf = IOBuffer(; sizehint = floor(Int, sizeof(code)))
+    buf = IOBuffer(; sizehint = sizeof(code))
     decoration = Decoration()
 
     for c in code
@@ -179,7 +179,7 @@ other supported decorations.
 """
 function replace_default_background(str::AbstractString, new_background::AbstractString)
     # Buffer to store the new string.
-    buf_new_str = IOBuffer(; sizehint = floor(Int, sizeof(str)))
+    buf_new_str = IOBuffer(; sizehint = sizeof(str))
 
     str_i = 1
 
@@ -302,7 +302,7 @@ Update the current `decoration` given the decorations in the string `code` or in
 """
 function update_decoration(decoration::Decoration, code::String)
     state = :text
-    buf = IOBuffer(; sizehint = floor(Int, sizeof(code)))
+    buf = IOBuffer(; sizehint = sizeof(code))
     hyperlink = false
 
     for c in code

@@ -296,7 +296,7 @@ function right_crop(
     printable_string_width::Int = -1,
 )
     buf_ansi = IOBuffer()
-    buf_str  = IOBuffer(; sizehint = floor(Int, max(0, sizeof(str) - crop_width)))
+    buf_str  = IOBuffer(; sizehint = max(0, sizeof(str) - crop_width))
     state    = :text
 
     str_width = if printable_string_width < 0

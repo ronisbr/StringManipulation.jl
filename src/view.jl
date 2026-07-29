@@ -370,7 +370,7 @@ function _textview(
     ruler_spacing = 0
 
     if show_ruler
-        ruler_spacing = floor(Int, total_lines |> abs |> log10) + 1
+        ruler_spacing = ndigits(total_lines)
 
         # If the user selected a maximum number of columns, we need to decrease it to take
         # into account the ruler.
@@ -1357,7 +1357,7 @@ function _ansi_summary_after(layout::TextViewLayout, line_number::Int, byte_inde
     # A boundary aligned with an ANSI block can use its complete cached suffix directly.
     first_event == first_event_in_block && return suffix[current_block]
 
-    next_block = cld(first_event, stride) + 1
+    next_block = current_block + 1
     last_local_event = min((next_block - 1) * stride, length(events))
     transition = _empty_ansi_transition()
 
