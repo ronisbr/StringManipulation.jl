@@ -80,3 +80,31 @@ end
     # `start_line` must be clamped to 1.
     @test highlight_search(lines, matches; start_line = -3) == expected
 end
+
+@testset "Highlight Searches With Decorations at the Boundaries" begin
+    # An escape sequence placed exactly where a match begins must be written before the
+    # highlight, whereas one inside the match must be suppressed and reapplied after it.
+    str = "ab\e[31mcd\e[0mef"
+    matches = string_search(str, r"cd")
+    @test highlight_search(str, matches) == "ab\e[31m\e[7mcd\e[0m\e[0mef"
+
+    str = "abcd"
+    @test highlight_search(str, [(2, 2)]) == "a\e[7mbc\e[0md"
+
+    # A match that extends past the end of the string must still be closed.
+    @test highlight_search("abc", [(2, 10)]) == "a\e[7mbc\e[0m"
+
+    # Wide characters must keep their printable width.
+    @test printable_textwidth(highlight_search("日本語", string_search("日本語", r"本"))) ==
+        printable_textwidth("日本語")
+
+    # Many matches in a single line must be handled in linear time. This only checks the
+    # result, but a quadratic implementation is unusably slow here.
+    long = repeat("abc match ", 500)
+    long_matches = string_search(long, r"match")
+    @test length(long_matches) == 500
+
+    highlighted = highlight_search(long, long_matches)
+    @test printable_textwidth(highlighted) == printable_textwidth(long)
+    @test count("\e[7m", highlighted) == 500
+end

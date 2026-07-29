@@ -154,21 +154,14 @@ function highlight_search(
 
     (num_matches == 0) && return String(str)
 
-    reset_decoration = convert(String, _RESET_DECORATION)
-    h_str = IOBuffer(; sizehint = floor(Int, sizeof(str)))
-
-    # Auxiliary variable to store the index of the first character in the current string
-    # part we are processing.
-    Δ = start_column - 1
-
-    # Store the current decoration of the string.
-    decoration = Decoration()
-
+    # The matches are sorted by their initial column. Hence, we can use a binary search to
+    # find the first and the last match that can be visible in this view, avoiding a scan
+    # over all of them.
     first_match = 1
     if (start_column > 1) || (min_column > 1)
         first_visible_column = max(start_column, min_column)
         low = 1
-        high = length(search_matches)
+        high = num_matches
         while low ≤ high
             middle = (low + high) >>> 1
             match = search_matches[middle]
@@ -181,10 +174,10 @@ function highlight_search(
         first_match = low
     end
 
-    last_match = length(search_matches)
+    last_match = num_matches
     if max_column > 0
         low = first_match
-        high = length(search_matches)
+        high = num_matches
         while low ≤ high
             middle = (low + high) >>> 1
             if search_matches[middle][1] ≤ max_column
@@ -196,59 +189,196 @@ function highlight_search(
         last_match = high
     end
 
-    for i in first_match:last_match
-        match = search_matches[i]
+    h_str = IOBuffer(; sizehint = sizeof(str))
 
-        # If the match is before `start_column`, just skip it.
-        ((match[1] + match[2] - 1) < start_column) && continue
+    # Buffer to accumulate the ANSI escape sequence we are currently processing.
+    buf_ansi = IOBuffer()
 
-        # If the match is before `min_column`, just skip it.
-        ((min_column > 0) && ((match[1] + match[2] - 1) < min_column)) && continue
+    # Current decoration of the string, considering every escape sequence seen so far.
+    decoration = Decoration()
 
-        # If the match is after `max_column`, we can stop the process.
-        ((max_column > 0) && (match[1] > max_column)) && break
+    state = :text
 
-        # Split the string in the point indicated by the match.
-        str₀, str₁ = split_string(str, match[1] - 1 - Δ)
+    # Printable column of the character we are processing. The first character of `str` is
+    # at `start_column` because the string was already cropped by the caller.
+    column = start_column
 
-        # We need to obtain the current decoration and merge it with the one stored in
-        # `decoration` to keep track how the string should be printed after the highlight.
-        str₀_decorations = get_decorations(str₀)
-        decoration = update_decoration(decoration, str₀_decorations)
+    match_index      = first_match
+    match_end_column = 0
+    in_match         = false
 
-        # Check if we are in the active highlight or not.
-        hd = i != active_match ? highlight : active_highlight
+    for c in str
+        state = _next_string_state(c, state)
 
-        # Write the string before the match and the highlight decoration to the buffer.
-        write(h_str, str₀, hd)
+        # == ANSI Escape Sequences =========================================================
 
-        # Now, we need to split the remaining string using the information on how many
-        # characters we have in the match. Notice that we must take into account the case
-        # where the match happened before the first character in `str`, i.e., before the
-        # `start_column`. This case only happens when `match[1] - 1 - Δ` is negative.
-        match_size = min(0, match[1] - 1 - Δ) + match[2]
-        str₂, str₃ = split_string(str₁, match_size)
+        if state != :text
+            write(buf_ansi, c)
 
-        # There might be some decoration information inside `str₂` that must be taken into
-        # account after the highlight.
-        str₂_decorations, str₂_plain = get_and_remove_decorations(str₂)
-        decoration = update_decoration(decoration, str₂_decorations)
+            if state == :escape_state_end
+                ansi = String(take!(buf_ansi))
+                decoration = update_decoration(decoration, ansi)
 
-        # Here we write the string, reset the decoration, and apply the previous decoration
-        # stored in `decoration`.
-        write(h_str, str₂_plain, reset_decoration)
-        write(h_str, convert(String, decoration))
+                # Inside a match, the escape sequences must not be written because they
+                # would override the highlight decoration. They are applied again when the
+                # match ends.
+                in_match || write(h_str, ansi)
+            end
 
-        # All the next matches must consider that we are not in the beginning of the string
-        # anymore.
-        Δ = match[1] - 1 + match[2]
-        str = str₃
+            continue
+        end
+
+        # == Printable Characters ==========================================================
+
+        match_index, match_end_column, in_match = _apply_match_boundaries!(
+            h_str,
+            search_matches,
+            decoration,
+            column,
+            match_index,
+            match_end_column,
+            in_match,
+            last_match,
+            active_match,
+            highlight,
+            active_highlight,
+            start_column,
+            min_column,
+        )
+
+        character_width = textwidth(c)
+        next_column     = column + character_width
+
+        # If a boundary falls strictly inside this character, we cannot break it. Hence, we
+        # replace the character by spaces, keeping the printable width unchanged.
+        boundary = if in_match
+            match_end_column
+        elseif match_index ≤ last_match
+            search_matches[match_index][1]
+        else
+            typemax(Int)
+        end
+
+        if column < boundary < next_column
+            for _ in column:(boundary - 1)
+                write(h_str, ' ')
+            end
+
+            column = boundary
+
+            match_index, match_end_column, in_match = _apply_match_boundaries!(
+                h_str,
+                search_matches,
+                decoration,
+                column,
+                match_index,
+                match_end_column,
+                in_match,
+                last_match,
+                active_match,
+                highlight,
+                active_highlight,
+                start_column,
+                min_column,
+            )
+
+            for _ in boundary:(next_column - 1)
+                write(h_str, ' ')
+            end
+
+            column = next_column
+            continue
+        end
+
+        write(h_str, c)
+        column = next_column
     end
 
-    # Write the rest of the string.
-    write(h_str, str)
+    # A match can begin or end after the last character of the string, for example when the
+    # line was cropped. Hence, we must process the remaining boundaries here.
+    match_index, match_end_column, in_match = _apply_match_boundaries!(
+        h_str,
+        search_matches,
+        decoration,
+        column,
+        match_index,
+        match_end_column,
+        in_match,
+        last_match,
+        active_match,
+        highlight,
+        active_highlight,
+        start_column,
+        min_column,
+    )
+
+    # If a match extends past the end of the string, we still must close its highlight.
+    in_match && write(h_str, _RESET_DECORATIONS, convert(String, decoration))
 
     return String(take!(h_str))
+end
+
+"""
+    _apply_match_boundaries!(h_str::IOBuffer, search_matches::Vector{Tuple{Int, Int}}, decoration::Decoration, column::Int, match_index::Int, match_end_column::Int, in_match::Bool, last_match::Int, active_match::Int, highlight::String, active_highlight::String, start_column::Int, min_column::Int) -> Int, Int, Bool
+
+Open and close in `h_str` all the highlights whose boundary is at `column`, advancing over
+the matches that are not visible in the view.
+
+A highlight is opened by writing `highlight`, or `active_highlight` if the match is the
+active one, and closed by writing a reset followed by `decoration`, which restores the
+decoration of the text that was suppressed inside the match.
+
+# Returns
+
+- `Int`: Index of the next match to be processed.
+- `Int`: Column just after the end of the match being processed.
+- `Bool`: `true` if we are inside a match after processing the boundaries.
+"""
+function _apply_match_boundaries!(
+    h_str::IOBuffer,
+    search_matches::Vector{Tuple{Int, Int}},
+    decoration::Decoration,
+    column::Int,
+    match_index::Int,
+    match_end_column::Int,
+    in_match::Bool,
+    last_match::Int,
+    active_match::Int,
+    highlight::String,
+    active_highlight::String,
+    start_column::Int,
+    min_column::Int,
+)
+    while true
+        if in_match
+            (column < match_end_column) && break
+
+            write(h_str, _RESET_DECORATIONS, convert(String, decoration))
+            in_match = false
+            match_index += 1
+
+        else
+            (match_index > last_match) && break
+
+            match = search_matches[match_index]
+            match_last_column = match[1] + match[2] - 1
+
+            # Skip the matches that are not visible in this view.
+            if (match_last_column < start_column) ||
+                ((min_column > 0) && (match_last_column < min_column))
+                match_index += 1
+                continue
+            end
+
+            (column < match[1]) && break
+
+            write(h_str, match_index == active_match ? active_highlight : highlight)
+            in_match         = true
+            match_end_column = match[1] + match[2]
+        end
+    end
+
+    return match_index, match_end_column, in_match
 end
 
 function highlight_search(str::AbstractString, regex::Regex; kwargs...)
