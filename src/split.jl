@@ -23,11 +23,14 @@ equal to `str`.
     UTF-8 characters), everything will be filled with spaces.
 """
 function split_string(str::AbstractString, size::Int)
-    # Buffer with the string before the split point.
-    buf₀ = IOBuffer(; sizehint = max(size, 1))
-
-    # Buffer with the string after the split point.
-    buf₁ = IOBuffer(; sizehint = max(length(str) - size, 1))
+    # Buffers with the string before and after the split point. Notice that we hint them
+    # with a number of bytes, so we must use `sizeof` and not `length`, which counts the
+    # characters and requires a full scan of the string. We also clamp the hints to the size
+    # of the string because `size` is a printable width given by the caller and can be
+    # arbitrarily large.
+    string_size = sizeof(str)
+    buf₀ = IOBuffer(; sizehint = clamp(size, 1, max(string_size, 1)))
+    buf₁ = IOBuffer(; sizehint = clamp(string_size - size, 1, max(string_size, 1)))
 
     state = :text
 
@@ -54,14 +57,14 @@ function split_string(str::AbstractString, size::Int)
                 # replace it by spaces on both sides so that the printable width of each
                 # part is preserved.
                 if size < 0
-                    print(buf₀, " "^available_width)
-                    print(buf₁, " "^(cw - available_width))
+                    write(buf₀, " "^available_width)
+                    write(buf₁, " "^(cw - available_width))
                     size = 0
                     continue
                 end
             end
 
-            print(buf₀, c)
+            write(buf₀, c)
             continue
         end
 
@@ -72,7 +75,7 @@ function split_string(str::AbstractString, size::Int)
 
             # All non-printable character just after splitting must go to `buf₀`.
             if state != :text
-                print(buf₀, c)
+                write(buf₀, c)
                 continue
             end
 
@@ -80,7 +83,7 @@ function split_string(str::AbstractString, size::Int)
             check_ansi_after_split = false
         end
 
-        print(buf₁, c)
+        write(buf₁, c)
     end
 
     return String(take!(buf₀)), String(take!(buf₁))
