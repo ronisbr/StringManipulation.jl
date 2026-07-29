@@ -13,10 +13,13 @@ Parse the ANSI escape sequences in `str` and return a vector of pairs where each
 contains a substring and its corresponding `Decoration`.
 """
 function parse_ansi_string(str::AbstractString)
-    # Buffers to store the tokens and the ANSI escape sequences.
-    str_len  = length(str)
-    buf_text = IOBuffer(; sizehint = max(str_len, 1))
-    buf_ansi = IOBuffer(; sizehint = max(str_len, 64))
+    # Buffers to store the tokens and the ANSI escape sequences. Notice that we must use
+    # `sizeof`, which is the number of bytes, instead of `length`, which is the number of
+    # characters. The latter requires a full scan of the string and underestimates the
+    # required size if the string is not ASCII. The buffer with the escape sequences only
+    # holds a run of them, which is much shorter than the string itself.
+    buf_text = IOBuffer(; sizehint = max(sizeof(str), 1))
+    buf_ansi = IOBuffer(; sizehint = 64)
 
     # Output vector with the string parts and their decoration.
     voutput = Pair{String, Decoration}[]
@@ -37,26 +40,34 @@ function parse_ansi_string(str::AbstractString)
 
         if state == :text
             capturing_ansi = false
-            print(buf_text, c)
+            write(buf_text, c)
             continue
         end
 
-        if !capturing_ansi && (i != firstindex(str))
-            ansi  = String(take!(buf_ansi))
+        # We are starting a run of escape sequences. Hence, we must close the current
+        # token, which is decorated by the previous run. Notice that we test the buffers
+        # instead of the index because nothing must be pushed if the string begins with an
+        # escape sequence.
+        if !capturing_ansi && ((position(buf_text) > 0) || (position(buf_ansi) > 0))
             token = String(take!(buf_text))
 
-            decoration = update_decoration(decoration, ansi)
+            if position(buf_ansi) > 0
+                decoration = update_decoration(decoration, String(take!(buf_ansi)))
+            end
+
             push!(voutput, token => decoration)
         end
 
-        print(buf_ansi, c)
+        write(buf_ansi, c)
         capturing_ansi = true
     end
 
-    ansi  = String(take!(buf_ansi))
     token = String(take!(buf_text))
 
-    decoration = update_decoration(decoration, ansi)
+    if position(buf_ansi) > 0
+        decoration = update_decoration(decoration, String(take!(buf_ansi)))
+    end
+
     push!(voutput, token => decoration)
 
     return voutput
