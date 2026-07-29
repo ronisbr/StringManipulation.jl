@@ -70,7 +70,27 @@ function align_string(
     isnothing(padding) && return String(str)
 
     lpad, rpad = padding
+
     return " "^lpad * str * " "^rpad
+end
+
+"""
+    _write_padding(buf::IOBuffer, num_spaces::Int) -> Nothing
+
+Write `num_spaces` spaces to `buf`, doing nothing if it is not positive.
+"""
+function _write_padding(buf::IOBuffer, num_spaces::Int)
+    remaining = num_spaces
+
+    # Writing the spaces in chunks from a constant lets each `write` be a bulk copy instead
+    # of one call per space, and it does not allocate the padding string.
+    while remaining > 0
+        num_written = min(remaining, ncodeunits(_SPACES))
+        write(buf, SubString(_SPACES, 1, num_written))
+        remaining -= num_written
+    end
+
+    return nothing
 end
 
 """
@@ -134,13 +154,26 @@ function align_string_per_line(
 )
     (field_width ≤ 0) && return String(str)
 
-    # Align each line without materializing the collection of lines.
-    buf = IOBuffer(; sizehint = sizeof(str))
+    # Align each line without materializing the collection of lines. The padding is written
+    # directly to the buffer instead of calling `align_string`, which would allocate an
+    # aligned string per line only to copy it here.
+    buf = IOBuffer(; sizehint = sizeof(str) + field_width)
     first_line = true
 
     for line in eachsplit(str, '\n'; keepempty = true)
         first_line || write(buf, '\n')
-        write(buf, align_string(line, field_width, alignment; fill))
+
+        padding = padding_for_string_alignment(line, field_width, alignment; fill)
+
+        if isnothing(padding)
+            write(buf, line)
+        else
+            lpad, rpad = padding
+            _write_padding(buf, lpad)
+            write(buf, line)
+            _write_padding(buf, rpad)
+        end
+
         first_line = false
     end
 

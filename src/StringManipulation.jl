@@ -14,6 +14,10 @@ const _CSI = "\x1b["
 # that was never terminated instead of consuming the remaining text.
 const _REGEX_ANSI_SEQUENCES = r"\x1B(?:]8;;[^\x00-\x1F\x7F]*(?:\x1B\\|\a)|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
 
+# Padding used to align strings. It is written in chunks so that we never need to build
+# a string of spaces.
+const _SPACES = " "^64
+
 # Escape sequence that reset all decorations.
 const _RESET_DECORATIONS = _CSI * "0m"
 
