@@ -32,7 +32,7 @@ Return the text composed of the `lines` with the `search_matches` (see
     active highlight.
     (**Default** = `\\e[30;43m`.)
 - `end_line::Int`: Line to end the processing. If it is equal or lower than 0, all lines
-    will be processed.
+    will be processed. This value is clamped to the number of lines.
     (**Default** = 0)
 - `highlight::String`: ANSI escape sequence that contains the decoration of the highlight.
     (**Default** = `\\e[7m`)
@@ -42,8 +42,8 @@ Return the text composed of the `lines` with the `search_matches` (see
 - `min_column::Int`: Do not process matches before this column. If it is equal or lower than
     0, this limit will not be considered.
     (**Default** = 0)
-- `start_line::Int`: Line to begin the processing.
-    (**Default** = 1)
+- `start_line::Int`: Line to begin the processing. This value is clamped to 1.
+    (**Default** = 0)
 """
 function highlight_search(
     lines::Vector{T},
@@ -60,9 +60,9 @@ function highlight_search(
 
     start_line = max(start_line, 1)
 
-    if end_line ≤ 0
-        end_line = length(lines)
-    end
+    # `end_line` must be clamped to the number of lines. Otherwise, we would try to access
+    # a line that does not exist.
+    end_line = end_line ≤ 0 ? length(lines) : min(end_line, length(lines))
 
     # Count how many matches we have before this line.
     num_matches = 0

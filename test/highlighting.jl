@@ -67,3 +67,16 @@ end
     )
     @test hstr == expected
 end
+
+@testset "Highlight Searches With Out-of-Range Lines" begin
+    lines = ["a", "b"]
+    matches = Dict(1 => [(1, 1)])
+    expected = "\e[7ma\e[0m\nb"
+
+    # `end_line` must be clamped to the number of lines.
+    @test highlight_search(lines, matches; end_line = 5) == expected
+    @test highlight_search(lines, matches) == expected
+
+    # `start_line` must be clamped to 1.
+    @test highlight_search(lines, matches; start_line = -3) == expected
+end
