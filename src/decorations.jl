@@ -373,9 +373,12 @@ function convert(::Type{String}, d::Decoration)
         ""
     end
 
-    # Check if we have a reset. Notice that a reset **does not** clean the hyperlink.
     d === _DEFAULT_DECORATION && return ""
-    d.reset && return "$(str_hyperlink)$(_CSI)0m"
+
+    # Check if we have a reset. Notice that a reset **does not** clean the hyperlink. We
+    # must emit it before the other properties instead of returning here because the same
+    # ANSI sequence can set a decoration after resetting everything, like in `\e[0;31m`.
+    str_reset = d.reset ? _RESET_DECORATIONS : ""
 
     # TODO: Check if we can avoid adding so many `_CSI`.
     str_foreground = !isempty(d.foreground) ? "$(_CSI)$(d.foreground)m" : ""
@@ -387,6 +390,7 @@ function convert(::Type{String}, d::Decoration)
 
     return string(
         str_hyperlink,
+        str_reset,
         str_foreground,
         str_background,
         str_bold,

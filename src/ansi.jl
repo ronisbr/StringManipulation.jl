@@ -97,13 +97,16 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::String)
         end
 
         if code_i == 0
-            # If we have a reset, neglect all the other configurations except the
-            # hyperlinks.
-            return Decoration(;
-                reset = true,
-                hyperlink_url = decoration.hyperlink_url,
-                hyperlink_url_changed = decoration.hyperlink_url_changed,
-            )
+            # If we have a reset, neglect all the configurations we have parsed so far,
+            # except the hyperlinks. Notice that we must not return here because the same
+            # sequence can contain other codes after the reset, like in `\e[0;31m`.
+            foreground = ""
+            background = ""
+            bold       = unchanged
+            italic     = unchanged
+            underline  = unchanged
+            reversed   = unchanged
+            reset      = true
 
         elseif code_i == 1
             bold = active
