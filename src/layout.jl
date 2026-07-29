@@ -339,17 +339,17 @@ function _prepare_text_view_layout(
     plain_ascii = falses(num_lines)
     ansi_fallback = falses(num_lines)
     metadata = Vector{Union{Nothing, TextLineMetadata}}(nothing, num_lines)
-    document_ansi_checkpoints = Decoration[]
+    document_ansi_checkpoints = Vector{Decoration}(undef, num_lines)
     document_state = Decoration()
 
     for line_number in eachindex(lines)
         line = lines[line_number]
-        is_plain_ascii = all(c -> (' ' ≤ c ≤ '~'), line)
+        is_plain_ascii = _is_printable_ascii(line)
         plain_ascii[line_number] = is_plain_ascii
 
         if is_plain_ascii
             printable_widths[line_number] = ncodeunits(line)
-            push!(document_ansi_checkpoints, document_state)
+            document_ansi_checkpoints[line_number] = document_state
             continue
         end
 
@@ -374,7 +374,9 @@ function _prepare_text_view_layout(
         for m in eachmatch(_REGEX_ANSI_SEQUENCES, line)
             byte_start = m.offset
             byte_end = byte_start + ncodeunits(m.match) - 1
-            recognized_bytes[byte_start:byte_end] .= true
+            for k in byte_start:byte_end
+                recognized_bytes[k] = true
+            end
             code = String(m.match)
 
             if !(
@@ -514,7 +516,7 @@ function _prepare_text_view_layout(
             )
         end
 
-        push!(document_ansi_checkpoints, document_state)
+        document_ansi_checkpoints[line_number] = document_state
     end
 
     return (;
