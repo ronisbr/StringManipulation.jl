@@ -191,6 +191,11 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     # The first thing we need to do is to set the new background.
     write(buf_new_str, _CSI, new_background, "m")
 
+    # Position in the buffer right after the new background was written. If we must set the
+    # background again while still at this position, the sequence would be redundant
+    # because nothing was written in between.
+    background_set_at = position(buf_new_str)
+
     # This variable stores the current decoration when we split the string in each ANSI
     # escape sequence.
     current_decoration = Decoration()
@@ -218,6 +223,7 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
             # Otherwise, we will have duplicated escape sequences.
             if str_i <= str_code_units
                 write(buf_new_str, _CSI, "0m", _CSI, new_background, "m")
+                background_set_at = position(buf_new_str)
                 current_decoration = Decoration()
             end
 
@@ -226,13 +232,24 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
             # sequence and treat it after the loop, where we will restore background to the
             # default one. Otherwise, we will have duplicated escape sequences.
             if str_i <= str_code_units
+                # If nothing was written since the background was last set, writing it
+                # again would only add a redundant escape sequence.
+                background = if position(buf_new_str) == background_set_at
+                    ""
+                else
+                    new_background
+                end
+
                 new_decoration = Decoration(;
-                    foreground = d.foreground,
-                    background = new_background,
-                    bold       = d.bold,
-                    italic     = d.italic,
-                    underline  = d.underline,
-                    reset      = d.reset,
+                    foreground            = d.foreground,
+                    background            = background,
+                    bold                  = d.bold,
+                    italic                = d.italic,
+                    reversed              = d.reversed,
+                    underline             = d.underline,
+                    reset                 = d.reset,
+                    hyperlink_url         = d.hyperlink_url,
+                    hyperlink_url_changed = d.hyperlink_url_changed,
                 )
 
                 write(buf_new_str, String(new_decoration))

@@ -224,6 +224,17 @@ end
     new = replace_default_background(str, "43")
 
     @test new == exp
+
+    # The properties that are not related to the background must be preserved when the
+    # default background is replaced.
+    @test replace_default_background("\e[7;49mX\e[0mY", "44") ==
+        "\e[44m\e[7mX\e[0m\e[44mY\e[49m"
+
+    @test replace_default_background("A\e]8;;u\e\\\e[49mX\e[0mY", "44") ==
+        "\e[44mA\e]8;;u\e\\\e[44mX\e[0m\e[44mY\e[49m"
+
+    # The background must not be written twice in a row when nothing is written in between.
+    @test replace_default_background("\e[49mX", "44") == "\e[44mX\e[49m"
 end
 
 @testset "Update Decorations" begin
