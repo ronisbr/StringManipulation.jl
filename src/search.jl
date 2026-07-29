@@ -10,8 +10,9 @@ export string_search, string_search_per_line
     string_search(str::AbstractString, r::Regex) -> Vector{Tuple{Int, Int}}
 
 Search for the pattern in regex `r` in the string `str`. The result will be a vector of
-`Tuple{Int, Int}` with the beginning of the match and its length, where both values are
-related to the width of printable characters.
+`Tuple{Int, Int}` with the one-based printable column where the match begins and the
+printable width of the match. Both values consider only the printable characters, *i.e.*
+the ANSI escape sequences are discarded.
 """
 function string_search(str::AbstractString, r::Regex)
     # Remove the decorations so that we can search by regex.
@@ -24,16 +25,19 @@ function string_search(str::AbstractString, r::Regex)
     # We track the current byte offset and accumulated text width so that each match only
     # scans the delta from the previous one, giving O(n) total work instead of O(n * k) when
     # there are k matches.
-    prev_offset       = 1
+    prev_offset       = firstindex(undecorated_str)
     accumulated_width = 0
 
     @views for m in eachmatch(r, undecorated_str)
-        # Advance the accumulated width only from the previous offset to the start of this
-        # match, avoiding a full rescan from byte 1 each time.
-        accumulated_width += textwidth(undecorated_str[prev_offset:(m.offset)])
-        prev_offset = nextind(undecorated_str, m.offset)
+        # Advance the accumulated width only from the previous offset to the character
+        # right before this match, avoiding a full rescan from byte 1 each time. Notice
+        # that `m.offset` can be `ncodeunits(undecorated_str) + 1` if the regex matches an
+        # empty string at the end, which is why we must stop at `prevind`.
+        last_offset_before_match = prevind(undecorated_str, m.offset)
+        accumulated_width += textwidth(undecorated_str[prev_offset:last_offset_before_match])
+        prev_offset = m.offset
 
-        push!(search_result, (accumulated_width, textwidth(m.match)))
+        push!(search_result, (accumulated_width + 1, textwidth(m.match)))
     end
 
     return search_result
