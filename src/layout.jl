@@ -137,7 +137,10 @@ end
 """
     struct TextViewLayout <: AbstractVector{String}
     TextViewLayout(text::AbstractString; kwargs...) -> TextViewLayout
-    TextViewLayout(input_lines::AbstractVector{<:AbstractString}; kwargs...) -> TextViewLayout
+    TextViewLayout(
+        input_lines::AbstractVector{<:AbstractString};
+        kwargs...
+    ) -> TextViewLayout
 
 Represent text prepared for repeated viewport rendering with [`textview`](@ref).
 
@@ -345,8 +348,8 @@ function _prepare_text_view_layout(
     # Buffers reused by every line so that we do not allocate them once per line. They hold
     # the ANSI events found by the regex, which are produced in increasing byte order.
     event_starts = Int[]
-    event_stops  = Int[]
-    event_codes  = SubString{String}[]
+    event_stops = Int[]
+    event_codes = SubString{String}[]
     transition_indices = Dict{AnsiStateTransition, Int32}()
     transition_cache = AnsiStateTransition[]
 
@@ -438,7 +441,7 @@ function _prepare_text_view_layout(
             if (next_event ≤ length(event_starts)) && (event_starts[next_event] == i)
                 # Attach zero-width events to their current printable column.
                 event_end = event_stops[next_event]
-                code      = event_codes[next_event]
+                code = event_codes[next_event]
                 next_event += 1
 
                 transition = _ansi_transition(code)
@@ -616,7 +619,11 @@ function _event_transition(line::String, metadata::TextLineMetadata, event::Text
 end
 
 """
-    _compact_transition_value(line::String, metadata::TextLineMetadata, transition_index::Integer) -> AnsiStateTransition
+    _compact_transition_value(
+        line::String,
+        metadata::TextLineMetadata,
+        transition_index::Integer
+    ) -> AnsiStateTransition
 
 Materialize the deduplicated transition of `metadata` stored at `transition_index`, reading
 its values from the owned source `line`.
@@ -699,10 +706,8 @@ function _compact_ansi_transition(
     transition.hyperlink_changed && (flags |= _ANSI_HYPERLINK_CHANGED)
 
     states =
-        UInt8(transition.bold) |
-        (UInt8(transition.italic) << 2) |
-        (UInt8(transition.reversed) << 4) |
-        (UInt8(transition.underline) << 6)
+        UInt8(transition.bold) | (UInt8(transition.italic) << 2) |
+        (UInt8(transition.reversed) << 4) | (UInt8(transition.underline) << 6)
 
     return CompactAnsiTransition(
         flags,

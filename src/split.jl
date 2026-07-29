@@ -13,8 +13,8 @@ Split the string `str` after a number of characters that have a specific printab
 This function returns two strings: before and after the split point.
 
 The algorithm ensures that the printable width of the first returned string will always be
-equal to `size`, unless `size` is negative or larger than the printable size of `str`. In the
-first case, the first string is empty, whereas, in the second case, the first string is
+equal to `size`, unless `size` is negative or larger than the printable size of `str`. In
+the first case, the first string is empty, whereas, in the second case, the first string is
 equal to `str`.
 
 !!! note
@@ -36,8 +36,8 @@ function split_string(str::AbstractString, size::Int)
     state = :text
 
     # If we are splitting just at the point where a non-printable character is, we need to
-    # add all those characters to the string in `buf₀`. This variable is used to handle this
-    # case.
+    # add all those characters to the string in `buf₀`. This variable is used to handle
+    # this case.
     check_ansi_after_split = true
 
     for c in str

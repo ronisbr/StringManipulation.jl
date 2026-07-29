@@ -23,8 +23,8 @@ be:
 
 !!! note
 
-    If the printable width of `str` is higher than or equal to `field_width`, nothing will be
-    changed.
+    If the printable width of `str` is higher than or equal to `field_width`, nothing
+    will be changed.
 
 !!! note
 
@@ -111,8 +111,8 @@ which can be:
 
 !!! note
 
-    If the printable width of `str` is higher than or equal to `field_width`, nothing will be
-    changed.
+    If the printable width of `str` is higher than or equal to `field_width`, nothing
+    will be changed.
 
 # Keywords
 

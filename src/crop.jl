@@ -135,9 +135,11 @@ function fit_string_in_field(
     printable_string_width::Int = -1,
 )
     if (crop_side != :right) && (crop_side != :left)
-        throw(ArgumentError(
-            "`crop_side` must be `:right` or `:left`, but it is `:$crop_side`."
-        ))
+        throw(
+            ArgumentError(
+                "`crop_side` must be `:right` or `:left`, but it is `:$crop_side`."
+            ),
+        )
     end
 
     str_width = if printable_string_width < 0
@@ -185,7 +187,7 @@ function fit_string_in_field(
 
         return "$cropped_str$cont_str$ansi"
 
-    # == Crop From the Left ================================================================
+        # == Crop From the Left ========================================================
 
     else
         ansi, cropped_str = left_crop(str, crop; keep_escape_seq)

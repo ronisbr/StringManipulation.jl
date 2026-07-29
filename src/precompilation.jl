@@ -33,9 +33,7 @@ PrecompileTools.@compile_workload begin
         "This is a \e[1mbold string\e[45mwith a different background\e[0m."
     )
     parse_decoration("\e[1;45m")
-    remove_decorations(
-        "This is a \e[1mbold string\e[45mwith a different background\e[0m."
-    )
+    remove_decorations("This is a \e[1mbold string\e[45mwith a different background\e[0m.")
     replace_default_background(
         "\e[35mThis is a \e[45;1mtest string to \e[0mverify if " *
         "\e[45mthe background \e[49;1mwas replaced correctly.",

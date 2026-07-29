@@ -78,7 +78,11 @@ end
 ############################################################################################
 
 """
-    _next_sgr_parameter(code::AbstractString, i::Int, require_value::Bool = false) -> Int, Int, Bool
+    _next_sgr_parameter(
+        code::AbstractString,
+        i::Int,
+        require_value::Bool = false
+    ) -> Int, Int, Bool
 
 Read the SGR parameter of `code` that begins at the byte index `i`.
 

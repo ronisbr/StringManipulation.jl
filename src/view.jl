@@ -675,7 +675,10 @@ end
 ############################################################################################
 
 """
-    _visual_line_backgrounds_by_line(visual_lines, visual_line_backgrounds) -> Dict{Int, String}
+    _visual_line_backgrounds_by_line(
+        visual_lines,
+        visual_line_backgrounds
+    ) -> Dict{Int, String}
 
 Map each line in `visual_lines` to its background. `visual_line_backgrounds` can be either a
 vector with one background per visual line or a single background applied to all of them. If

@@ -265,8 +265,8 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
     if current_decoration.reset
         write(buf_new_str, _CSI, "0m")
 
-        # If the last decoration is a background change, or if the background is not modified,
-        # we should reset to the terminal default background.
+        # If the last decoration is a background change, or if the background is not
+        # modified, we should reset to the terminal default background.
     elseif isempty(current_decoration.background) || (current_decoration.background == "49")
         write(buf_new_str, _CSI, "49m")
     end
@@ -423,7 +423,11 @@ function convert(::Type{String}, d::Decoration)
     str_foreground = !isempty(d.foreground) ? "$(_CSI)$(d.foreground)m" : ""
     str_background = !isempty(d.background) ? "$(_CSI)$(d.background)m" : ""
     str_bold       = d.bold != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
-    str_italic     = d.italic != unchanged ? "$(_CSI)$(d.italic == active ? "3" : "23")m" : ""
+    str_italic     = if d.italic != unchanged
+        "$(_CSI)$(d.italic == active ? "3" : "23")m"
+    else
+        ""
+    end
 
     str_underline = if d.underline != unchanged
         "$(_CSI)$(d.underline == active ? "4" : "24")m"

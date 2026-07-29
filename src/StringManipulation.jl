@@ -12,7 +12,9 @@ const _CSI = "\x1b["
 # OSC 8 hyperlink can be terminated by either ST (`\e\\`) or BEL (`\a`), and that its URL
 # cannot contain control characters. The latter restriction lets us bail out of a sequence
 # that was never terminated instead of consuming the remaining text.
-const _REGEX_ANSI_SEQUENCES = r"\x1B(?:]8;;[^\x00-\x1F\x7F]*(?:\x1B\\|\a)|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+const _REGEX_ANSI_SEQUENCES = Regex(
+    raw"\x1B(?:]8;;[^\x00-\x1F\x7F]*(?:\x1B\\|\a)|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+)
 
 # Padding used to align strings. It is written in chunks so that we never need to build
 # a string of spaces.

@@ -34,7 +34,9 @@ function string_search(str::AbstractString, r::Regex)
         # that `m.offset` can be `ncodeunits(undecorated_str) + 1` if the regex matches an
         # empty string at the end, which is why we must stop at `prevind`.
         last_offset_before_match = prevind(undecorated_str, m.offset)
-        accumulated_width += textwidth(undecorated_str[prev_offset:last_offset_before_match])
+        accumulated_width += textwidth(
+            undecorated_str[prev_offset:last_offset_before_match]
+        )
         prev_offset = m.offset
 
         push!(search_result, (accumulated_width + 1, textwidth(m.match)))

@@ -319,7 +319,21 @@ function highlight_search(
 end
 
 """
-    _apply_match_boundaries!(h_str::IOBuffer, search_matches::Vector{Tuple{Int, Int}}, decoration::Decoration, column::Int, match_index::Int, match_end_column::Int, in_match::Bool, last_match::Int, active_match::Int, highlight::String, active_highlight::String, start_column::Int, min_column::Int) -> Int, Int, Bool
+    _apply_match_boundaries!(
+        h_str::IOBuffer,
+        search_matches::Vector{Tuple{Int, Int}},
+        decoration::Decoration,
+        column::Int,
+        match_index::Int,
+        match_end_column::Int,
+        in_match::Bool,
+        last_match::Int,
+        active_match::Int,
+        highlight::String,
+        active_highlight::String,
+        start_column::Int,
+        min_column::Int
+    ) -> Int, Int, Bool
 
 Open and close in `h_str` all the highlights whose boundary is at `column`, advancing over
 the matches that are not visible in the view.
