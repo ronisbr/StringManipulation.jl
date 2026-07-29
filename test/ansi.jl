@@ -106,3 +106,63 @@ end
     @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "1")) == 0
     @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "22;24")) == 0
 end
+
+@testset "Reset Followed by Other Codes" begin
+    # A reset must not discard the codes that follow it in the same sequence.
+    @test String(parse_decoration("\e[0;31m")) == "\e[0m\e[31m"
+    @test String(parse_decoration("\e[0m")) == "\e[0m"
+
+    # A code before the reset must be discarded.
+    @test String(parse_decoration("\e[1;0;4m")) == "\e[0m\e[4m"
+
+    decoration = parse_decoration("\e[0;31m")
+    @test decoration.reset
+    @test decoration.foreground == "31"
+end
+
+@testset "Omitted SGR Parameters" begin
+    # ECMA-48 states that an omitted parameter takes its default value, 0 for SGR.
+    @test String(parse_decoration("\e[m")) == "\e[0m"
+    @test parse_decoration("\e[m").reset
+    @test String(parse_decoration("\e[;31m")) == "\e[0m\e[31m"
+end
+
+@testset "Non-SGR CSI Sequences" begin
+    # Only the sequences terminated by `m` change the decoration.
+    for code in ("\e[1A", "\e[0K", "\e[2J", "\e[3J", "\e[1;1H", "\e[4G", "\e[K")
+        decoration = parse_decoration(code)
+        @test decoration == Decoration()
+        @test String(decoration) == ""
+    end
+
+    # A cursor movement between two SGR sequences must not disturb them.
+    @test parse_decoration("\e[1m\e[1A\e[31m").bold == StringManipulation.active
+    @test parse_decoration("\e[1m\e[1A\e[31m").foreground == "31"
+
+    # They also must not be counted as printable text.
+    @test printable_textwidth("a\e[1Ab\e[0Kc") == 3
+end
+
+@testset "Hyperlink Terminators" begin
+    # An OSC 8 hyperlink can be terminated by either ST or BEL.
+    bel = "\e]8;;http://a\aX\e]8;;\a"
+    st  = "\e]8;;http://a\e\\X\e]8;;\e\\"
+
+    @test remove_decorations(bel) == "X"
+    @test remove_decorations(st) == "X"
+    @test printable_textwidth(bel) == 1
+    @test printable_textwidth(st) == 1
+
+    @test parse_decoration("\e]8;;http://a\a").hyperlink_url == "http://a"
+    @test parse_decoration("\e]8;;http://a\e\\").hyperlink_url == "http://a"
+    @test parse_decoration("\e]8;;http://a\a").hyperlink_url_changed
+    @test parse_decoration("\e]8;;\a").hyperlink_url == ""
+
+    @test first(first(parse_ansi_string(bel))) == "X"
+    @test first(first(parse_ansi_string(st))) == "X"
+
+    # An unterminated hyperlink must not consume the following lines.
+    @test occursin(
+        "rest of text", join(first.(parse_ansi_string("\e]8;;bad\nrest of text")))
+    )
+end
