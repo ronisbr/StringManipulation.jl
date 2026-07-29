@@ -391,19 +391,11 @@ function _textview(
                     "`visual_line_backgrounds`.",
                 ),
             )
-
-            backgrounds = visual_line_backgrounds
-        else
-            backgrounds = Iterators.repeated(visual_line_backgrounds, length(visual_lines))
         end
 
-        visual_line_backgrounds_by_line = Dict{Int, String}()
-
-        for (line, background) in zip(visual_lines, backgrounds)
-            if !haskey(visual_line_backgrounds_by_line, line)
-                visual_line_backgrounds_by_line[line] = background
-            end
-        end
+        visual_line_backgrounds_by_line = _visual_line_backgrounds_by_line(
+            visual_lines, visual_line_backgrounds
+        )
     end
 
     # == Internal Variables ================================================================
@@ -434,8 +426,10 @@ function _textview(
     max_cropped_chars = 0
 
     # Variable to store the decorations before the view, including those in the frozen
-    # lines. It is used if the option `parse_decorations_before_view` is `true`.
-    pre_decorations = parse_decorations_before_view ? IOBuffer() : nothing
+    # lines. It is only written to if the option `parse_decorations_before_view` is `true`,
+    # but we always allocate it so that its type is concrete. Otherwise, every `write` in
+    # the line loops below would be a dynamic dispatch.
+    pre_decorations = IOBuffer()
 
     # Check if we have a maximum number of lines.
     if maximum_number_of_lines ≥ 0
@@ -679,6 +673,51 @@ end
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+"""
+    _visual_line_backgrounds_by_line(visual_lines, visual_line_backgrounds) -> Dict{Int, String}
+
+Map each line in `visual_lines` to its background. `visual_line_backgrounds` can be either a
+vector with one background per visual line or a single background applied to all of them. If
+a line is repeated, the first background wins.
+
+Notice that this function is split into two methods, one per kind of
+`visual_line_backgrounds`, so that the loop is specialized and no abstract iterator is
+created.
+
+# Arguments
+
+- `visual_lines`: Lines that must be rendered with a background.
+- `visual_line_backgrounds`: Background of each visual line, or a single background for all
+    of them.
+
+# Returns
+
+- `Dict{Int, String}`: Background of each visual line, indexed by the line number.
+"""
+function _visual_line_backgrounds_by_line(
+    visual_lines, visual_line_backgrounds::AbstractVector
+)
+    backgrounds_by_line = Dict{Int, String}()
+    sizehint!(backgrounds_by_line, length(visual_lines))
+
+    for (line, background) in zip(visual_lines, visual_line_backgrounds)
+        get!(backgrounds_by_line, line, background)
+    end
+
+    return backgrounds_by_line
+end
+
+function _visual_line_backgrounds_by_line(visual_lines, visual_line_background)
+    backgrounds_by_line = Dict{Int, String}()
+    sizehint!(backgrounds_by_line, length(visual_lines))
+
+    for line in visual_lines
+        get!(backgrounds_by_line, line, visual_line_background)
+    end
+
+    return backgrounds_by_line
+end
 
 """
     _source_length(source::RawTextViewSource) -> Int
