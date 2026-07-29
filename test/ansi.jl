@@ -100,11 +100,26 @@ end
     @test parse_code("007").reversed == StringManipulation.active
     @test parse_code("038;5;231").foreground == "38;5;231"
 
-    # The most common codes must be parsed without allocating.
-    d = Decoration()
-    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "0")) == 0
-    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "1")) == 0
-    @test @allocated(StringManipulation._parse_ansi_decoration_code(d, "22;24")) == 0
+    # Scanning the parameters instead of splitting them made the amount allocated
+    # independent of how many parameters the code has. Notice that we must not require zero
+    # allocations here: the returned `Decoration` is not an `isbits` type, so whether its
+    # allocation is elided depends on the Julia version.
+    sgr_allocations(d, code) =
+        @allocated StringManipulation._parse_ansi_decoration_code(d, code)
+
+    decoration = Decoration()
+    codes = ("0", "1", "22;24", "22;24;27;23;1;3;4;7")
+
+    # Warm up so that the compilation is not measured.
+    for code in codes
+        sgr_allocations(decoration, code)
+    end
+
+    baseline = sgr_allocations(decoration, first(codes))
+
+    for code in codes
+        @test sgr_allocations(decoration, code) == baseline
+    end
 end
 
 @testset "Reset Followed by Other Codes" begin
