@@ -134,6 +134,12 @@ function fit_string_in_field(
     keep_escape_seq::Bool = true,
     printable_string_width::Int = -1,
 )
+    if (crop_side != :right) && (crop_side != :left)
+        throw(ArgumentError(
+            "`crop_side` must be `:right` or `:left`, but it is `:$crop_side`."
+        ))
+    end
+
     str_width = if printable_string_width < 0
         printable_textwidth(str)
     else

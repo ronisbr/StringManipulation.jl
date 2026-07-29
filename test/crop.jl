@@ -211,6 +211,9 @@ end
     cropped_str = fit_string_in_field(str, 0; keep_escape_seq = false)
     @test cropped_str == expected
 
+    # An invalid `crop_side` must be rejected instead of silently cropping from the left.
+    @test_throws ArgumentError fit_string_in_field("abcdef", 3; crop_side = :rigth)
+
     # The result must never be wider than the field.
     for field_width in -3:5
         for kwargs in (
