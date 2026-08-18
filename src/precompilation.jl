@@ -40,7 +40,7 @@ PrecompileTools.@compile_workload begin
         "43",
     )
     update_decoration(Decoration(), "\e[1;45m")
-    convert(String, Decoration(; bold = StringManipulation.active))
+    String(Decoration(; bold = StringManipulation.active))
 
     # == Highlight =========================================================================
 

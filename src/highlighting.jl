@@ -313,7 +313,7 @@ function highlight_search(
     )
 
     # If a match extends past the end of the string, we still must close its highlight.
-    in_match && write(h_str, _RESET_DECORATIONS, convert(String, decoration))
+    in_match && write(h_str, _RESET_DECORATIONS, String(decoration))
 
     return String(take!(h_str))
 end
@@ -367,7 +367,7 @@ function _apply_match_boundaries!(
         if in_match
             (column < match_end_column) && break
 
-            write(h_str, _RESET_DECORATIONS, convert(String, decoration))
+            write(h_str, _RESET_DECORATIONS, String(decoration))
             in_match = false
             match_index += 1
 

@@ -10,7 +10,7 @@
     )
 
     expected = "\e[35m\e[48;5;243m\e[4m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(;
@@ -18,19 +18,19 @@
     )
 
     expected = "\e[35m\e[48;5;243m\e[24m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(; foreground = "35", background = "", bold = StringManipulation.active)
 
     expected = "\e[35m\e[1m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(; foreground = "35", background = "", bold = StringManipulation.inactive)
 
     expected = "\e[35m\e[22m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(;
@@ -38,7 +38,7 @@
     )
 
     expected = "\e[45m\e[7m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(;
@@ -46,7 +46,7 @@
     )
 
     expected = "\e[45m\e[27m"
-    result = convert(String, d)
+    result = String(d)
 
     @test result == expected
 
@@ -58,7 +58,7 @@
     )
 
     expected = "\e[35m\e[45m\e[1m\e[3m"
-    result = convert(String, d)
+    result = String(d)
 
     @test result == expected
 
@@ -72,7 +72,7 @@
     )
 
     expected = "\e[35m\e[45m\e[1m\e[3m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 
     d = Decoration(;
@@ -85,7 +85,7 @@
     )
 
     expected = "\e]8;;https://ronanarraes.com\e\\\e[35m\e[45m\e[1m\e[3m"
-    result = convert(String, d)
+    result = String(d)
     @test result == expected
 end
 

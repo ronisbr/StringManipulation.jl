@@ -398,10 +398,17 @@ end
 #                                        Julia API                                         #
 ############################################################################################
 
-String(d::Decoration) = convert(String, d)
-
 # Convert `Decoration` to string.
-function convert(::Type{String}, d::Decoration)
+#
+# NOTE: The conversion is implemented in the `String` constructor instead of
+# `Base.convert(::Type{String}, ::Decoration)` on purpose. `String` already has many
+# constructor methods, so call sites like `String(x::Any)` are dynamically dispatched and
+# adding one more method is harmless. On the other hand, call sites in Base and other
+# packages that are inferred as `convert(::Type{String}, ::Any)` (`push!` to
+# `Vector{String}`, `setindex!` to `Dict{String, ...}`, `setfield!` of `String` fields,
+# ...) are union-split over the few existing methods. Hence, adding a new `convert` method
+# invalidates all of them, leading to massive latency when loading other packages.
+function String(d::Decoration)
     # Fast path for the most common case. It must come first so that nothing below is
     # computed for a decoration that is rendered as an empty string. Notice that comparing
     # with `===` is enough because all the empty strings are the same object.

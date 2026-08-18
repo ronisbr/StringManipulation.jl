@@ -1,6 +1,6 @@
 module StringManipulation
 
-import Base: convert, String, @kwdef
+import Base: String, @kwdef
 
 ############################################################################################
 #                                        Constants                                         #
