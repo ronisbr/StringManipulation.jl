@@ -1,6 +1,14 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.5.0
+-------------
+
+- ![BREAKING][badge-breaking] Remove `convert(::Type{String}, ::Decoration)`, which
+  invalidated every compiled call site of `convert(String, ::Any)` in Base and in other
+  packages, increasing the load time of the entire session. Use the equivalent constructor
+  `String(::Decoration)` instead.
+
 Version 0.4.7
 -------------
 
