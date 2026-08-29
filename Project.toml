@@ -5,10 +5,12 @@ version = "0.5.0"
 
 [deps]
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 
 [compat]
 julia = "^1.10"
 PrecompileTools = "1"
+StyledStrings = "1"
 
 [extras]
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"

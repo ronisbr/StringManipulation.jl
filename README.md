@@ -217,6 +217,26 @@ code of the new background:
 
 ![Replace default background](./assets/replace_default_background.png "Replace default background")
 
+## Faces of StyledStrings.jl
+
+A face of [StyledStrings.jl](https://github.com/JuliaLang/StyledStrings.jl) can be
+converted into a `Decoration`, whose `String` is the escape sequence that shows text with
+the attributes of the face. Hence, the faces customized by the user in `faces.toml` can be
+used by the functions of this package, like `textview` and `highlight_search`, which expect
+the decorations as escape sequences:
+
+```julia
+julia> using StyledStrings
+
+julia> face = Face(; weight = :bold, foreground = :bright_white, background = :blue);
+
+julia> String(Decoration(face))
+"\e[0m\e[97m\e[44m\e[1m"
+
+julia> Decoration(face).background
+"44"
+```
+
 ## Highlight Search Matches
 
 The function `highlight_search` can be used to highlight search matches, given by a `Regex`,

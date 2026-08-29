@@ -1,5 +1,7 @@
 module StringManipulation
 
+using StyledStrings: StyledStrings, Face, SimpleColor
+
 import Base: String, @kwdef
 
 ############################################################################################
@@ -82,6 +84,7 @@ include("./alignment.jl")
 include("./ansi.jl")
 include("./crop.jl")
 include("./decorations.jl")
+include("./faces.jl")
 include("./highlighting.jl")
 include("./state.jl")
 include("./split.jl")

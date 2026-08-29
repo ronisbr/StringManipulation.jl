@@ -42,6 +42,11 @@ PrecompileTools.@compile_workload begin
     update_decoration(Decoration(), "\e[1;45m")
     String(Decoration(; bold = StringManipulation.active))
 
+    # == Faces =============================================================================
+
+    String(Decoration(Face(; weight = :bold, foreground = :red, background = "#005f87")))
+    Decoration(Face(; slant = :italic, underline = false); reset = false)
+
     # == Highlight =========================================================================
 
     highlight_search(
