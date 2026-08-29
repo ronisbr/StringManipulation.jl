@@ -1,6 +1,18 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.6.0
+-------------
+
+- ![BREAKING][badge-breaking] Add the fields `faint` and `strikethrough` to `Decoration`,
+  which changes its positional constructor. The SGR codes 2, 9, 22, and 29 are now parsed
+  and rendered, so that those attributes are preserved by the functions that rebuild the
+  decorations, and the code 22 turns off both the bold and the faint, as ECMA-48 defines it.
+- ![Feature][badge-feature] Add the constructor `Decoration(::StyledStrings.Face)`, which
+  converts a face of StyledStrings.jl into the decoration that renders it, so that
+  `String(Decoration(face))` is the escape sequence with the attributes of the face.
+  StyledStrings.jl is now a dependency.
+
 Version 0.5.0
 -------------
 
