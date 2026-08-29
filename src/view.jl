@@ -7,43 +7,6 @@
 export textview
 
 ############################################################################################
-#                                   Types and Structures                                   #
-############################################################################################
-
-"""
-    abstract type TextViewSource
-
-Represent a source of lines rendered by the shared text-view implementation.
-"""
-abstract type TextViewSource end
-
-"""
-    struct RawTextViewSource{T <: AbstractString} <: TextViewSource
-
-Wrap raw lines for text-view rendering.
-
-# Fields
-
-- `lines::Vector{T}`: Raw lines to render.
-"""
-struct RawTextViewSource{T <: AbstractString} <: TextViewSource
-    lines::Vector{T}
-end
-
-"""
-    struct PreparedTextViewSource <: TextViewSource
-
-Wrap a prepared layout for text-view rendering.
-
-# Fields
-
-- `layout::TextViewLayout`: Prepared layout to render.
-"""
-struct PreparedTextViewSource <: TextViewSource
-    layout::TextViewLayout
-end
-
-############################################################################################
 #                                     Public Functions                                     #
 ############################################################################################
 
@@ -1086,27 +1049,6 @@ function _prepared_line_segment(
         ),
         width,
     )
-end
-
-"""
-    struct PreparedSeekResult
-
-Store the byte boundary, padding, and ANSI data produced by a prepared seek.
-
-# Fields
-
-- `byte_index::Int`: Byte index selected for slicing.
-- `state_byte_index::Int`: Byte index selected for ANSI state reconstruction.
-- `left_padding::Int`: Spaces required to the left of a split wide character.
-- `right_padding::Int`: Spaces required to the right of a split wide character.
-- `attached_ansi::String`: ANSI events attached to the selected boundary.
-"""
-struct PreparedSeekResult
-    byte_index::Int
-    state_byte_index::Int
-    left_padding::Int
-    right_padding::Int
-    attached_ansi::String
 end
 
 """

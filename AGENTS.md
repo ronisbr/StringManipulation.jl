@@ -3,8 +3,8 @@
 ## Package Structure
 
 - Treat this repository as one Julia package compatible with Julia `^1.10`.
-- Use `src/StringManipulation.jl` as the single module entrypoint. Preserve its include order: alignment, ansi, crop, decorations, faces, highlighting, state, split, layout, search, view, width, precompilation.
-- Treat feature files in `src/` as module includes, not independent subpackages.
+- Use `src/StringManipulation.jl` as the single module entrypoint. Preserve its include order: types first, then alignment, ansi, crop, decorations, faces, highlighting, state, split, layout, search, view, width, precompilation.
+- Treat feature files in `src/` as module includes, not independent subpackages. Every type and structure is defined in `src/types.jl`; the feature files only define functions and constants.
 - Keep tests in the files unconditionally included by `test/runtests.jl`: alignment, ansi, crop, decorations, faces, highlighting, layout, search, split, view, and width. Do not expect dedicated test files for state or precompilation.
 - Review `src/precompilation.jl` and its explicit `PrecompileTools.@compile_workload` when public API changes should be precompiled.
 - Remember that PrecompileTools and StyledStrings are the only runtime dependencies; the test target supplies Test and Markdown. StyledStrings is a standard library on Julia 1.11 and later and a registered package on Julia 1.10, with the same UUID, so it is declared as a regular dependency.
