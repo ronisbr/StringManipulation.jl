@@ -15,6 +15,13 @@ const _FACE_FAINT_WEIGHTS = (:semilight, :light, :extralight, :thin)
 # Slants of a face that are shown in italics.
 const _FACE_ITALIC_SLANTS = (:italic, :oblique)
 
+# Colors of the terminal foreground and background, which a reset already selects. Their
+# names depend on the version of StyledStrings.jl: `:default` selected both up to 1.12,
+# whereas `:foreground` and `:background` select each of them since 1.13.
+const _RENAMED_DEFAULT_COLORS = pkgversion(StyledStrings) >= v"1.13"
+const _DEFAULT_FOREGROUND = SimpleColor(_RENAMED_DEFAULT_COLORS ? :foreground : :default)
+const _DEFAULT_BACKGROUND = SimpleColor(_RENAMED_DEFAULT_COLORS ? :background : :default)
+
 ############################################################################################
 #                                     Public Functions                                     #
 ############################################################################################
@@ -28,8 +35,8 @@ The colors follow the rules of **StyledStrings.jl**: a named color is written as
 16 terminal colors, a 24-bit color is written as such or approximated by the 256-color
 palette if the terminal does not support true color, and a color that names another face
 selects the foreground of that face. An attribute set to its default in `face`, like the
-weight `:normal`, `false`, or the color `:default`, turns the attribute off, whereas an
-attribute left unset (`nothing`) is left unchanged.
+weight `:normal`, `false`, or the default color of the terminal, turns the attribute off,
+whereas an attribute left unset (`nothing`) is left unchanged.
 
 Notice that the underline color and style are not represented in a `Decoration`, so that
 the text is shown with a plain underline, and that the `font` and the `height` of the face
@@ -140,20 +147,24 @@ end
 
 Return the SGR parameters that select `color` for `category`, which is `'3'` for the
 foreground and `'4'` for the background, like `"31"` or `"48;2;0;95;135"`. Return an empty
-string if `color` is `nothing`, or if it is the default color and `reset` is `true` because
-the reset already selects it.
+string if `color` is `nothing`, if it is the default color of the terminal and `reset` is
+`true` because the reset already selects it, or if **StyledStrings.jl** does not know it.
 """
 function _face_color_parameters(
     color::Union{Nothing, SimpleColor}, category::Char, reset::Bool
 )
     isnothing(color) && return ""
-    (reset && (color == SimpleColor(:default))) && return ""
 
-    # `termcolor` writes the entire escape sequence `\e[<parameters>m`. Hence, we must strip
-    # the CSI and the final byte.
+    # The reset already selects the default color of the terminal.
+    default = category == '4' ? _DEFAULT_BACKGROUND : _DEFAULT_FOREGROUND
+    (reset && (color == default)) && return ""
+
+    # `termcolor` writes the entire escape sequence `\e[<parameters>m`, or nothing if it
+    # does not know the color. Hence, we must strip the CSI and the final byte.
     buf = IOBuffer()
     StyledStrings.termcolor(buf, color, category)
     sequence = String(take!(buf))
+    isempty(sequence) && return ""
 
     return String(SubString(sequence, ncodeunits(_CSI) + 1, ncodeunits(sequence) - 1))
 end

@@ -23,9 +23,16 @@ const _Face = StringManipulation.Face
     @test sgr(_Face(; underline = :red)) == "\e[0m\e[4m"
 
     # The attributes turned off and the default colors are already selected by the reset.
+    # Notice that the name of the default color depends on the version of StyledStrings.jl,
+    # which the package selects at load time. Hence, it must match the default face.
+    default_foreground = StringManipulation._DEFAULT_FOREGROUND
+    default_background = StringManipulation._DEFAULT_BACKGROUND
+    @test default_foreground == _SS.getface().foreground
+    @test default_background == _SS.getface().background
     @test sgr(_Face(; weight = :normal, slant = :normal)) == "\e[0m"
     @test sgr(_Face(; underline = false, strikethrough = false, inverse = false)) == "\e[0m"
-    @test sgr(_Face(; foreground = :default, background = :default)) == "\e[0m"
+    @test sgr(_Face(; foreground = default_foreground, background = default_background)) ==
+        "\e[0m"
 
     # A merged face carries the default of every attribute, which must not be written.
     @test sgr(_SS.getface(_Face(; weight = :bold))) == "\e[0m\e[1m"
@@ -38,8 +45,10 @@ const _Face = StringManipulation.Face
     @test sgr(
         _Face(; underline = false, strikethrough = false, inverse = false); reset = false
     ) == "\e[24m\e[29m\e[27m"
-    @test sgr(_Face(; foreground = :default, background = :default); reset = false) ==
-        "\e[39m\e[49m"
+    @test sgr(
+        _Face(; foreground = default_foreground, background = default_background);
+        reset = false,
+    ) == "\e[39m\e[49m"
 
     # == Colors ============================================================================
 
