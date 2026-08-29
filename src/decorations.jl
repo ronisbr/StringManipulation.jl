@@ -15,12 +15,14 @@ unnecessary escape sequences after decorations are reset.
 """
 function drop_inactive_properties(decoration::Decoration)
     # Unpack fields.
-    foreground = decoration.foreground
-    background = decoration.background
-    bold       = decoration.bold
-    italic     = decoration.italic
-    underline  = decoration.underline
-    reversed   = decoration.reversed
+    foreground    = decoration.foreground
+    background    = decoration.background
+    bold          = decoration.bold
+    faint         = decoration.faint
+    italic        = decoration.italic
+    underline     = decoration.underline
+    strikethrough = decoration.strikethrough
+    reversed      = decoration.reversed
 
     # If a field is inactive or if it is a reset to a default value, drop it by returning to
     # default.
@@ -36,12 +38,20 @@ function drop_inactive_properties(decoration::Decoration)
         bold = unchanged
     end
 
+    if faint == inactive
+        faint = unchanged
+    end
+
     if italic == inactive
         italic = unchanged
     end
 
     if underline == inactive
         underline = unchanged
+    end
+
+    if strikethrough == inactive
+        strikethrough = unchanged
     end
 
     if reversed == inactive
@@ -52,9 +62,11 @@ function drop_inactive_properties(decoration::Decoration)
         foreground,
         background,
         bold,
+        faint,
         italic,
         reversed,
         underline,
+        strikethrough,
         false,
         decoration.hyperlink_url,
         decoration.hyperlink_url_changed,
@@ -242,9 +254,11 @@ function replace_default_background(str::AbstractString, new_background::Abstrac
                     foreground            = d.foreground,
                     background            = background,
                     bold                  = d.bold,
+                    faint                 = d.faint,
                     italic                = d.italic,
                     reversed              = d.reversed,
                     underline             = d.underline,
+                    strikethrough         = d.strikethrough,
                     reset                 = d.reset,
                     hyperlink_url         = d.hyperlink_url,
                     hyperlink_url_changed = d.hyperlink_url_changed,
@@ -285,9 +299,11 @@ function _apply_hyperlink(decoration::Decoration, hyperlink_url::String)
         decoration.foreground,
         decoration.background,
         decoration.bold,
+        decoration.faint,
         decoration.italic,
         decoration.reversed,
         decoration.underline,
+        decoration.strikethrough,
         decoration.reset,
         hyperlink_url,
         true,
@@ -361,22 +377,26 @@ function update_decoration(decoration::Decoration, code::String)
 end
 
 function update_decoration(decoration::Decoration, new::Decoration)
-    foreground = decoration.foreground
-    background = decoration.background
-    bold       = decoration.bold
-    italic     = decoration.italic
-    underline  = decoration.underline
-    reset      = decoration.reset
-    reversed   = decoration.reversed
-    hl_url     = decoration.hyperlink_url
+    foreground    = decoration.foreground
+    background    = decoration.background
+    bold          = decoration.bold
+    faint         = decoration.faint
+    italic        = decoration.italic
+    underline     = decoration.underline
+    strikethrough = decoration.strikethrough
+    reset         = decoration.reset
+    reversed      = decoration.reversed
+    hl_url        = decoration.hyperlink_url
 
     hl_url_changed = new.hyperlink_url_changed
 
     !isempty(new.foreground) && (foreground = new.foreground)
     !isempty(new.background) && (background = new.background)
     new.bold != unchanged && (bold = new.bold)
+    new.faint != unchanged && (faint = new.faint)
     new.italic != unchanged && (italic = new.italic)
     new.underline != unchanged && (underline = new.underline)
+    new.strikethrough != unchanged && (strikethrough = new.strikethrough)
     new.reset && (reset = true)
     new.reversed != unchanged && (reversed = new.reversed)
     hl_url_changed && (hl_url = new.hyperlink_url)
@@ -385,9 +405,11 @@ function update_decoration(decoration::Decoration, new::Decoration)
         foreground,
         background,
         bold,
+        faint,
         italic,
         reversed,
         underline,
+        strikethrough,
         reset,
         hl_url,
         hl_url_changed,
@@ -429,8 +451,20 @@ function String(d::Decoration)
     # TODO: Check if we can avoid adding so many `_CSI`.
     str_foreground = !isempty(d.foreground) ? "$(_CSI)$(d.foreground)m" : ""
     str_background = !isempty(d.background) ? "$(_CSI)$(d.background)m" : ""
-    str_bold       = d.bold != unchanged ? "$(_CSI)$(d.bold == active ? "1" : "22")m" : ""
-    str_italic     = if d.italic != unchanged
+
+    # The code 22 selects the normal intensity, turning off both the bold and the faint
+    # attributes. Hence, it must be written once, and before the code that turns on the
+    # other attribute.
+    str_normal_intensity = if (d.bold == inactive) || (d.faint == inactive)
+        "$(_CSI)22m"
+    else
+        ""
+    end
+
+    str_bold  = d.bold == active ? "$(_CSI)1m" : ""
+    str_faint = d.faint == active ? "$(_CSI)2m" : ""
+
+    str_italic = if d.italic != unchanged
         "$(_CSI)$(d.italic == active ? "3" : "23")m"
     else
         ""
@@ -438,6 +472,12 @@ function String(d::Decoration)
 
     str_underline = if d.underline != unchanged
         "$(_CSI)$(d.underline == active ? "4" : "24")m"
+    else
+        ""
+    end
+
+    str_strikethrough = if d.strikethrough != unchanged
+        "$(_CSI)$(d.strikethrough == active ? "9" : "29")m"
     else
         ""
     end
@@ -453,9 +493,12 @@ function String(d::Decoration)
         str_reset,
         str_foreground,
         str_background,
+        str_normal_intensity,
         str_bold,
+        str_faint,
         str_italic,
         str_underline,
+        str_strikethrough,
         str_reversed,
     )
 end

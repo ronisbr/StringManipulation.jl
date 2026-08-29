@@ -41,12 +41,16 @@ Summarize how a sequence of ANSI events changes a decoration state.
 - `background::String`: Final background value.
 - `bold_changed::Bool`: Whether the bold state is overridden.
 - `bold::DecorationState`: Final bold state.
+- `faint_changed::Bool`: Whether the faint state is overridden.
+- `faint::DecorationState`: Final faint state.
 - `italic_changed::Bool`: Whether the italic state is overridden.
 - `italic::DecorationState`: Final italic state.
 - `reversed_changed::Bool`: Whether the reversed state is overridden.
 - `reversed::DecorationState`: Final reversed state.
 - `underline_changed::Bool`: Whether the underline state is overridden.
 - `underline::DecorationState`: Final underline state.
+- `strikethrough_changed::Bool`: Whether the strikethrough state is overridden.
+- `strikethrough::DecorationState`: Final strikethrough state.
 - `hyperlink_changed::Bool`: Whether the hyperlink is overridden.
 - `hyperlink_url::String`: Final hyperlink URL.
 """
@@ -60,12 +64,16 @@ struct AnsiStateTransition
     background::String
     bold_changed::Bool
     bold::DecorationState
+    faint_changed::Bool
+    faint::DecorationState
     italic_changed::Bool
     italic::DecorationState
     reversed_changed::Bool
     reversed::DecorationState
     underline_changed::Bool
     underline::DecorationState
+    strikethrough_changed::Bool
+    strikethrough::DecorationState
     hyperlink_changed::Bool
     hyperlink_url::String
 end
@@ -97,14 +105,15 @@ Store parsed event state as packed flags and source-backed value ranges.
 # Fields
 
 - `flags::UInt16`: Packed transition-presence and transition-state flags.
-- `decoration_states::UInt8`: Packed bold, italic, reversed, and underline states.
+- `decoration_states::UInt16`: Packed bold, faint, italic, reversed, underline, and
+    strikethrough states, using two bits each in this order.
 - `foreground_ref::UInt64`: Packed source range or fallback for the foreground value.
 - `background_ref::UInt64`: Packed source range or fallback for the background value.
 - `hyperlink_ref::UInt64`: Packed source range or fallback for the hyperlink URL.
 """
 struct CompactAnsiTransition
     flags::UInt16
-    decoration_states::UInt8
+    decoration_states::UInt16
     foreground_ref::UInt64
     background_ref::UInt64
     hyperlink_ref::UInt64
@@ -583,17 +592,19 @@ end
 #                                    Private Functions                                     #
 ############################################################################################
 
-const _ANSI_CLEAR_SGR          = UInt16(1) << 0
-const _ANSI_HAS_SGR            = UInt16(1) << 1
-const _ANSI_FINAL_RESET        = UInt16(1) << 2
-const _ANSI_FOREGROUND_CHANGED = UInt16(1) << 3
-const _ANSI_BACKGROUND_CHANGED = UInt16(1) << 4
-const _ANSI_BOLD_CHANGED       = UInt16(1) << 5
-const _ANSI_ITALIC_CHANGED     = UInt16(1) << 6
-const _ANSI_REVERSED_CHANGED   = UInt16(1) << 7
-const _ANSI_UNDERLINE_CHANGED  = UInt16(1) << 8
-const _ANSI_HYPERLINK_CHANGED  = UInt16(1) << 9
-const _ANSI_FALLBACK_REF       = typemax(UInt32)
+const _ANSI_CLEAR_SGR             = UInt16(1) << 0
+const _ANSI_HAS_SGR               = UInt16(1) << 1
+const _ANSI_FINAL_RESET           = UInt16(1) << 2
+const _ANSI_FOREGROUND_CHANGED    = UInt16(1) << 3
+const _ANSI_BACKGROUND_CHANGED    = UInt16(1) << 4
+const _ANSI_BOLD_CHANGED          = UInt16(1) << 5
+const _ANSI_ITALIC_CHANGED        = UInt16(1) << 6
+const _ANSI_REVERSED_CHANGED      = UInt16(1) << 7
+const _ANSI_UNDERLINE_CHANGED     = UInt16(1) << 8
+const _ANSI_HYPERLINK_CHANGED     = UInt16(1) << 9
+const _ANSI_FAINT_CHANGED         = UInt16(1) << 10
+const _ANSI_STRIKETHROUGH_CHANGED = UInt16(1) << 11
+const _ANSI_FALLBACK_REF          = typemax(UInt32)
 
 """
     _event_transition(
@@ -655,12 +666,16 @@ function _compact_transition_value(
         _ansi_source_value(line, metadata.ansi_fallback_values, transition.background_ref),
         !iszero(flags & _ANSI_BOLD_CHANGED),
         DecorationState(states & 0x03),
-        !iszero(flags & _ANSI_ITALIC_CHANGED),
+        !iszero(flags & _ANSI_FAINT_CHANGED),
         DecorationState((states >> 2) & 0x03),
-        !iszero(flags & _ANSI_REVERSED_CHANGED),
+        !iszero(flags & _ANSI_ITALIC_CHANGED),
         DecorationState((states >> 4) & 0x03),
-        !iszero(flags & _ANSI_UNDERLINE_CHANGED),
+        !iszero(flags & _ANSI_REVERSED_CHANGED),
         DecorationState((states >> 6) & 0x03),
+        !iszero(flags & _ANSI_UNDERLINE_CHANGED),
+        DecorationState((states >> 8) & 0x03),
+        !iszero(flags & _ANSI_STRIKETHROUGH_CHANGED),
+        DecorationState((states >> 10) & 0x03),
         !iszero(flags & _ANSI_HYPERLINK_CHANGED),
         _ansi_source_value(line, metadata.ansi_fallback_values, transition.hyperlink_ref),
     )
@@ -700,14 +715,17 @@ function _compact_ansi_transition(
     transition.foreground_changed && (flags |= _ANSI_FOREGROUND_CHANGED)
     transition.background_changed && (flags |= _ANSI_BACKGROUND_CHANGED)
     transition.bold_changed && (flags |= _ANSI_BOLD_CHANGED)
+    transition.faint_changed && (flags |= _ANSI_FAINT_CHANGED)
     transition.italic_changed && (flags |= _ANSI_ITALIC_CHANGED)
     transition.reversed_changed && (flags |= _ANSI_REVERSED_CHANGED)
     transition.underline_changed && (flags |= _ANSI_UNDERLINE_CHANGED)
+    transition.strikethrough_changed && (flags |= _ANSI_STRIKETHROUGH_CHANGED)
     transition.hyperlink_changed && (flags |= _ANSI_HYPERLINK_CHANGED)
 
     states =
-        UInt8(transition.bold) | (UInt8(transition.italic) << 2) |
-        (UInt8(transition.reversed) << 4) | (UInt8(transition.underline) << 6)
+        UInt16(transition.bold) | (UInt16(transition.faint) << 2) |
+        (UInt16(transition.italic) << 4) | (UInt16(transition.reversed) << 6) |
+        (UInt16(transition.underline) << 8) | (UInt16(transition.strikethrough) << 10)
 
     return CompactAnsiTransition(
         flags,
@@ -821,6 +839,10 @@ function _empty_ansi_transition()
         false,
         unchanged,
         false,
+        unchanged,
+        false,
+        unchanged,
+        false,
         "",
     )
 end
@@ -843,9 +865,11 @@ function _ansi_transition_string(transition::AnsiStateTransition)
         transition.foreground_changed ? transition.foreground : "",
         transition.background_changed ? transition.background : "",
         transition.bold_changed ? transition.bold : unchanged,
+        transition.faint_changed ? transition.faint : unchanged,
         transition.italic_changed ? transition.italic : unchanged,
         transition.reversed_changed ? transition.reversed : unchanged,
         transition.underline_changed ? transition.underline : unchanged,
+        transition.strikethrough_changed ? transition.strikethrough : unchanged,
         false,
         transition.hyperlink_changed ? transition.hyperlink_url : "",
         transition.hyperlink_changed,
@@ -883,12 +907,16 @@ function _ansi_transition(code::AbstractString)
         decoration.background,
         is_sgr && (decoration.bold != unchanged),
         decoration.bold,
+        is_sgr && (decoration.faint != unchanged),
+        decoration.faint,
         is_sgr && (decoration.italic != unchanged),
         decoration.italic,
         is_sgr && (decoration.reversed != unchanged),
         decoration.reversed,
         is_sgr && (decoration.underline != unchanged),
         decoration.underline,
+        is_sgr && (decoration.strikethrough != unchanged),
+        decoration.strikethrough,
         decoration.hyperlink_url_changed,
         decoration.hyperlink_url,
     )
@@ -914,27 +942,33 @@ Apply `transition` to `decoration` and return the resulting state.
 function _apply_ansi_transition(decoration::Decoration, transition::AnsiStateTransition)
     # A reset clears inherited SGR attributes before later overrides are applied.
     if transition.clear_sgr
-        foreground = ""
-        background = ""
-        bold = unchanged
-        italic = unchanged
-        reversed = unchanged
-        underline = unchanged
+        foreground    = ""
+        background    = ""
+        bold          = unchanged
+        faint         = unchanged
+        italic        = unchanged
+        reversed      = unchanged
+        underline     = unchanged
+        strikethrough = unchanged
     else
-        foreground = decoration.foreground
-        background = decoration.background
-        bold = decoration.bold
-        italic = decoration.italic
-        reversed = decoration.reversed
-        underline = decoration.underline
+        foreground    = decoration.foreground
+        background    = decoration.background
+        bold          = decoration.bold
+        faint         = decoration.faint
+        italic        = decoration.italic
+        reversed      = decoration.reversed
+        underline     = decoration.underline
+        strikethrough = decoration.strikethrough
     end
 
     transition.foreground_changed && (foreground = transition.foreground)
     transition.background_changed && (background = transition.background)
     transition.bold_changed && (bold = transition.bold)
+    transition.faint_changed && (faint = transition.faint)
     transition.italic_changed && (italic = transition.italic)
     transition.reversed_changed && (reversed = transition.reversed)
     transition.underline_changed && (underline = transition.underline)
+    transition.strikethrough_changed && (strikethrough = transition.strikethrough)
 
     reset = transition.has_sgr ? transition.final_reset : decoration.reset
     hyperlink_url =
@@ -945,9 +979,11 @@ function _apply_ansi_transition(decoration::Decoration, transition::AnsiStateTra
         foreground,
         background,
         bold,
+        faint,
         italic,
         reversed,
         underline,
+        strikethrough,
         reset,
         hyperlink_url,
         hyperlink_changed,
@@ -985,12 +1021,16 @@ function _compose_ansi_transitions(first::AnsiStateTransition, second::AnsiState
         second.background_changed ? second.background : first.background,
         second.bold_changed || (!second_clears && first.bold_changed),
         second.bold_changed ? second.bold : first.bold,
+        second.faint_changed || (!second_clears && first.faint_changed),
+        second.faint_changed ? second.faint : first.faint,
         second.italic_changed || (!second_clears && first.italic_changed),
         second.italic_changed ? second.italic : first.italic,
         second.reversed_changed || (!second_clears && first.reversed_changed),
         second.reversed_changed ? second.reversed : first.reversed,
         second.underline_changed || (!second_clears && first.underline_changed),
         second.underline_changed ? second.underline : first.underline,
+        second.strikethrough_changed || (!second_clears && first.strikethrough_changed),
+        second.strikethrough_changed ? second.strikethrough : first.strikethrough,
         second.hyperlink_changed || first.hyperlink_changed,
         second.hyperlink_changed ? second.hyperlink_url : first.hyperlink_url,
     )

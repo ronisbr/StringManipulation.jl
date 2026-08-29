@@ -87,21 +87,57 @@
     expected = "\e]8;;https://ronanarraes.com\e\\\e[35m\e[45m\e[1m\e[3m"
     result = String(d)
     @test result == expected
+
+    # == Faint and Strikethrough ===========================================================
+
+    d = Decoration(;
+        faint = StringManipulation.active, strikethrough = StringManipulation.active
+    )
+    @test String(d) == "\e[2m\e[9m"
+
+    d = Decoration(;
+        faint = StringManipulation.inactive, strikethrough = StringManipulation.inactive
+    )
+    @test String(d) == "\e[22m\e[29m"
+
+    # The code 22 turns off both the bold and the faint. Hence, it must be written once, and
+    # before the code that turns on the other attribute.
+    d = Decoration(;
+        bold = StringManipulation.inactive, faint = StringManipulation.inactive
+    )
+    @test String(d) == "\e[22m"
+
+    d = Decoration(; bold = StringManipulation.active, faint = StringManipulation.inactive)
+    @test String(d) == "\e[22m\e[1m"
+
+    d = Decoration(; bold = StringManipulation.inactive, faint = StringManipulation.active)
+    @test String(d) == "\e[22m\e[2m"
+
+    d = Decoration(; bold = StringManipulation.active, faint = StringManipulation.active)
+    @test String(d) == "\e[1m\e[2m"
 end
 
 @testset "Drop Inactive Decorations" begin
     decoration = Decoration(;
-        foreground = "39",
-        background = "49",
-        bold       = StringManipulation.inactive,
-        italic     = StringManipulation.inactive,
-        underline  = StringManipulation.inactive,
-        reversed   = StringManipulation.inactive,
+        foreground    = "39",
+        background    = "49",
+        bold          = StringManipulation.inactive,
+        faint         = StringManipulation.inactive,
+        italic        = StringManipulation.inactive,
+        underline     = StringManipulation.inactive,
+        strikethrough = StringManipulation.inactive,
+        reversed      = StringManipulation.inactive,
     )
 
     decoration = drop_inactive_properties(decoration)
 
     @test decoration === Decoration()
+
+    decoration = Decoration(;
+        faint         = StringManipulation.active, strikethrough = StringManipulation.active
+    )
+
+    @test drop_inactive_properties(decoration) === decoration
 
     decoration = Decoration(;
         foreground = "39",

@@ -148,12 +148,14 @@ return the updated decoration given the initial `decoration`.
 """
 function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractString)
     # Unpack fields.
-    foreground = decoration.foreground
-    background = decoration.background
-    bold       = decoration.bold
-    italic     = decoration.italic
-    underline  = decoration.underline
-    reversed   = decoration.reversed
+    foreground    = decoration.foreground
+    background    = decoration.background
+    bold          = decoration.bold
+    faint         = decoration.faint
+    italic        = decoration.italic
+    underline     = decoration.underline
+    strikethrough = decoration.strikethrough
+    reversed      = decoration.reversed
 
     # `reset` must not be copied to other decorations. Hence, we need to reset it here.
     reset = false
@@ -171,16 +173,21 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractStrin
             # If we have a reset, neglect all the configurations we have parsed so far,
             # except the hyperlinks. Notice that we must not stop here because the same
             # sequence can contain other codes after the reset, like in `\e[0;31m`.
-            foreground = ""
-            background = ""
-            bold       = unchanged
-            italic     = unchanged
-            underline  = unchanged
-            reversed   = unchanged
-            reset      = true
+            foreground    = ""
+            background    = ""
+            bold          = unchanged
+            faint         = unchanged
+            italic        = unchanged
+            underline     = unchanged
+            strikethrough = unchanged
+            reversed      = unchanged
+            reset         = true
 
         elseif code_i == 1
             bold = active
+
+        elseif code_i == 2
+            faint = active
 
         elseif code_i == 3
             italic = active
@@ -191,8 +198,14 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractStrin
         elseif code_i == 7
             reversed = active
 
+        elseif code_i == 9
+            strikethrough = active
+
         elseif code_i == 22
-            bold = inactive
+            # ECMA-48 defines the code 22 as the normal intensity, which turns off both the
+            # bold and the faint attributes.
+            bold  = inactive
+            faint = inactive
 
         elseif code_i == 23
             italic = inactive
@@ -202,6 +215,9 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractStrin
 
         elseif code_i == 27
             reversed = inactive
+
+        elseif code_i == 29
+            strikethrough = inactive
 
         elseif (30 ≤ code_i ≤ 37) || (code_i == 39) || (90 ≤ code_i ≤ 97)
             foreground = string(code_i)
@@ -245,9 +261,11 @@ function _parse_ansi_decoration_code(decoration::Decoration, code::AbstractStrin
         foreground,
         background,
         bold,
+        faint,
         italic,
         reversed,
         underline,
+        strikethrough,
         reset,
         decoration.hyperlink_url,
         decoration.hyperlink_url_changed,

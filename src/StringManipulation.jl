@@ -40,17 +40,35 @@ export Decoration
     struct Decoration
 
 Structure to hold the current decoration of a string.
+
+# Fields
+
+- `foreground::String`: SGR parameters of the foreground color, like `"31"` or
+    `"38;2;255;0;0"`, or an empty string if it is unchanged.
+- `background::String`: SGR parameters of the background color, like `"44"` or `"48;5;201"`,
+    or an empty string if it is unchanged.
+- `bold::DecorationState`: State of the bold attribute.
+- `faint::DecorationState`: State of the faint attribute.
+- `italic::DecorationState`: State of the italic attribute.
+- `reversed::DecorationState`: State of the reverse video attribute.
+- `underline::DecorationState`: State of the underline attribute.
+- `strikethrough::DecorationState`: State of the strikethrough attribute.
+- `reset::Bool`: `true` if the decoration resets the previous attributes.
+- `hyperlink_url::String`: URL of the hyperlink, or an empty string if there is none.
+- `hyperlink_url_changed::Bool`: `true` if the decoration changes the hyperlink.
 """
 @kwdef struct Decoration
-    foreground::String          = ""
-    background::String          = ""
-    bold::DecorationState       = unchanged
-    italic::DecorationState     = unchanged
-    reversed::DecorationState   = unchanged
-    underline::DecorationState  = unchanged
-    reset::Bool                 = false
-    hyperlink_url::String       = ""
-    hyperlink_url_changed::Bool = false
+    foreground::String             = ""
+    background::String             = ""
+    bold::DecorationState          = unchanged
+    faint::DecorationState         = unchanged
+    italic::DecorationState        = unchanged
+    reversed::DecorationState      = unchanged
+    underline::DecorationState     = unchanged
+    strikethrough::DecorationState = unchanged
+    reset::Bool                    = false
+    hyperlink_url::String          = ""
+    hyperlink_url_changed::Bool    = false
 end
 
 const _DEFAULT_DECORATION = Decoration()

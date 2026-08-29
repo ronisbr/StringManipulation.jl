@@ -122,6 +122,44 @@ end
     end
 end
 
+@testset "Faint and Strikethrough" begin
+    decoration = parse_decoration("\e[2;9m")
+    @test decoration.faint == StringManipulation.active
+    @test decoration.strikethrough == StringManipulation.active
+    @test decoration.bold == StringManipulation.unchanged
+    @test String(decoration) == "\e[2m\e[9m"
+
+    # The code 22 selects the normal intensity, which turns off both the bold and the faint.
+    decoration = parse_decoration("\e[1;2m\e[22m")
+    @test decoration.bold == StringManipulation.inactive
+    @test decoration.faint == StringManipulation.inactive
+    @test String(decoration) == "\e[22m"
+
+    decoration = parse_decoration("\e[22;1m")
+    @test decoration.bold == StringManipulation.active
+    @test decoration.faint == StringManipulation.inactive
+    @test String(decoration) == "\e[22m\e[1m"
+
+    @test parse_decoration("\e[29m").strikethrough == StringManipulation.inactive
+    @test String(parse_decoration("\e[9;29m")) == "\e[29m"
+
+    # A reset clears both attributes.
+    decoration = parse_decoration("\e[2;9;0m")
+    @test decoration.faint == StringManipulation.unchanged
+    @test decoration.strikethrough == StringManipulation.unchanged
+    @test decoration.reset
+
+    # The attributes are preserved by the functions that rebuild the decorations.
+    str = "\e[2mfaint\e[22m \e[9mstruck\e[29m end"
+    parsed = parse_ansi_string(str)
+    @test parsed[1][2].faint == StringManipulation.active
+    @test parsed[2][2].faint == StringManipulation.inactive
+    @test parsed[3][2].strikethrough == StringManipulation.active
+    @test parsed[4][2].strikethrough == StringManipulation.inactive
+    @test right_crop(str, 4) == ("\e[2mfaint\e[22m \e[9mstruck", "\e[29m")
+    @test split_string(str, 8) == ("\e[2mfaint\e[22m \e[9mst", "ruck\e[29m end")
+end
+
 @testset "Reset Followed by Other Codes" begin
     # A reset must not discard the codes that follow it in the same sequence.
     @test String(parse_decoration("\e[0;31m")) == "\e[0m\e[31m"

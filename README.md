@@ -53,10 +53,10 @@ julia> str = "Test 😅 \e[38;5;231;48;5;243mTest 😅 \e[38;5;201;48;5;243mTest
 
 julia> parse_ansi_string(str)
 4-element Vector{Pair{String, Decoration}}:
- "Test 😅 " => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
- "Test 😅 " => Decoration("38;5;231", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
-     "Test" => Decoration("38;5;201", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
-         "" => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, true, "", false)
+ "Test 😅 " => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+ "Test 😅 " => Decoration("38;5;231", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+     "Test" => Decoration("38;5;201", "48;5;243", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, false, "", false)
+         "" => Decoration("", "", StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, StringManipulation.unchanged, true, "", false)
 ```
 
 ## Cropping
@@ -162,9 +162,11 @@ Decoration
   foreground: String "38;5;201"
   background: String "48;5;243"
   bold: StringManipulation.DecorationState StringManipulation.unchanged
+  faint: StringManipulation.DecorationState StringManipulation.unchanged
   italic: StringManipulation.DecorationState StringManipulation.unchanged
   reversed: StringManipulation.DecorationState StringManipulation.inactive
   underline: StringManipulation.DecorationState StringManipulation.active
+  strikethrough: StringManipulation.DecorationState StringManipulation.unchanged
   reset: Bool false
   hyperlink_url: String ""
   hyperlink_url_changed: Bool false
@@ -183,9 +185,11 @@ Decoration
   foreground: String "33"
   background: String "48;5;243"
   bold: StringManipulation.DecorationState StringManipulation.active
+  faint: StringManipulation.DecorationState StringManipulation.unchanged
   italic: StringManipulation.DecorationState StringManipulation.unchanged
   reversed: StringManipulation.DecorationState StringManipulation.inactive
   underline: StringManipulation.DecorationState StringManipulation.active
+  strikethrough: StringManipulation.DecorationState StringManipulation.unchanged
   reset: Bool false
   hyperlink_url: String ""
   hyperlink_url_changed: Bool false
@@ -195,9 +199,11 @@ Decoration
   foreground: String "38;5;201"
   background: String "48;5;243"
   bold: StringManipulation.DecorationState StringManipulation.unchanged
+  faint: StringManipulation.DecorationState StringManipulation.unchanged
   italic: StringManipulation.DecorationState StringManipulation.unchanged
   reversed: StringManipulation.DecorationState StringManipulation.inactive
   underline: StringManipulation.DecorationState StringManipulation.active
+  strikethrough: StringManipulation.DecorationState StringManipulation.unchanged
   reset: Bool false
   hyperlink_url: String "https://ronanarraes.com"
   hyperlink_url_changed: Bool true

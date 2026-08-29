@@ -426,6 +426,8 @@ end
         "\e[39m\e[49m",
         "\e[38;2;1;2;3m\e[48;5;201m",
         "\e[1m\e[3m\e[4m\e[7m\e[22m\e[23m\e[24m\e[27m",
+        "\e[2m\e[9m\e[22m\e[29m",
+        "\e[1m\e[2m\e[22m\e[1m",
     )
     oracle_lines = ("AB\e[0m$(open_url)C", "AB\e[0m$(open_url)\e[31mC")
     for line in
