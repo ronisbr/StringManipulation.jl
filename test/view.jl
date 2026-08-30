@@ -461,7 +461,7 @@
 
     expected = """
         Lorem ipsum dolor sit amet, consectetur adipisc\e[7ming\e[0m elit. Pellentesque tempor\e[0m
-        \e[34m\e[1mauctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
+        \e[34;1mauctor purus, in faucibus nisi quam ac erat. Nulla facilisi. Aenean et augue
         augue. Donec ut sem posuere, venenatis est quis, ultrices elit. Vivamus elit
         sapien, ullamcorper quis dui ut, \e[0msuscipit varius nibh. Duis varius arcu id
         ipsum egestas aliquam. Pellentesque eget sem ornare turpis fr\e[7ming\e[0milla fr\e[30;43ming\e[0milla
@@ -504,7 +504,7 @@
         frozen_lines_at_beginning = 1,
         parse_decorations_before_view = true,
     )
-    @test frozen_vstr == "\e[31mfrozen\e[0m\n\e[31m\e[1mshown"
+    @test frozen_vstr == "\e[31mfrozen\e[0m\n\e[31;1mshown"
 
     hidden_title_vstr, ~ = textview(
         ["\e[31mtitle", "\e[1mfrozen", "shown"],
@@ -514,7 +514,7 @@
         parse_decorations_before_view = true,
         title_lines = 1,
     )
-    @test hidden_title_vstr == "\e[1mfrozen\e[0m\n\e[31m\e[1mshown"
+    @test hidden_title_vstr == "\e[1mfrozen\e[0m\n\e[31;1mshown"
 end
 
 @testset "Text View [Errors]" begin

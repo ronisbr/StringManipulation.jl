@@ -58,13 +58,13 @@ are ignored because they have no effect in the terminal.
 julia> using StyledStrings
 
 julia> String(Decoration(Face(; weight = :bold, foreground = :red)))
-"\\e[0m\\e[31m\\e[1m"
+"\\e[0;31;1m"
 
 julia> Decoration(Face(; background = :blue)).background
 "44"
 
 julia> String(Decoration(Face(; weight = :normal, underline = false); reset = false))
-"\\e[22m\\e[24m"
+"\\e[22;24m"
 ```
 """
 function Decoration(face::Face; reset::Bool = true)

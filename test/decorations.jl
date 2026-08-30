@@ -9,7 +9,7 @@
         foreground = "35", background = "48;5;243", underline = StringManipulation.active
     )
 
-    expected = "\e[35m\e[48;5;243m\e[4m"
+    expected = "\e[35;48;5;243;4m"
     result = String(d)
     @test result == expected
 
@@ -17,19 +17,19 @@
         foreground = "35", background = "48;5;243", underline = StringManipulation.inactive
     )
 
-    expected = "\e[35m\e[48;5;243m\e[24m"
+    expected = "\e[35;48;5;243;24m"
     result = String(d)
     @test result == expected
 
     d = Decoration(; foreground = "35", background = "", bold = StringManipulation.active)
 
-    expected = "\e[35m\e[1m"
+    expected = "\e[35;1m"
     result = String(d)
     @test result == expected
 
     d = Decoration(; foreground = "35", background = "", bold = StringManipulation.inactive)
 
-    expected = "\e[35m\e[22m"
+    expected = "\e[35;22m"
     result = String(d)
     @test result == expected
 
@@ -37,7 +37,7 @@
         foreground = "", background = "45", reversed = StringManipulation.active
     )
 
-    expected = "\e[45m\e[7m"
+    expected = "\e[45;7m"
     result = String(d)
     @test result == expected
 
@@ -45,7 +45,7 @@
         foreground = "", background = "45", reversed = StringManipulation.inactive
     )
 
-    expected = "\e[45m\e[27m"
+    expected = "\e[45;27m"
     result = String(d)
 
     @test result == expected
@@ -57,7 +57,7 @@
         italic = StringManipulation.active,
     )
 
-    expected = "\e[35m\e[45m\e[1m\e[3m"
+    expected = "\e[35;45;1;3m"
     result = String(d)
 
     @test result == expected
@@ -71,7 +71,7 @@
         hyperlink_url_changed = false,
     )
 
-    expected = "\e[35m\e[45m\e[1m\e[3m"
+    expected = "\e[35;45;1;3m"
     result = String(d)
     @test result == expected
 
@@ -84,7 +84,7 @@
         hyperlink_url_changed = true,
     )
 
-    expected = "\e]8;;https://ronanarraes.com\e\\\e[35m\e[45m\e[1m\e[3m"
+    expected = "\e]8;;https://ronanarraes.com\e\\\e[35;45;1;3m"
     result = String(d)
     @test result == expected
 
@@ -93,12 +93,12 @@
     d = Decoration(;
         faint = StringManipulation.active, strikethrough = StringManipulation.active
     )
-    @test String(d) == "\e[2m\e[9m"
+    @test String(d) == "\e[2;9m"
 
     d = Decoration(;
         faint = StringManipulation.inactive, strikethrough = StringManipulation.inactive
     )
-    @test String(d) == "\e[22m\e[29m"
+    @test String(d) == "\e[22;29m"
 
     # The code 22 turns off both the bold and the faint. Hence, it must be written once, and
     # before the code that turns on the other attribute.
@@ -108,13 +108,13 @@
     @test String(d) == "\e[22m"
 
     d = Decoration(; bold = StringManipulation.active, faint = StringManipulation.inactive)
-    @test String(d) == "\e[22m\e[1m"
+    @test String(d) == "\e[22;1m"
 
     d = Decoration(; bold = StringManipulation.inactive, faint = StringManipulation.active)
-    @test String(d) == "\e[22m\e[2m"
+    @test String(d) == "\e[22;2m"
 
     d = Decoration(; bold = StringManipulation.active, faint = StringManipulation.active)
-    @test String(d) == "\e[1m\e[2m"
+    @test String(d) == "\e[1;2m"
 end
 
 @testset "Drop Inactive Decorations" begin
@@ -134,7 +134,7 @@ end
     @test decoration === Decoration()
 
     decoration = Decoration(;
-        faint         = StringManipulation.active, strikethrough = StringManipulation.active
+        faint = StringManipulation.active, strikethrough = StringManipulation.active
     )
 
     @test drop_inactive_properties(decoration) === decoration
@@ -256,7 +256,7 @@ end
 
 @testset "Replace the Default Background" begin
     str = "\e[35mThis is a \e[45;1mtest string with \e]8;;https://ronanarraes.com\e\\hyperlink\e]8;;\e\\ to \e[0mverify if \e[45mthe background \e[49;1mwas replaced correctly."
-    exp = "\e[43m\e[35mThis is a \e[45;1mtest string with \e]8;;https://ronanarraes.com\e\\hyperlink\e]8;;\e\\ to \e[0m\e[43mverify if \e[45mthe background \e[43m\e[1mwas replaced correctly.\e[49m"
+    exp = "\e[43m\e[35mThis is a \e[45;1mtest string with \e]8;;https://ronanarraes.com\e\\hyperlink\e]8;;\e\\ to \e[0m\e[43mverify if \e[45mthe background \e[43;1mwas replaced correctly.\e[49m"
     new = replace_default_background(str, "43")
 
     @test new == exp

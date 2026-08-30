@@ -127,7 +127,7 @@ end
     @test decoration.faint == StringManipulation.active
     @test decoration.strikethrough == StringManipulation.active
     @test decoration.bold == StringManipulation.unchanged
-    @test String(decoration) == "\e[2m\e[9m"
+    @test String(decoration) == "\e[2;9m"
 
     # The code 22 selects the normal intensity, which turns off both the bold and the faint.
     decoration = parse_decoration("\e[1;2m\e[22m")
@@ -138,7 +138,7 @@ end
     decoration = parse_decoration("\e[22;1m")
     @test decoration.bold == StringManipulation.active
     @test decoration.faint == StringManipulation.inactive
-    @test String(decoration) == "\e[22m\e[1m"
+    @test String(decoration) == "\e[22;1m"
 
     @test parse_decoration("\e[29m").strikethrough == StringManipulation.inactive
     @test String(parse_decoration("\e[9;29m")) == "\e[29m"
@@ -162,11 +162,11 @@ end
 
 @testset "Reset Followed by Other Codes" begin
     # A reset must not discard the codes that follow it in the same sequence.
-    @test String(parse_decoration("\e[0;31m")) == "\e[0m\e[31m"
+    @test String(parse_decoration("\e[0;31m")) == "\e[0;31m"
     @test String(parse_decoration("\e[0m")) == "\e[0m"
 
     # A code before the reset must be discarded.
-    @test String(parse_decoration("\e[1;0;4m")) == "\e[0m\e[4m"
+    @test String(parse_decoration("\e[1;0;4m")) == "\e[0;4m"
 
     decoration = parse_decoration("\e[0;31m")
     @test decoration.reset
@@ -177,7 +177,7 @@ end
     # ECMA-48 states that an omitted parameter takes its default value, 0 for SGR.
     @test String(parse_decoration("\e[m")) == "\e[0m"
     @test parse_decoration("\e[m").reset
-    @test String(parse_decoration("\e[;31m")) == "\e[0m\e[31m"
+    @test String(parse_decoration("\e[;31m")) == "\e[0;31m"
 end
 
 @testset "Non-SGR CSI Sequences" begin

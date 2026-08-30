@@ -13,14 +13,12 @@ const _Face = StringManipulation.Face
     # == Reset =============================================================================
 
     @test sgr(_Face()) == "\e[0m"
-    @test sgr(_Face(; inverse = true)) == "\e[0m\e[7m"
+    @test sgr(_Face(; inverse = true)) == "\e[0;7m"
     @test sgr(_Face(; weight = :bold, foreground = :bright_white, background = :blue)) ==
-        "\e[0m\e[97m\e[44m\e[1m"
-    @test sgr(_Face(; weight = :light, slant = :italic, underline = true)) ==
-        "\e[0m\e[2m\e[3m\e[4m"
-    @test sgr(_Face(; strikethrough = true, underline = (:red, :curly))) ==
-        "\e[0m\e[4m\e[9m"
-    @test sgr(_Face(; underline = :red)) == "\e[0m\e[4m"
+        "\e[0;97;44;1m"
+    @test sgr(_Face(; weight = :light, slant = :italic, underline = true)) == "\e[0;2;3;4m"
+    @test sgr(_Face(; strikethrough = true, underline = (:red, :curly))) == "\e[0;4;9m"
+    @test sgr(_Face(; underline = :red)) == "\e[0;4m"
 
     # The attributes turned off and the default colors are already selected by the reset.
     # Notice that the name of the default color depends on the version of StyledStrings.jl,
@@ -35,20 +33,20 @@ const _Face = StringManipulation.Face
         "\e[0m"
 
     # A merged face carries the default of every attribute, which must not be written.
-    @test sgr(_SS.getface(_Face(; weight = :bold))) == "\e[0m\e[1m"
+    @test sgr(_SS.getface(_Face(; weight = :bold))) == "\e[0;1m"
 
     # == Without Reset =====================================================================
 
     @test sgr(_Face(); reset = false) == ""
-    @test sgr(_Face(; weight = :bold); reset = false) == "\e[22m\e[1m"
-    @test sgr(_Face(; weight = :normal, slant = :normal); reset = false) == "\e[22m\e[23m"
+    @test sgr(_Face(; weight = :bold); reset = false) == "\e[22;1m"
+    @test sgr(_Face(; weight = :normal, slant = :normal); reset = false) == "\e[22;23m"
     @test sgr(
         _Face(; underline = false, strikethrough = false, inverse = false); reset = false
-    ) == "\e[24m\e[29m\e[27m"
+    ) == "\e[24;29;27m"
     @test sgr(
         _Face(; foreground = default_foreground, background = default_background);
         reset = false,
-    ) == "\e[39m\e[49m"
+    ) == "\e[39;49m"
 
     # == Colors ============================================================================
 

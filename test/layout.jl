@@ -102,15 +102,24 @@ end
         (; parse_decorations_before_view = true),
     )
 
+    # The prepared layout rebuilds the decorations of a cropped line from a `Decoration`,
+    # which writes a single SGR sequence, whereas the raw view keeps the sequences of the
+    # input verbatim. Both are equivalent, so the comparison merges the adjacent sequences.
+    merge_sgr(str::AbstractString) = replace(str, r"m\e\[(?=[0-9;]+m)" => ";")
+    merge_sgr(t::Tuple) = map(merge_sgr, t)
+    merge_sgr(x) = x
+
     for view in views, kwargs in options
-        @test textview(layout, view; kwargs...) == textview(lines, view; kwargs...)
+        @test merge_sgr(textview(layout, view; kwargs...)) ==
+            merge_sgr(textview(lines, view; kwargs...))
 
         prepared_buffer = IOBuffer()
         raw_buffer = IOBuffer()
         prepared_result = textview(prepared_buffer, layout, view; kwargs...)
         raw_result = textview(raw_buffer, lines, view; kwargs...)
-        @test prepared_result == raw_result
-        @test String(take!(prepared_buffer)) == String(take!(raw_buffer))
+        @test merge_sgr(prepared_result) == merge_sgr(raw_result)
+        @test merge_sgr(String(take!(prepared_buffer))) ==
+            merge_sgr(String(take!(raw_buffer)))
     end
 
     matches = string_search_per_line(layout, r"a|red|link")

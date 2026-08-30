@@ -436,69 +436,54 @@ function String(d::Decoration)
     # with `===` is enough because all the empty strings are the same object.
     d === _DEFAULT_DECORATION && return ""
 
+    buf = IOBuffer(; sizehint = 32)
+
     # Check if we must change the hyperlink. Notice that a reset **does not** clean it.
-    str_hyperlink = if d.hyperlink_url_changed
-        "\x1B]8;;$(d.hyperlink_url)\x1B\\"
-    else
-        ""
-    end
+    d.hyperlink_url_changed && write(buf, "\x1B]8;;", d.hyperlink_url, "\x1B\\")
 
-    # The reset must be written before the other properties instead of returning here
-    # because the same ANSI sequence can set a decoration after resetting everything, like
-    # in `\e[0;31m`.
-    str_reset = d.reset ? _RESET_DECORATIONS : ""
+    # All the SGR parameters are written in a single sequence `\e[p1;p2;...m`, like
+    # `\e[0;31;1m`. `n` counts the parameters written so far so that the CSI precedes the
+    # first one and a `;` precedes the others.
+    n = 0
 
-    # TODO: Check if we can avoid adding so many `_CSI`.
-    str_foreground = !isempty(d.foreground) ? "$(_CSI)$(d.foreground)m" : ""
-    str_background = !isempty(d.background) ? "$(_CSI)$(d.background)m" : ""
+    # The reset must be the first parameter instead of returning here because the same
+    # sequence can set a decoration after resetting everything, like in `\e[0;31m`.
+    n = _write_sgr_parameter!(buf, n, d.reset, "0")
+    n = _write_sgr_parameter!(buf, n, !isempty(d.foreground), d.foreground)
+    n = _write_sgr_parameter!(buf, n, !isempty(d.background), d.background)
 
     # The code 22 selects the normal intensity, turning off both the bold and the faint
     # attributes. Hence, it must be written once, and before the code that turns on the
     # other attribute.
-    str_normal_intensity = if (d.bold == inactive) || (d.faint == inactive)
-        "$(_CSI)22m"
-    else
-        ""
-    end
-
-    str_bold  = d.bold == active ? "$(_CSI)1m" : ""
-    str_faint = d.faint == active ? "$(_CSI)2m" : ""
-
-    str_italic = if d.italic != unchanged
-        "$(_CSI)$(d.italic == active ? "3" : "23")m"
-    else
-        ""
-    end
-
-    str_underline = if d.underline != unchanged
-        "$(_CSI)$(d.underline == active ? "4" : "24")m"
-    else
-        ""
-    end
-
-    str_strikethrough = if d.strikethrough != unchanged
-        "$(_CSI)$(d.strikethrough == active ? "9" : "29")m"
-    else
-        ""
-    end
-
-    str_reversed = if d.reversed != unchanged
-        "$(_CSI)$(d.reversed == active ? "7" : "27")m"
-    else
-        ""
-    end
-
-    return string(
-        str_hyperlink,
-        str_reset,
-        str_foreground,
-        str_background,
-        str_normal_intensity,
-        str_bold,
-        str_faint,
-        str_italic,
-        str_underline,
-        str_strikethrough,
-        str_reversed,
+    n = _write_sgr_parameter!(buf, n, (d.bold == inactive) || (d.faint == inactive), "22")
+    n = _write_sgr_parameter!(buf, n, d.bold == active, "1")
+    n = _write_sgr_parameter!(buf, n, d.faint == active, "2")
+    n = _write_sgr_parameter!(
+        buf, n, d.italic != unchanged, d.italic == active ? "3" : "23"
     )
+    n = _write_sgr_parameter!(
+        buf, n, d.underline != unchanged, d.underline == active ? "4" : "24"
+    )
+    n = _write_sgr_parameter!(
+        buf, n, d.strikethrough != unchanged, d.strikethrough == active ? "9" : "29"
+    )
+    n = _write_sgr_parameter!(
+        buf, n, d.reversed != unchanged, d.reversed == active ? "7" : "27"
+    )
+
+    (n > 0) && write(buf, 'm')
+
+    return String(take!(buf))
+end
+
+# Write the SGR parameter `parameter` to `buf` if `condition` is `true`. The parameter is
+# preceded by the CSI if it is the first one (`n == 0`) or by `;` otherwise. It returns the
+# updated number of parameters.
+@inline function _write_sgr_parameter!(
+    buf::IOBuffer, n::Int, condition::Bool, parameter::String
+)
+    condition || return n
+    write(buf, n == 0 ? _CSI : ";")
+    write(buf, parameter)
+    return n + 1
 end
