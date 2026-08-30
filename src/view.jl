@@ -455,12 +455,7 @@ function _textview(
             active_match_location, l, active_match - num_matches
         )
 
-        if show_ruler
-            line_number_str = lpad(l, ruler_spacing)
-            write(buf, ruler_decoration, " ")
-            write(buf, line_number_str, " │")
-            write(buf, _CSI, "0m")
-        end
+        show_ruler && _write_ruler!(buf, l, ruler_spacing, ruler_decoration)
 
         cropped_chars_in_line = 0
 
@@ -582,12 +577,7 @@ function _textview(
             line_search_matches = nothing
         end
 
-        if show_ruler
-            line_number_str = lpad(l, ruler_spacing)
-            write(buf, ruler_decoration, " ")
-            write(buf, line_number_str, " │")
-            write(buf, _CSI, "0m")
-        end
+        show_ruler && _write_ruler!(buf, l, ruler_spacing, ruler_decoration)
 
         visual_line_background = if isnothing(visual_line_backgrounds_by_line)
             nothing
@@ -1321,6 +1311,56 @@ function _ansi_summary_after(layout::TextViewLayout, line_number::Int, byte_inde
 end
 
 """
+    _write_ruler!(
+        buf::IO,
+        line_number::Int,
+        ruler_spacing::Int,
+        ruler_decoration::String
+    ) -> Nothing
+
+Write the ruler of the line `line_number` to `buf`: the `ruler_decoration`, the number
+right-aligned in `ruler_spacing` columns between blanks, the separator `│`, and a reset.
+The digits are written directly, so that the ruler does not allocate at every line.
+
+# Arguments
+
+- `buf::IO`: Buffer receiving the ruler.
+- `line_number::Int`: Number of the line.
+- `ruler_spacing::Int`: Number of columns of the line number.
+- `ruler_decoration::String`: Escape sequence that decorates the ruler.
+"""
+function _write_ruler!(
+    buf::IO, line_number::Int, ruler_spacing::Int, ruler_decoration::String
+)
+    write(buf, ruler_decoration, ' ')
+
+    for _ in 1:(ruler_spacing - ndigits(line_number))
+        write(buf, ' ')
+    end
+
+    _write_decimal(buf, line_number)
+    write(buf, " │", _RESET_DECORATIONS)
+
+    return nothing
+end
+
+"""
+    _write_decimal(buf::IO, n::Int) -> Nothing
+
+Write the non-negative integer `n` in decimal to `buf` without allocating.
+
+# Arguments
+
+- `buf::IO`: Buffer receiving the digits.
+- `n::Int`: Non-negative integer to write.
+"""
+function _write_decimal(buf::IO, n::Int)
+    n ≥ 10 && _write_decimal(buf, div(n, 10))
+    write(buf, UInt8(0x30 + rem(n, 10)))
+    return nothing
+end
+
+"""
     _draw_ascii_line_view!(
         buf::IO,
         layout::TextViewLayout,
@@ -1374,8 +1414,19 @@ function _draw_ascii_line_view!(
     line = layout._lines[line_number]
     width = layout._printable_widths[line_number]
 
+    # The visible parts are copied into strings only when they must be transformed. The
+    # plain rows, which are most of them, are written directly.
+    transform = visual_line || !isnothing(line_search_matches)
+
     if frozen_columns_at_beginning > 0
         frozen_width = min(frozen_columns_at_beginning, width)
+
+        if !transform
+            (frozen_width > 0) && write(buf, SubString(line, 1, frozen_width))
+            write(buf, _RESET_DECORATIONS)
+            @goto scrolled
+        end
+
         left = frozen_width == 0 ? "" : String(SubString(line, 1, frozen_width))
 
         if visual_line
@@ -1401,9 +1452,19 @@ function _draw_ascii_line_view!(
         write(buf, left, _RESET_DECORATIONS)
     end
 
+    @label scrolled
+
     first_visible = min(start_column, width + 1)
     available_width = max(width - first_visible + 1, 0)
     visible_width = num_columns < 0 ? available_width : min(num_columns, available_width)
+    cropped_chars = num_columns < 0 ? 0 : max(available_width - num_columns, 0)
+
+    if !transform
+        (visible_width > 0) &&
+            write(buf, SubString(line, first_visible, first_visible + visible_width - 1))
+        return cropped_chars
+    end
+
     line_str = if visible_width == 0
         ""
     else
@@ -1413,8 +1474,6 @@ function _draw_ascii_line_view!(
     if (num_columns ≥ 0) && visual_line && (visible_width < num_columns)
         line_str *= " "^(num_columns - visible_width)
     end
-
-    cropped_chars = num_columns < 0 ? 0 : max(available_width - num_columns, 0)
 
     if visual_line && (num_columns ≥ 0)
         line_str = replace_default_background(line_str, visual_line_background)
