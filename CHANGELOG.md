@@ -1,6 +1,22 @@
 StringManipulation.jl Changelog
 ===============================
 
+Version 0.6.1
+-------------
+
+- ![Bugfix][badge-bugfix] Render a `Decoration` as a single SGR sequence, like `"\e[31;1m"`,
+  instead of one sequence per attribute, like `"\e[31m\e[1m"`. The parameters and their
+  order are unchanged, so that the result is equivalent, shorter, and identical to the
+  sequence written by Crayons.jl for the same attributes.
+- ![Feature][badge-feature] Add `Decoration(d::Decoration; kwargs...)`, which creates a copy
+  of a decoration replacing the fields passed as keywords.
+- ![Feature][badge-feature] Add `face_color_rgb`, which returns the 24-bit value of a color
+  of a face of StyledStrings.jl, resolving the 16 terminal colors and the colors that name
+  another face.
+- ![Enhancement][badge-enhancement] Render the rows of a text view that need no highlight
+  nor visual background without copying them, and write the ruler without allocating, which
+  removes about 20 KB of allocations per frame of a 60 row view with the ruler.
+
 Version 0.6.0
 -------------
 
