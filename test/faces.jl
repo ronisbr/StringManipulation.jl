@@ -4,8 +4,9 @@
 #
 ############################################################################################
 
-const _SS   = StringManipulation.StyledStrings
+const _SS = StringManipulation.StyledStrings
 const _Face = StringManipulation.Face
+const _SimpleColor = StringManipulation.SimpleColor
 
 @testset "Convert Face to Decoration" begin
     sgr(face; kwargs...) = String(Decoration(face; kwargs...))
@@ -65,4 +66,44 @@ const _Face = StringManipulation.Face
     error_foreground = _SS.getface(:error).foreground
     @test Decoration(_Face(; foreground = :error)).foreground ==
         Decoration(_Face(; foreground = error_foreground)).foreground
+end
+
+@testset "Face Color to RGB" begin
+    @test face_color_rgb(nothing) === nothing
+
+    # == Terminal Colors ===================================================================
+
+    @test face_color_rgb(_SimpleColor(:red)) == (r = 0xa5, g = 0x1c, b = 0x2c)
+    @test face_color_rgb(_SimpleColor(:bright_white)) == (r = 0xf6, g = 0xf5, b = 0xf4)
+    @test face_color_rgb(_SimpleColor(:grey)) == face_color_rgb(_SimpleColor(:bright_black))
+
+    # == 24-bit Colors =====================================================================
+
+    @test face_color_rgb(_SimpleColor(0x005f87)) == (r = 0x00, g = 0x5f, b = 0x87)
+    @test face_color_rgb(_SimpleColor(0x12, 0x34, 0x56)) == (r = 0x12, g = 0x34, b = 0x56)
+
+    # == Colors Without a Fixed Value ======================================================
+
+    @test face_color_rgb(_SimpleColor(:default)) === nothing
+    @test face_color_rgb(_SimpleColor(:foreground)) === nothing
+    @test face_color_rgb(_SimpleColor(:background)) === nothing
+    @test face_color_rgb(_SimpleColor(:this_face_does_not_exist)) === nothing
+
+    # == Colors That Name Another Face =====================================================
+
+    @test face_color_rgb(_SimpleColor(:error)) ==
+        face_color_rgb(_SS.getface(:error).foreground)
+
+    _SS.withfaces(
+        :sm_test_a => _Face(; foreground = :sm_test_b),
+        :sm_test_b => _Face(; foreground = :blue),
+        :sm_cycle_a => _Face(; foreground = :sm_cycle_b),
+        :sm_cycle_b => _Face(; foreground = :sm_cycle_a),
+        :sm_self => _Face(; foreground = :sm_self),
+    ) do
+        @test face_color_rgb(_SimpleColor(:sm_test_a)) ==
+            face_color_rgb(_SimpleColor(:blue))
+        @test face_color_rgb(_SimpleColor(:sm_cycle_a)) === nothing
+        @test face_color_rgb(_SimpleColor(:sm_self)) === nothing
+    end
 end

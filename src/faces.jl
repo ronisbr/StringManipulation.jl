@@ -4,6 +4,8 @@
 #
 ############################################################################################
 
+export face_color_rgb
+
 ############################################################################################
 #                                        Constants                                         #
 ############################################################################################
@@ -21,6 +23,35 @@ const _FACE_ITALIC_SLANTS = (:italic, :oblique)
 const _RENAMED_DEFAULT_COLORS = pkgversion(StyledStrings) >= v"1.13"
 const _DEFAULT_FOREGROUND = SimpleColor(_RENAMED_DEFAULT_COLORS ? :foreground : :default)
 const _DEFAULT_BACKGROUND = SimpleColor(_RENAMED_DEFAULT_COLORS ? :background : :default)
+
+# Named tuple used by StyledStrings.jl to store a 24-bit color.
+const _RGBTuple = NamedTuple{(:r, :g, :b), NTuple{3, UInt8}}
+
+# 24-bit values of the 16 terminal colors, copied from the ones StyledStrings.jl uses to
+# render the faces in HTML (`HTML_BASIC_COLORS`, which is not part of its public API).
+const _TERMINAL_COLORS_RGB = Dict{Symbol, _RGBTuple}(
+    :black          => (r = 0x1c, g = 0x1a, b = 0x23),
+    :red            => (r = 0xa5, g = 0x1c, b = 0x2c),
+    :green          => (r = 0x25, g = 0xa2, b = 0x68),
+    :yellow         => (r = 0xe5, g = 0xa5, b = 0x09),
+    :blue           => (r = 0x19, g = 0x5e, b = 0xb3),
+    :magenta        => (r = 0x80, g = 0x3d, b = 0x9b),
+    :cyan           => (r = 0x00, g = 0x97, b = 0xa7),
+    :white          => (r = 0xdd, g = 0xdc, b = 0xd9),
+    :bright_black   => (r = 0x76, g = 0x75, b = 0x7a),
+    :grey           => (r = 0x76, g = 0x75, b = 0x7a),
+    :gray           => (r = 0x76, g = 0x75, b = 0x7a),
+    :bright_red     => (r = 0xed, g = 0x33, b = 0x3b),
+    :bright_green   => (r = 0x33, g = 0xd0, b = 0x79),
+    :bright_yellow  => (r = 0xf6, g = 0xd2, b = 0x2c),
+    :bright_blue    => (r = 0x35, g = 0x83, b = 0xe4),
+    :bright_magenta => (r = 0xbf, g = 0x60, b = 0xca),
+    :bright_cyan    => (r = 0x26, g = 0xc6, b = 0xda),
+    :bright_white   => (r = 0xf6, g = 0xf5, b = 0xf4),
+)
+
+# Maximum number of faces followed when a color names another face, guarding cycles.
+const _MAX_FACE_COLOR_DEPTH = 16
 
 ############################################################################################
 #                                     Public Functions                                     #
@@ -100,9 +131,66 @@ function Decoration(face::Face; reset::Bool = true)
     )
 end
 
+"""
+    face_color_rgb(color::Union{Nothing, SimpleColor}) -> Union{Nothing, NamedTuple}
+
+Return the 24-bit value of `color`, a color of a face of **StyledStrings.jl**, as the named
+tuple `(; r, g, b)` with `UInt8` fields, or `nothing` if it has no fixed value.
+
+A 24-bit color is returned as is. One of the 16 terminal colors, like `:red` or
+`:bright_blue`, is mapped to the value **StyledStrings.jl** uses to render it in HTML. A
+symbol that names another face selects the foreground of that face, following the chain
+until a fixed color is found. The default colors of the terminal (`:default`,
+`:foreground`, and `:background`), an unknown name, and `nothing` return `nothing`.
+
+# Examples
+
+```julia
+julia> using StyledStrings
+
+julia> face_color_rgb(SimpleColor(:red))
+(r = 0xa5, g = 0x1c, b = 0x2c)
+
+julia> face_color_rgb(SimpleColor(0x005f87))
+(r = 0x00, g = 0x5f, b = 0x87)
+
+julia> face_color_rgb(SimpleColor(:default))
+
+julia> face_color_rgb(Face(; foreground = :error).foreground)
+(r = 0xa5, g = 0x1c, b = 0x2c)
+```
+"""
+face_color_rgb(color::Union{Nothing, SimpleColor}) = _face_color_rgb(color, 0)
+
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+"""
+    _face_color_rgb(color::Union{Nothing, SimpleColor}, depth::Int) -> Union{Nothing, NamedTuple}
+
+Implementation of `face_color_rgb`, in which `depth` is the number of faces followed so far
+when the color names another face.
+"""
+function _face_color_rgb(color::Union{Nothing, SimpleColor}, depth::Int)
+    isnothing(color) && return nothing
+
+    value = color.value
+    (value isa _RGBTuple) && return value
+
+    rgb = get(_TERMINAL_COLORS_RGB, value, nothing)
+    isnothing(rgb) || return rgb
+
+    (value ∈ (:default, :foreground, :background)) && return nothing
+    (depth >= _MAX_FACE_COLOR_DEPTH) && return nothing
+
+    # `getface` returns the default face for an unknown name, whose foreground is the
+    # default color of the terminal. Hence, unknown names return `nothing` above.
+    foreground = StyledStrings.getface(value).foreground
+    (foreground == color) && return nothing
+
+    return _face_color_rgb(foreground, depth + 1)
+end
 
 """
     _face_attribute_state(value::Union{Nothing, Bool}, reset::Bool) -> DecorationState
