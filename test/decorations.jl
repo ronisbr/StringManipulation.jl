@@ -4,6 +4,34 @@
 #
 ############################################################################################
 
+@testset "Copy a Decoration with Keywords" begin
+    d = Decoration(;
+        foreground = "31",
+        bold = StringManipulation.active,
+        reset = true,
+        hyperlink_url = "https://ronanarraes.com",
+        hyperlink_url_changed = true,
+    )
+
+    @test Decoration(d) === d
+    @test Decoration(d; reset = false) == Decoration(;
+        foreground = "31",
+        bold = StringManipulation.active,
+        hyperlink_url = "https://ronanarraes.com",
+        hyperlink_url_changed = true,
+    )
+    @test Decoration(d; background = "44", bold = StringManipulation.inactive) ==
+        Decoration(;
+        foreground = "31",
+        background = "44",
+        bold = StringManipulation.inactive,
+        reset = true,
+        hyperlink_url = "https://ronanarraes.com",
+        hyperlink_url_changed = true,
+    )
+    @test String(Decoration(d; reset = false, hyperlink_url_changed = false)) == "\e[31;1m"
+end
+
 @testset "Convert Decoration to String" begin
     d = Decoration(;
         foreground = "35", background = "48;5;243", underline = StringManipulation.active

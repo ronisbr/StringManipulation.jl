@@ -55,6 +55,49 @@ Structure to hold the current decoration of a string.
     hyperlink_url_changed::Bool    = false
 end
 
+"""
+    Decoration(d::Decoration; kwargs...) -> Decoration
+
+Create a copy of the decoration `d` replacing the fields passed as keyword arguments.
+
+# Examples
+
+```julia
+julia> d = Decoration(; foreground = "31", reset = true);
+
+julia> String(Decoration(d; reset = false))
+"\\e[31m"
+```
+"""
+function Decoration(
+    d::Decoration;
+    foreground::String             = d.foreground,
+    background::String             = d.background,
+    bold::DecorationState          = d.bold,
+    faint::DecorationState         = d.faint,
+    italic::DecorationState        = d.italic,
+    reversed::DecorationState      = d.reversed,
+    underline::DecorationState     = d.underline,
+    strikethrough::DecorationState = d.strikethrough,
+    reset::Bool                    = d.reset,
+    hyperlink_url::String          = d.hyperlink_url,
+    hyperlink_url_changed::Bool    = d.hyperlink_url_changed,
+)
+    return Decoration(
+        foreground,
+        background,
+        bold,
+        faint,
+        italic,
+        reversed,
+        underline,
+        strikethrough,
+        reset,
+        hyperlink_url,
+        hyperlink_url_changed,
+    )
+end
+
 # == Text View Layout ======================================================================
 
 """
